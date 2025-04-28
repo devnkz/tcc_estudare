@@ -3,7 +3,7 @@ import { ArrowRightIcon } from "@heroicons/react/16/solid"
 
 const inter = Inter({ subsets: ['latin'], weight: ['400'] })
 
-export default function TelaHome() {
+export default function TelaInicial() {
     return (
         <div className={`${inter.className} h-screen w-full bg-white flex flex-col justify-between items-center`}>
             <header className="w-full flex flex-col items-center justify-between p-4 gap-4">

@@ -1,5 +1,4 @@
-import Image from "next/image";
-import TelaHome from "./screens/TelaHome";
+import TelaHome from "./screens/Tela_Apresentacao/page";
 
 export default function Home() {
   return (

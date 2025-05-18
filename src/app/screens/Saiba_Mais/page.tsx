@@ -4,7 +4,6 @@ import Image from "next/image"
 import { MenuLateral } from "@/app/components/Menu_Lateral";
 import Footer from "@/app/components/Footer";
 import { Inter } from "next/font/google"
-import { LightBulbIcon } from "@heroicons/react/16/solid";
 
 const inter = Inter({ subsets: ['latin'], weight: ['400'] })
 

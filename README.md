@@ -35,3 +35,6 @@ O Estudare é uma aplicação web desenvolvida com Next.js, focada em oferecer u
 ```md
 ![Página inicial](./public/screenshots/introducao.png)
 ![Home](./public/screenshots/home.png)
+
+rode projeto escola: Set-ExecutionPolicy RemoteSigned
+

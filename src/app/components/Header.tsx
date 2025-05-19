@@ -32,7 +32,7 @@ export function HeaderDesktop() {
                         </a>
                     </li>
                     <button className="p-2 rounded-xl bg-purple-600 flex gap-2 justify-center items-center hover:bg-purple-950 transition-all duration-300 cursor-pointer">
-                        <p>Faça uma pergunta</p>
+                        <p className="text-white">Faça uma pergunta</p>
                         <LightBulbIcon className="h-4 w-4 text-white" />
                     </button>
                 </ul>

@@ -1,36 +1,37 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 📚 Estudare
 
-## Getting Started
+> Plataforma educacional desenvolvida como TCC na ETEC, com foco em facilitar o ensino e aprendizado de forma digital e acessível.
 
-First, run the development server:
+O Estudare é uma aplicação web desenvolvida com Next.js, focada em oferecer uma experiência moderna e responsiva para alunos e administradores. A proposta é permitir o acesso a aulas extras, áreas do conhecimento e materiais de estudo de forma simples e organizada.
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+---
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## 🚀 Tecnologias utilizadas
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+- **[Next.js](https://nextjs.org/)** – Framework React full-stack
+- **[React](https://reactjs.org/)** – Biblioteca JavaScript para interfaces
+- **[Tailwind CSS](https://tailwindcss.com/)** – Framework de estilização moderna
+- **[TypeScript](https://www.typescriptlang.org/)** – Tipagem estática (em progresso)
+- **[Node.js](https://nodejs.org/)** e **[Express](https://expressjs.com/)** – Back-end da aplicação (em desenvolvimento)
+- **[MySQL](https://www.mysql.com/)** – Banco de dados relacional
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+---
 
-## Learn More
+## 🧠 Funcionalidades do Projeto
 
-To learn more about Next.js, take a look at the following resources:
+- [x] Página inicial com destaque para áreas de estudo
+- [x] Responsividade para mobile, tablet e desktop
+- [x] Aulas extracurriculares e interacao e resolucao de duvidas
+- [x] Componentização com React e Tailwind
+- [ ] Sistema de cadastro e login
+- [ ] Área de chat entre os alunos
+- [ ] Dashboard administrativo
+- [ ] Integração com banco de dados MySQL
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+---
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## 📷 Prints do Projeto
 
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+```md
+![Página inicial](./public/screenshots/introducao.png)
+![Home](./public/screenshots/home.png)

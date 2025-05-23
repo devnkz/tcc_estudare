@@ -1,5 +1,5 @@
 import Image from "next/image"
-import { LightBulbIcon } from "@heroicons/react/16/solid"
+import {  UserIcon, BellIcon } from "@heroicons/react/16/solid"
 
 export function HeaderDesktop() {
     return (
@@ -9,7 +9,7 @@ export function HeaderDesktop() {
                 <ul className="flex gap-4 items-center justify-center">
                     <li>
                         <a href="#home"
-                            className="menu-link text-zinc-800 hover:text-purple-600 text-lg transition-colors duration-300 relative group">
+                            className="menu-link text-zinc-400 hover:text-purple-600 text-lg transition-colors duration-300 relative group">
                             Home
                             <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-purple-600 
                                 group-hover:w-full transition-all duration-300"></span>
@@ -17,24 +17,41 @@ export function HeaderDesktop() {
                     </li>
                     <li>
                         <a href="#sobreNos"
-                            className="menu-link text-zinc-800 hover:text-purple-600 text-lg transition-colors duration-300 relative group">
-                            Saiba mais
+                            className="menu-link text-zinc-400 hover:text-purple-600 text-lg transition-colors duration-300 relative group">
+                            Conheça-nos
                             <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-purple-600 
                                 group-hover:w-full transition-all duration-300"></span>
                         </a>
                     </li>
                     <li>
                         <a href="#comoFunciona"
-                            className="menu-link text-zinc-800 hover:text-purple-600 text-lg transition-colors duration-300 relative group">
-                            Chat
+                            className="menu-link text-zinc-400 hover:text-purple-600 text-lg transition-colors duration-300 relative group">
+                            Grupos
                             <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-purple-600 
                                 group-hover:w-full transition-all duration-300"></span>
                         </a>
                     </li>
-                    <button className="p-2 rounded-xl bg-purple-600 flex gap-2 justify-center items-center hover:bg-purple-950 transition-all duration-300 cursor-pointer">
-                        <p className="text-white">Faça uma pergunta</p>
-                        <LightBulbIcon className="h-4 w-4 text-white" />
+
+                    <div className="flex space-x-3">
+
+                        <button className="rounded-full bg-zinc-200 p-2 relative
+                    hover:-transplate-y-1 hover:bg-purple-600 hover:text-white trasition-all duration-300 group">
+                        <BellIcon className="h-8 w-8"/>
+
+                        <span className="hidden group-hover:block absolute left-0 top-14 bg-zinc-400 text-white p-2 text-xs rounded-lg
+                        ">Notificações</span>
                     </button>
+
+                    <button className="rounded-full bg-zinc-200 p-2 relative
+                    hover:-transplate-y-1 hover:bg-purple-600 hover:text-white trasition-all duration-300 group">
+                        <UserIcon className="h-8 w-8"/>
+
+                        <span className="hidden group-hover:block absolute left-0 top-14 bg-zinc-400 text-white p-2 text-xs rounded-lg
+                        ">Sua_conta</span>
+                    </button>
+                    </div>
+
+                    
                 </ul>
             </nav>
         </header>

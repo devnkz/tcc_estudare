@@ -1,11 +1,11 @@
 import { FaceSmileIcon, ArrowLongRightIcon } from "@heroicons/react/16/solid"
 
-export function EstudoDiarioPage(){
+export function ChatPage(){
     return(
         <div className="w-full flex flex-col justify-center items-center gap-4">
             <div className="flex flex-col justify-center items-center">
                 <h1 className="text-2xl">Converse com alunos e tire dúvidas <span className="font-bold">expontaneamente!</span></h1>
-            <p className="text-zinc-600">Poste sua <span className="text-purple-600">dúvida</span> e interaja no grupo!</p>
+            <p className="text-zinc-600">Poste sua <span className="text-purple-600">dúvida</span> e interaja no grupo geral!</p>
             </div>
             
             <div className="h-[300px] flex flex-col justify-between w-4/5 border border-zinc-300 rounded-lg">

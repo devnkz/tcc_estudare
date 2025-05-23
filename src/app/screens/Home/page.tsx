@@ -4,9 +4,10 @@ import Footer from "@/app/components/Footer";
 import { HeaderDesktop } from "@/app/components/Header";
 import { Inter } from "next/font/google";
 import { ResponderPerguntasPage } from "./pages/ResponderPerguntas";
-import { EstudoDiarioPage } from "./pages/EstudoDiario";
+import { ChatPage } from "./pages/ChatPage";
 import { SuaPerguntaPage } from "./pages/SuaPergunta";
 import { TopicosLeitura } from "./pages/TopicosLeituraPage";
+import { InicialPage } from "./pages/InicialPage";
 
 const inter = Inter({ subsets: ['latin'], weight: '400' })
 
@@ -21,8 +22,8 @@ export default function HomePage() {
                         <h1 className="text-purple-600 font-bold text-center">ESTUDARE</h1>
                         <div>
                             <div className="flex flex-col gap-4">
-                                <button className="bg-zinc-200 text-black p-2 rounded-lg text-xs hover:-translate-y-1 hover:text-white
-                                hover:bg-purple-600 transition-all duration-300">Estudo diário</button>
+                                <button className="bg-purple-600 text-white p-2 rounded-lg text-xs hover:-translate-y-1 hover:text-white
+                                hover:bg-purple-600 transition-all duration-300">Página inicial</button>
                                 <button className="bg-zinc-200 text-black p-2 rounded-lg text-xs hover:-translate-y-1 hover:text-white
                                 hover:bg-purple-600 transition-all duration-300">Responda perguntas</button>
                                 <button className="bg-zinc-200 text-black p-2 rounded-lg text-xs hover:-translate-y-1 hover:text-white
@@ -36,7 +37,9 @@ export default function HomePage() {
                 </div>
                 <div className="w-full p-4 flex flex-col items-center gap-4">
 
-                    <EstudoDiarioPage/>
+                    <InicialPage/>
+
+                    <ChatPage/>
 
                     <ResponderPerguntasPage/>
 

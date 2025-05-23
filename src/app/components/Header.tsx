@@ -1,5 +1,5 @@
 import Image from "next/image"
-import {  UserIcon, BellIcon } from "@heroicons/react/16/solid"
+import { UserIcon, BellIcon } from "@heroicons/react/16/solid"
 
 export function HeaderDesktop() {
     return (
@@ -36,22 +36,22 @@ export function HeaderDesktop() {
 
                         <button className="rounded-full bg-zinc-200 p-2 relative
                     hover:-transplate-y-1 hover:bg-purple-600 hover:text-white trasition-all duration-300 group">
-                        <BellIcon className="h-8 w-8"/>
+                            <BellIcon className="h-8 w-8 text-black group-hover:text-white" />
 
-                        <span className="hidden group-hover:block absolute left-0 top-14 bg-zinc-400 text-white p-2 text-xs rounded-lg
+                            <span className="hidden group-hover:block absolute left-0 top-14 bg-zinc-400 text-white p-2 text-xs rounded-lg
                         ">Notificações</span>
-                    </button>
+                        </button>
 
-                    <button className="rounded-full bg-zinc-200 p-2 relative
+                        <button className="rounded-full bg-zinc-200 p-2 relative
                     hover:-transplate-y-1 hover:bg-purple-600 hover:text-white trasition-all duration-300 group">
-                        <UserIcon className="h-8 w-8"/>
+                            <UserIcon className="h-8 w-8 text-black group-hover:text-white" />
 
-                        <span className="hidden group-hover:block absolute left-0 top-14 bg-zinc-400 text-white p-2 text-xs rounded-lg
+                            <span className="hidden group-hover:block absolute left-0 top-14 bg-zinc-400 text-white p-2 text-xs rounded-lg
                         ">Sua_conta</span>
-                    </button>
+                        </button>
                     </div>
 
-                    
+
                 </ul>
             </nav>
         </header>

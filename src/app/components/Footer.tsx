@@ -9,7 +9,7 @@ export default function Footer() {
         <footer className="border-t-[1px] border-zinc-200 p-4 w-full lg:max-w-[1200px] flex flex-col justify-center items-center gap-12">
             <div className="flex flex-col lg:flex-row justify-between items-center w-full gap-4">
                 <div className="text-black flex justify-center items-center gap-2">
-                    <Image src="/imagens/logo.png" height={50} width={50} alt="Logo Estudare" style={{ objectFit: 'contain' }} />
+                    <Image src="/imagens/Logo/gatopretotransparente.png" height={50} width={50} alt="Logo Estudare" style={{ objectFit: 'contain' }} />
                     <div className="flex flex-col items-center">
                         <h1 className="text-sm">Desenvolvido como plataforma de auxilio a estudantes</h1>
                         <p className="text-sm text-zinc-500">Nyckolas, Gabriel, Enzo e Vinicius</p>

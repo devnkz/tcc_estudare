@@ -34,7 +34,7 @@ export default function TelaHome() {
         <div className={`${inter.className} h-screen w-full bg-white flex flex-col justify-between items-center`}>
             <header className="w-full flex items-center justify-center p-4 gap-4">
                 <div className="w-full lg:max-w-[1200px] flex flex-col lg:flex-row justify-between items-center gap-4 lg:gap-0">
-                    <Image src="/imagens/logo.png" height={50} width={50} style={{ objectFit: "contain" }} alt="Imagem representativa" />
+                    <Image src="/imagens/Logo/logoroxofundobrando.png" height={100} width={100} style={{ objectFit: "contain" }} alt="Imagem representativa" />
                     <div className="flex gap-4">
                         <Button textButton="Cadastrar-se" rotaRedirecionamento="/screens/Login_Cadastro/Cadastro" />
                         <Button textButton="Entrar" rotaRedirecionamento="/screens/Login_Cadastro/Login" />

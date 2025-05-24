@@ -1,22 +1,42 @@
-import { MagnifyingGlassIcon, LightBulbIcon, PlusIcon } from "@heroicons/react/16/solid"
+import { MagnifyingGlassIcon, LightBulbIcon, PlusIcon, BellIcon, UserIcon } from "@heroicons/react/16/solid"
 
 export function InicialPage() {
     return (
-        <div className="w-4/5 space-y-4 my-4">
-            <div className="text-black">
-                <h1 className="font-bold text-xl">Olá, Nyckolas</h1>
-                <p className="text-zinc-600">Tem alguma dúvida hoje ?</p>
+        <div id="inicialPage" className="w-full lg:w-4/5 space-y-4 my-4">
+            <div className="text-black flex justify-between items-center">
+                <div>
+                    <h1 className="font-bold lg:text-xl">Olá, Nyckolas</h1>
+                    <p className="text-zinc-600">Tem alguma dúvida hoje ?</p>
+                </div>
+
+                <div className="flex space-x-3 lg:hidden">
+                    <button className="rounded-full bg-zinc-200 p-2 relative cursor-pointer
+                    hover:-transplate-y-1 hover:bg-purple-600 hover:text-white trasition-all duration-300 group">
+                        <BellIcon className="h-6 w-6 text-black group-hover:text-white" />
+
+                        <span className="hidden group-hover:block absolute left-0 top-14 bg-zinc-400 text-white p-2 text-xs rounded-lg
+                        ">Notificações</span>
+                    </button>
+
+                    <button className="rounded-full bg-zinc-200 p-2 relative cursor-pointer
+                    hover:-transplate-y-1 hover:bg-purple-600 hover:text-white trasition-all duration-300 group">
+                        <UserIcon className="h-6 w-6 text-black group-hover:text-white" />
+                        <span className="hidden group-hover:flex absolute left-0 top-14 bg-zinc-400 text-white p-2 text-xs rounded-lg whitespace-nowrap">
+                            Sua conta
+                        </span>
+                    </button>
+                </div>
             </div>
 
 
-            <div className="flex space-x-2">
+            <div className="flex space-x-2 my-6">
                 <button className="p-2 rounded-xl bg-purple-600 flex gap-2 justify-center items-center hover:bg-purple-950 hover:-translate-y-1 transition-all duration-300 cursor-pointer">
-                    <p className="text-white">Faça uma pergunta</p>
+                    <p className="text-white text-xs lg:text-base">Faça uma pergunta</p>
                     <LightBulbIcon className="h-4 w-4 text-white" />
                 </button>
 
                 <button className="p-2 rounded-xl bg-purple-600 flex gap-2 justify-center items-center hover:bg-purple-950 hover:-translate-y-1 transition-all duration-300 cursor-pointer">
-                    <p className="text-white">Criar seu grupo</p>
+                    <p className="text-white text-xs lg:text-base">Criar seu grupo</p>
                     <PlusIcon className="h-4 w-4 text-white" />
                 </button>
             </div>

@@ -1,5 +1,4 @@
 import { Bars3Icon } from "@heroicons/react/24/outline";
-import Link from 'next/link';
 import { useState } from "react";
 
 export function MenuLateral({ numero, top, right }: { numero: number, top: number, right: number }) {

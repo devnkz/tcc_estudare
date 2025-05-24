@@ -1,6 +1,11 @@
 import { useRouter } from "next/navigation"
 
-export function Button({ textButton, rotaRedirecionamento }: { textButton: string, rotaRedirecionamento: string }) {
+interface PropsButton {
+    textButton: string,
+    rotaRedirecionamento: string
+}
+
+export function Button({ textButton, rotaRedirecionamento }: PropsButton) {
 
     const router = useRouter();
 

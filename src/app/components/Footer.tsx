@@ -18,8 +18,8 @@ export default function Footer() {
                 <div className="flex justify-center items-center text-zinc-600">
                     <ul className="flex flex-col w-full gap-4 items-center">
                         <li>
-                            <a href="#home"
-                                className="cursor-pointer text-zinc-800 hover:text-purple-600 text-lg transition-colors duration-300 relative group">
+                            <a onClick={() => router.push("/screens/Home")}
+                                className="cursor-pointer text-zinc-600 hover:text-purple-600 text-lg transition-colors duration-300 relative group">
                                 Home
                                 <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-purple-600 
                                 group-hover:w-full transition-all duration-300"></span>
@@ -27,7 +27,7 @@ export default function Footer() {
                         </li>
                         <li>
                             <a onClick={() => router.push("/screens/Saiba_Mais")}
-                                className="cursor-pointer text-zinc-800 hover:text-purple-600 text-lg transition-colors duration-300 relative group">
+                                className="cursor-pointer text-zinc-600 hover:text-purple-600 text-lg transition-colors duration-300 relative group">
                                 Saiba mais
                                 <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-purple-600 
                                 group-hover:w-full transition-all duration-300"></span>
@@ -35,12 +35,22 @@ export default function Footer() {
                         </li>
                         <li>
                             <a href="#comoFunciona"
-                                className="cursor-pointer text-zinc-800 hover:text-purple-600 text-lg transition-colors duration-300 relative group">
-                                Chat de dúvidas
+                                className="cursor-pointer text-zinc-600 hover:text-purple-600 text-lg transition-colors duration-300 relative group">
+                                Seus grupos
                                 <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-purple-600 
                                 group-hover:w-full transition-all duration-300"></span>
                             </a>
                         </li>
+
+                        <li>
+                            <a onClick={() => router.push("/screens/Tela_Apresentacao")}
+                                className="cursor-pointer text-zinc-600 hover:text-purple-600 text-lg transition-colors duration-300 relative group">
+                                Apresentação
+                                <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-purple-600 
+                                group-hover:w-full transition-all duration-300"></span>
+                            </a>
+                        </li>
+
                     </ul>
                 </div>
             </div>

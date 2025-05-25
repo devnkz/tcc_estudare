@@ -37,7 +37,7 @@ export default function LoginUsuario() {
                     <MensagemRedirecionamento
                         pergunta="Ainda não tem uma conta ?"
                         textButton="Criar agora"
-                        rotaRedirecionamento="/screens/Login_Cadastro/Cadastro"
+                        rotaRedirecionamento="/Login_Cadastro/Cadastro"
                     />
                 </form>
             </main>

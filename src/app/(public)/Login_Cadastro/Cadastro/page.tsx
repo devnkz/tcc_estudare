@@ -45,7 +45,7 @@ export default function CadastroUsuario() {
                     <MensagemRedirecionamento
                         pergunta="Já possui uma conta?"
                         textButton="Entrar agora"
-                        rotaRedirecionamento="/screens/Login_Cadastro/Login"
+                        rotaRedirecionamento="/Login_Cadastro/Login"
                     />
                 </form>
             </main>

@@ -36,8 +36,8 @@ export default function TelaHome() {
                 <div className="w-full lg:max-w-[1200px] flex flex-col lg:flex-row justify-between items-center gap-4 lg:gap-0">
                     <Image src="/imagens/Logo/logoroxofundobrando.png" height={100} width={100} style={{ objectFit: "contain" }} alt="Imagem representativa" />
                     <div className="flex gap-4">
-                        <Button textButton="Cadastrar-se" rotaRedirecionamento="/screens/Login_Cadastro/Cadastro" />
-                        <Button textButton="Entrar" rotaRedirecionamento="/screens/Login_Cadastro/Login" />
+                        <Button textButton="Cadastrar-se" rotaRedirecionamento="/Login_Cadastro/Cadastro" />
+                        <Button textButton="Entrar" rotaRedirecionamento="/Login_Cadastro/Login" />
                     </div>
                 </div>
             </header>
@@ -49,12 +49,12 @@ export default function TelaHome() {
                         computador ou celular, diretamente da sua casa.
                     </p>
                     <div className="flex gap-4">
-                        <button onClick={() => router.push('/screens/Login_Cadastro/Login')} className="bg-purple-600 p-4 rounded-md text-white font-bold flex gap-2 justify-center items-center hover:bg-purple-950
+                        <button onClick={() => router.push('/Login_Cadastro/Login')} className="bg-purple-600 p-4 rounded-md text-white font-bold flex gap-2 justify-center items-center hover:bg-purple-950
                             transition-all duration-300 cursor-pointer">
                             <p className="text-center">Começar agora</p>
                             <ArrowRightIcon className="h-4 w-4 text-white" />
                         </button>
-                        <button onClick={() => router.push('/screens/Saiba_Mais')} className="bg-zinc-200 p-4 text-black rounded-lg hover:bg-zinc-300 transition-all duration-300 cursor-pointer">Saiba mais</button>
+                        <button onClick={() => router.push('/Saiba_Mais')} className="bg-zinc-200 p-4 text-black rounded-lg hover:bg-zinc-300 transition-all duration-300 cursor-pointer">Saiba mais</button>
                     </div>
                 </div>
                 {

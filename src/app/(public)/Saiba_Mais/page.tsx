@@ -6,6 +6,7 @@ import Footer from "@/app/components/Footer";
 import { Inter } from "next/font/google"
 import { useState, useEffect } from "react";
 import { HeaderDesktop } from "@/app/components/Header";
+import { CardDuvidas } from "./components/CardDuvidas";
 
 const inter = Inter({ subsets: ['latin'], weight: ['400'] })
 
@@ -29,7 +30,7 @@ export default function Saiba_Mais() {
 
 
     return (
-        <div className={`${inter.className} bg-zinc-100 w-full lg:h-screen flex flex-col justify-between items-center`}>
+        <div className={`${inter.className} bg-zinc-100 w-full flex flex-col justify-between items-center`}>
             {
                 /* Header Mobile  */
                 showMenuMobile &&
@@ -46,19 +47,23 @@ export default function Saiba_Mais() {
             }
 
             <main>
-                <div className="w-full lg:max-w-[1200px] flex flex-col lg:flex-row items-center justify-center md:justify-between">
-                    <div className="flex flex-col gap-4 w-full p-4 lg:p-0 items-center justify-center lg:items-start">
-                        <div className="flex items-center gap-4">
-                            <h1 className="text-3xl font-bold text-black">PROJETO ESTUDARE</h1>
-                            <Image src="/imagens/criatividade.png" height={50} width={50} alt="Logo estudare" style={{ objectFit: "contain" }} />
-                        </div>
+                <div className="w-full flex flex-col justify-center items-center gap-6 p-6">
+                    <h1 className="text-4xl font-bold text-center">Tem dúvidas ?<br/> A gente tem as respostas.</h1>
+                    <p className="text-zinc-700 w-3/4">
+                        Estamos aqui para esclarecer suas dúvidas e oferecer suporte que você precisa
+                        para seguir em frente com confiança.
+                    </p>
 
-                        <p className="text-zinc-600 text-sm md:text-base text-justify w-full md:w-3/4">O Estudare nasceu como uma iniciativa extracurricular voltada ao apoio educacional entre os próprios alunos. Inicialmente, o projeto consistia em encontros realizados fora do horário de aula, dentro da escola, onde os estudantes se reuniam para revisar conteúdos, tirar dúvidas e ajudar uns aos outros de forma colaborativa.
-                            Com o tempo, nós — alunos do 3º ano do curso técnico de Informática para Internet (Infonet) — enxergamos o potencial de ampliar esse projeto utilizando a tecnologia como aliada. Assim, decidimos transformar o Estudare em uma plataforma digital, acessível para todos.
-                            Criamos um sistema web onde os alunos podem se conectar diretamente de suas casas, enviar dúvidas, colaborar com respostas, compartilhar materiais e aprender juntos. O objetivo continua o mesmo: promover o apoio mútuo entre estudantes, mas agora de forma mais acessível, moderna e contínua.
-                        </p>
+                    <button className="p-4 rounded-lg bg-purple-600 text-white">Faça uma pergunta</button>
+
+                    <div className="bg-white p-4 rounded-lg">
+                        <p className="text-zinc-600 font-bold px-3 mb-4">Perguntas frequentes</p>
+                        <CardDuvidas numero="01" duvida="O que é o estudare ?" texto="Texto exemple"/>
+
+                        <CardDuvidas numero="02" duvida="O que é o estudare ?" texto="Texto exemple"/>
+
+                        <CardDuvidas numero="03" duvida="O que é o estudare ?" texto="Texto exemple"/>
                     </div>
-                    <Image src="/imagens/monitoramento.png" height={400} width={400} alt="Imagem representativa" style={{ objectFit: "contain" }} />
                 </div>
             </main>
 

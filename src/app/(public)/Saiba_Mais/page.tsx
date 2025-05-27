@@ -46,9 +46,9 @@ export default function Saiba_Mais() {
                 <HeaderDesktop />
             }
 
-            <main>
+            <main className="text-black">
                 <div className="w-full flex flex-col justify-center items-center gap-6 p-6">
-                    <h1 className="text-4xl font-bold text-center">Tem dúvidas ?<br/> A gente tem as respostas.</h1>
+                    <h1 className="text-4xl font-bold text-center">Tem dúvidas ?<br /> A gente tem as respostas.</h1>
                     <p className="text-zinc-700 w-3/4">
                         Estamos aqui para esclarecer suas dúvidas e oferecer suporte que você precisa
                         para seguir em frente com confiança.
@@ -58,11 +58,11 @@ export default function Saiba_Mais() {
 
                     <div className="bg-white p-4 rounded-lg">
                         <p className="text-zinc-600 font-bold px-3 mb-4">Perguntas frequentes</p>
-                        <CardDuvidas numero="01" duvida="O que é o estudare ?" texto="Texto exemple"/>
+                        <CardDuvidas numero="01" duvida="O que é o estudare ?" texto="Texto exemple" />
 
-                        <CardDuvidas numero="02" duvida="O que é o estudare ?" texto="Texto exemple"/>
+                        <CardDuvidas numero="02" duvida="O que é o estudare ?" texto="Texto exemple" />
 
-                        <CardDuvidas numero="03" duvida="O que é o estudare ?" texto="Texto exemple"/>
+                        <CardDuvidas numero="03" duvida="O que é o estudare ?" texto="Texto exemple" />
                     </div>
                 </div>
             </main>

@@ -1,3 +1,4 @@
+import { ArrowDownIcon } from "@heroicons/react/16/solid";
 import { ArrowRightIcon } from "@heroicons/react/20/solid";
 import { FaRegLightbulb } from "react-icons/fa";
 
@@ -21,6 +22,16 @@ export function SuaPerguntaPage() {
                     <h1>Enviar pergunta</h1>
                     <ArrowRightIcon className="h-5 w-5"/>
                 </button>
+            </div>
+
+            <div className="w-4/5 rounded-lg border-1 border-zinc-700">
+            <header className="flex w-full justify-between bg-zinc-300 p-4 rounded-t-lg">
+                <h1 className="font-bold">Perguntas já feitas que podem te responder</h1>
+                <ArrowDownIcon className="h-6 w-6"/>
+            </header>
+                <div className="p-4 h-[200px] flex justify-center items-center">
+                    <p>Escreva sua pergunta e sugeriremos perguntas semelhantes que já foram respondidas!</p>
+                </div>
             </div>
         </div>
     )

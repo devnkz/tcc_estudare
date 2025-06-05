@@ -8,7 +8,7 @@ import { ChatPage } from "./pages/ChatPage";
 import { SuaPerguntaPage } from "./pages/SuaPergunta";
 import { InicialPage } from "./pages/InicialPage";
 import { useEffect, useRef, useState } from "react";
-import { GruposPage } from "./pages/GruposPage";
+import GruposPage from "./pages/GruposPage";
 
 const inter = Inter({ subsets: ['latin'], weight: '400' })
 

@@ -6,13 +6,14 @@ const inter = Inter({ subsets: ['latin'], weight: '400' })
 
 export default function UsuarioPage(){
     return(
-        <div className={`${inter.className} w-full bg-zinc-200 p-2`}>
-            <div className="w-full flex flex-col justify-center items-center py-14 space-y-6">
+        <div className={`${inter.className} w-full flex justify-center bg-zinc-200 p-2`}>
+            <div className="w-[600px] flex flex-col justify-center items-center py-14 space-y-2">
                 <div className="space-y-2 w-full flex flex-col justify-center items-center">
                     <UserIcon className="h-20 w-20 p-4 bg-zinc-300 rounded-full"/>
                     <h2 className="text-sm text-zinc-600">Estudante</h2>
                 </div>
                 <h1 className="font-bold text-xl">Nyckolas Vieira</h1>
+                <h2 className="text-zinc-700 text-base">Seu apelido: Tio T.I</h2>
 
                 
                 <div className="p-2 rounded-xl w-full space-y-4">
@@ -34,7 +35,7 @@ export default function UsuarioPage(){
                         </div>
                         </div>
 
-                        <div className="flex justify-between px-2 py-4 border-b-2 border-zinc-300">
+                        <div className="flex gap-2 px-2 py-4 border-b-2 border-zinc-300">
                         <LuFiles className="h-10 w-10 p-2 bg-blue-600 rounded-full text-white"/>
                             <div>
                             <h1 className="font-bold text-black text-xs">TypeScript</h1>
@@ -44,7 +45,7 @@ export default function UsuarioPage(){
                             </div>
                         </div>
 
-                        <div className="flex justify-between px-2 py-4 border-b-2 border-zinc-300">
+                        <div className="flex gap-2 px-2 py-4 border-b-2 border-zinc-300">
                         <LuFiles className="h-10 w-10 p-2 bg-yellow-600 rounded-full text-white"/>
                             <div>
                             <h1 className="font-bold text-black text-xs">Banco de dados</h1>
@@ -54,7 +55,7 @@ export default function UsuarioPage(){
                             </div>
                         </div>
 
-                        <div className="flex justify-between px-2 py-4 border-b-2 border-zinc-300">
+                        <div className="flex gap-2 px-2 py-4 border-b-2 border-zinc-300">
                         <LuFiles className="h-10 w-10 p-2 bg-red-600 rounded-full text-white"/>
                             <div>
                             <h1 className="font-bold text-black text-xs">Matemática</h1>

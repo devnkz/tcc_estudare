@@ -50,13 +50,13 @@ export default function GruposPage() {
   };
 
   return (
-    <div className="container mx-auto p-8">
+    <div className="w-4/5 container">
       {/* Header */}
       <div className="flex items-center justify-between mb-8">
         <h1 className="text-4xl font-semibold text-gray-900">Meus Grupos</h1>
         <button
           onClick={() => setShowCreateModal(true)}
-          className="bg-blue-600 text-white py-2 px-4 rounded-lg flex items-center hover:bg-blue-700 transition-colors"
+          className="bg-purple-600 text-white py-2 px-4 rounded-lg flex items-center hover:bg-purple-700 transition-colors cursor-pointer"
         >
           <FaPlus className="mr-2" />
           Criar novo grupo
@@ -68,7 +68,7 @@ export default function GruposPage() {
         {groups.map((group, index) => (
           <div
             key={group.id}
-            className="bg-white p-6 rounded-lg shadow-lg hover:shadow-xl transition duration-300 transform hover:scale-105"
+            className="bg-white pt-6 px-4 flex flex-col justify-between rounded-lg shadow-lg hover:shadow-xl  hover:-translate-y-1 hover:border-2 border-purple-600 transition-all duration-300"
           >
             <h3 className="text-2xl font-semibold text-gray-800">{group.name}</h3>
             <p className="text-gray-600 mt-2">{group.description}</p>
@@ -77,8 +77,9 @@ export default function GruposPage() {
               {group.participants.slice(0, 3).map((participant, i) => (
                 <div key={i} className="flex items-center -ml-2">
                   <img
-                    src={avatars[i % avatars.length]}
+                    src={'/imagens/avatar-exemp.jpg'}
                     alt={participant}
+                    style={{objectFit: 'contain'}}
                     className="w-8 h-8 rounded-full border-2 border-white shadow-sm"
                   />
                 </div>
@@ -87,6 +88,8 @@ export default function GruposPage() {
                 <span className="text-gray-500">+{group.participants.length - 3} mais</span>
               )}
             </div>
+
+            <button className="bg-purple-600 p-4 rounded-lg my-4 text-white w-full">Abrir grupo</button>
           </div>
         ))}
       </div>

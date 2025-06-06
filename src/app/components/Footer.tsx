@@ -34,7 +34,7 @@ export default function Footer() {
                             </a>
                         </li>
                         <li>
-                            <a href="#comoFunciona"
+                            <a onClick={() => router.push('/Home')}
                                 className="cursor-pointer text-zinc-600 hover:text-purple-600 text-lg transition-colors duration-300 relative group">
                                 Seus grupos
                                 <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-purple-600 

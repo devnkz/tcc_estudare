@@ -1,6 +1,10 @@
 import { MagnifyingGlassIcon, LightBulbIcon, PlusIcon, BellIcon, UserIcon } from "@heroicons/react/16/solid"
+import { useRouter } from "next/navigation"
 
 export function InicialPage() {
+
+    const router = useRouter();
+
     return (
         <div id="inicialPage" className="w-full lg:w-4/5 space-y-4 my-4">
             <div className="text-black flex justify-between items-center">
@@ -10,7 +14,7 @@ export function InicialPage() {
                 </div>
 
                 <div className="flex space-x-3 lg:hidden">
-                    <button className="rounded-full bg-zinc-200 p-2 relative cursor-pointer
+                    <button onClick={() => router.push('/notificacoes')} className="rounded-full bg-zinc-200 p-2 relative cursor-pointer
                     hover:-transplate-y-1 hover:bg-purple-600 hover:text-white trasition-all duration-300 group">
                         <BellIcon className="h-6 w-6 text-black group-hover:text-white" />
 
@@ -18,7 +22,7 @@ export function InicialPage() {
                         ">Notificações</span>
                     </button>
 
-                    <button className="rounded-full bg-zinc-200 p-2 relative cursor-pointer
+                    <button onClick={() => router.push('/Usuario')} className="rounded-full bg-zinc-200 p-2 relative cursor-pointer
                     hover:-transplate-y-1 hover:bg-purple-600 hover:text-white trasition-all duration-300 group">
                         <UserIcon className="h-6 w-6 text-black group-hover:text-white" />
                         <span className="hidden group-hover:flex absolute left-0 top-14 bg-zinc-400 text-white p-2 text-xs rounded-lg whitespace-nowrap">

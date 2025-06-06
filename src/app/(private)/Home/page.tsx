@@ -56,7 +56,7 @@ export default function HomePage() {
             <HeaderDesktop />
 
             <div className="w-full lg:max-w-[1200px] flex p-4">
-                <div className="w-1/6 lg:p-4 h-[4000px] lg:border-r-2 border-purple-300">
+                <div className="w-1/6 lg:p-4 h-[3000px] lg:border-r-2 border-purple-300">
 
                     {/* menu lateral home */}
 

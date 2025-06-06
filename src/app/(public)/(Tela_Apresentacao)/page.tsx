@@ -31,7 +31,7 @@ export default function TelaHome() {
     const router = useRouter();
 
     return (
-        <div className={`${inter.className} h-screen w-full bg-white flex flex-col justify-between items-center`}>
+        <div className={`${inter.className} w-full bg-white flex flex-col justify-between items-center`}>
             <header className="w-full flex items-center justify-center p-4 gap-4">
                 <div className="w-full lg:max-w-[1200px] flex flex-col lg:flex-row justify-between items-center gap-4 lg:gap-0">
                     <Image src="/imagens/Logo/logoroxofundobrando.png" height={100} width={100} style={{ objectFit: "contain" }} alt="Imagem representativa" />
@@ -41,7 +41,7 @@ export default function TelaHome() {
                     </div>
                 </div>
             </header>
-            <main className="p-4 w-full lg:max-w-[1200px] h-[384px] justify-between items-center flex">
+            <main className="p-4 w-full lg:max-w-[1200px] justify-between items-center flex">
                 <div className="w-full lg:w-3/5 flex flex-col items-start gap-4">
                     <h3 className="text-purple-400">BEM-VINDO (A)</h3>
                     <h2 className="font-bold text-black text-3xl">Estudare: uma iniciativa dos alunos.</h2>

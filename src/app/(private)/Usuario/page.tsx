@@ -1,13 +1,24 @@
+'use client'
+
 import { UserIcon, PencilIcon } from "@heroicons/react/16/solid"
 import { LuFiles } from "react-icons/lu";
-import { Inter } from "next/font/google"
+import { Inter } from "next/font/google";
+import { useRouter } from "next/navigation";
 
 const inter = Inter({ subsets: ['latin'], weight: '400' })
 
 export default function UsuarioPage(){
+
+    const router = useRouter();
+
     return(
-        <div className={`${inter.className} w-full flex justify-center bg-zinc-200 p-2`}>
-            <div className="w-[600px] flex flex-col justify-center items-center py-14 space-y-2">
+        <div className={`${inter.className} w-full flex justify-center bg-zinc-50 p-2`}>
+            <div className="w-[600px] flex flex-col justify-center items-center py-14 space-y-2 relative">
+
+        <button onClick={() => router.push('/Home')} className="absolute top-2 right-0 bg-purple-600 text-white rounded-lg p-2
+        hover:translate-x-1 hover:bg-purple-800 cursor-pointer transition-all duration-300">Voltar ao inicio</button>
+
+
                 <div className="space-y-2 w-full flex flex-col justify-center items-center">
                     <UserIcon className="h-20 w-20 p-4 bg-zinc-300 rounded-full"/>
                     <h2 className="text-sm text-zinc-600">Estudante</h2>

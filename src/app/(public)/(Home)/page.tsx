@@ -48,7 +48,7 @@ export default function TelaHome() {
           </p>
           <div className="flex gap-4">
             <button
-              onClick={() => router.push("/Login_Cadastro/Login")}
+              onClick={() => router.push("/Dashboard")}
               className="bg-purple-600 p-4 rounded-md text-white font-bold flex gap-2 justify-center items-center hover:bg-purple-950
                             transition-all duration-300 cursor-pointer"
             >

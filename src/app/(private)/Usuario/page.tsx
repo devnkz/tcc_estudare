@@ -12,7 +12,7 @@ export default function UsuarioPage() {
 
   return (
     <div
-      className={`${inter.className} w-full flex justify-center bg-zinc-50 p-2`}
+      className={`${inter.className} w-full flex justify-center bg-white p-2`}
     >
       <div className="w-[600px] flex flex-col justify-center items-center py-14 space-y-2 relative">
         <button

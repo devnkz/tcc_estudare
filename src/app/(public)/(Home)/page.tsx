@@ -6,7 +6,7 @@ import Image from "next/image";
 import { useEffect, useState } from "react";
 import Footer from "@/app/components/Footer";
 import { useRouter } from "next/navigation";
-import { Button } from "./components/button";
+import { HeaderDesktopAutenticado } from "@/app/components/Header";
 
 const inter = Inter({ subsets: ["latin"], weight: ["400"] });
 
@@ -35,24 +35,6 @@ export default function TelaHome() {
     <div
       className={`${inter.className} w-full h-screen bg-white flex flex-col justify-between items-center`}
     >
-      <header className="w-full flex items-center justify-center p-4 gap-4">
-        <div className="w-full lg:max-w-[1200px] flex flex-col lg:flex-row justify-between items-center gap-4 lg:gap-0">
-          <Image
-            src="/imagens/Logo/logoroxofundobrando.png"
-            height={100}
-            width={100}
-            style={{ objectFit: "contain" }}
-            alt="Imagem representativa"
-          />
-          <div className="flex gap-4">
-            <Button
-              textButton="Cadastrar-se"
-              rotaRedirecionamento="/Auth/Register"
-            />
-            <Button textButton="Entrar" rotaRedirecionamento="/Auth/Login" />
-          </div>
-        </div>
-      </header>
       <main className="p-4 w-full lg:max-w-[1200px] justify-between items-center flex">
         <div className="w-full lg:w-3/5 flex flex-col items-start gap-4">
           <h3 className="text-purple-400">BEM-VINDO (A)</h3>

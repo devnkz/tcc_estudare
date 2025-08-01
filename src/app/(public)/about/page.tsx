@@ -1,11 +1,7 @@
 "use client";
 
-import Image from "next/image";
-import { MenuLateral } from "@/app/components/Menu_Lateral";
 import Footer from "@/app/components/Footer";
 import { Inter } from "next/font/google";
-import { useState, useEffect } from "react";
-import { Button } from "../(Home)/components/button";
 
 import {
   Accordion,
@@ -17,62 +13,8 @@ import {
 const inter = Inter({ subsets: ["latin"], weight: ["400"] });
 
 export default function Saiba_Mais() {
-  const [width, setWidth] = useState(
-    typeof window !== "undefined" ? window.innerWidth : 0
-  );
-  const [showMenuMobile, setShowMenuMobile] = useState(false);
-
-  useEffect(() => {
-    function handleResize() {
-      setWidth(window.innerWidth);
-    }
-    window.addEventListener("resize", handleResize);
-    handleResize();
-    return () => window.removeEventListener("resize", handleResize);
-  }, []);
-
-  useEffect(() => {
-    setShowMenuMobile(width < 1024);
-  }, [width]);
-
   return (
     <div className={`${inter.className} bg-white min-h-screen flex flex-col`}>
-      {/* Header Mobile */}
-      {showMenuMobile && (
-        <header className="w-full bg-white border-b border-gray-100 flex justify-between items-center px-6 py-4 shadow-sm">
-          <Image
-            src="/imagens/Logo/logoroxofundobrando.png"
-            height={40}
-            width={40}
-            alt="logo Estudare"
-            style={{ objectFit: "contain" }}
-          />
-          <MenuLateral top={7} right={6} numero={1} />
-        </header>
-      )}
-
-      {/* Header Desktop */}
-      {!showMenuMobile && (
-        <header className="w-full bg-white border-b border-gray-100 shadow-sm">
-          <div className="max-w-7xl mx-auto flex justify-between items-center px-8 py-6">
-            <Image
-              src="/imagens/Logo/logoroxofundobrando.png"
-              height={60}
-              width={60}
-              style={{ objectFit: "contain" }}
-              alt="Logo Estudare"
-            />
-            <div className="flex gap-4">
-              <Button
-                textButton="Cadastrar-se"
-                rotaRedirecionamento="/Auth/Register"
-              />
-              <Button textButton="Entrar" rotaRedirecionamento="/Auth/Login" />
-            </div>
-          </div>
-        </header>
-      )}
-
       <main className="flex-1 flex items-center justify-center py-16 px-6">
         <div className="max-w-4xl w-full">
           {/* Hero Section */}

@@ -1,6 +1,6 @@
 "use client";
 
-import { Input } from "../(UsuarioViews)/(public)/Auth/components/input";
+import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 
 import {
@@ -166,7 +166,7 @@ export default function DashboardPage() {
               placeholder="Digite a descrição"
               label="Descrição do curso"
             />
-            <Button type="submit">Salvar</Button>
+            <Button textButton="Confirmar" rotaRedirecionamento="#" />
           </form>
         </DialogContent>
       </Dialog>
@@ -201,7 +201,7 @@ export default function DashboardPage() {
               </SelectContent>
             </Select>
 
-            <Button type="submit">Salvar</Button>
+            <Button textButton="Confirmar" rotaRedirecionamento="#" />
           </form>
         </DialogContent>
       </Dialog>
@@ -233,7 +233,7 @@ export default function DashboardPage() {
               </SelectContent>
             </Select>
 
-            <Button type="submit">Salvar</Button>
+            <Button textButton="Confirmar" rotaRedirecionamento="#" />
           </form>
         </DialogContent>
       </Dialog>

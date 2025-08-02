@@ -36,9 +36,9 @@ export function middleware(request: NextRequest) {
     if(authToken && publicRoute && publicRoute.whenAuthenticated === "redirect") {
        const redirectUrl = request.nextUrl.clone();
 
-        redirectUrl.pathname = REDIRECT_NOT_AUTENTICATED_ROUTE;
+        redirectUrl.pathname = "/Dashboard"
 
-        return NextResponse.redirect("/Dashboard");
+        return NextResponse.redirect(redirectUrl);
     }
 
     if(authToken && !publicRoute ) {

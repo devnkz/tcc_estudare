@@ -4,11 +4,8 @@ import { Inter } from "next/font/google";
 import { ArrowRightIcon } from "@heroicons/react/16/solid";
 import Image from "next/image";
 import { useEffect, useState } from "react";
-import Footer from "@/app/components/Footer";
+import Footer from "@/components/layout/footer";
 import { useRouter } from "next/navigation";
-import { HeaderDesktopAutenticado } from "@/app/components/Header";
-
-const inter = Inter({ subsets: ["latin"], weight: ["400"] });
 
 export default function TelaHome() {
   const [width, setWidth] = useState(
@@ -32,9 +29,7 @@ export default function TelaHome() {
   const router = useRouter();
 
   return (
-    <div
-      className={`${inter.className} w-full h-screen bg-white flex flex-col justify-between items-center`}
-    >
+    <div className="w-full h-screen bg-white flex flex-col justify-between items-center">
       <main className="p-4 w-full lg:max-w-[1200px] justify-between items-center flex">
         <div className="w-full lg:w-3/5 flex flex-col items-start gap-4">
           <h3 className="text-purple-400">BEM-VINDO (A)</h3>

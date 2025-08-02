@@ -1,16 +1,9 @@
-"use client";
-
-import Footer from "@/app/components/Footer";
-import { Inter } from "next/font/google";
+import Footer from "@/components/layout/footer";
 import Image from "next/image";
-
-const inter = Inter({ subsets: ["latin"], weight: "400" });
 
 export default function NotificacaoPage() {
   return (
-    <div
-      className={`${inter.className} bg-white w-full flex flex-col justify-between items-center`}
-    >
+    <div className="bg-white w-full flex flex-col justify-between items-center">
       <div className="w-full md:max-w-[1200px] flex flex-col gap-6 justify-center items-center my-14">
         <h1 className="font-bold text-2xl">NOTIFICAÇÕES</h1>
 

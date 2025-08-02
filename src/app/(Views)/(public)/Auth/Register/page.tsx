@@ -1,17 +1,14 @@
 "use client";
 
-import Footer from "@/app/components/Footer";
-import { Inter } from "next/font/google";
+import Footer from "@/components/layout/footer";
 import { EnvelopeIcon, LockClosedIcon } from "@heroicons/react/16/solid";
-import { Input } from "../components/input";
+import { Input } from "../../../../../components/ui/input";
 import {
   BotoesFormulario,
   MensagemRedirecionamento,
-} from "../components/button";
-import { HeaderLoginCadastro } from "../components/header";
+} from "../../../../../components/ui/button";
+import { HeaderLoginCadastro } from "../../../../../components/layout/header";
 import { useState } from "react";
-
-const inter = Inter({ subsets: ["latin"], weight: ["400"] });
 
 export default function CadastroUsuario() {
   const [form, setForm] = useState({
@@ -49,9 +46,7 @@ export default function CadastroUsuario() {
   };
 
   return (
-    <div
-      className={`${inter.className} bg-white w-full p-4 flex flex-col justify-between items-center`}
-    >
+    <div className="bg-white w-full p-4 flex flex-col justify-between items-center">
       <HeaderLoginCadastro />
 
       <main className="w-full lg:max-w-[1200px] flex flex-col items-center justify-center gap-4">

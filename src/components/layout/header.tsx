@@ -1,6 +1,6 @@
 import Image from "next/image";
 import { UserIcon, BellIcon } from "@heroicons/react/16/solid";
-import { Button } from "./button";
+import { Button } from "../ui/button";
 import Link from "next/link";
 
 export function HeaderDesktopAutenticado() {
@@ -19,7 +19,7 @@ export function HeaderDesktopAutenticado() {
         <ul className="flex gap-4 items-center justify-center">
           <li>
             <Link
-              href="/Dashboard"
+              href="/home"
               className="cursor-pointer text-zinc-400 hover:text-purple-600 text-lg transition-colors duration-300 relative group"
             >
               Home
@@ -46,7 +46,7 @@ export function HeaderDesktopAutenticado() {
           </li>
           {/* Itens de notificação e usuário também devem ser <li> */}
           <li className="flex space-x-3">
-            <Link href="/notificacoes">
+            <Link href="/notifications">
               <button className="rounded-full bg-zinc-200 p-2 relative cursor-pointer hover:-translate-y-1 hover:bg-purple-600 hover:text-white transition-all duration-300 group">
                 <BellIcon className="h-8 w-8 text-black group-hover:text-white" />
                 <span className="hidden group-hover:block absolute left-0 top-14 bg-zinc-400 text-white p-2 text-xs rounded-lg">
@@ -55,7 +55,7 @@ export function HeaderDesktopAutenticado() {
               </button>
             </Link>
 
-            <Link href="/Usuario">
+            <Link href="/user">
               <button className="rounded-full bg-zinc-200 p-2 relative cursor-pointer hover:-translate-y-1 hover:bg-purple-600 hover:text-white transition-all duration-300 group">
                 <UserIcon className="h-8 w-8 text-black group-hover:text-white" />
                 <span className="hidden group-hover:flex absolute left-0 top-14 bg-zinc-400 text-white p-2 text-xs rounded-lg whitespace-nowrap">
@@ -88,6 +88,27 @@ export function HeaderDesktopNaoAutenticado() {
           />
           <Button textButton="Entrar" rotaRedirecionamento="/Auth/Login" />
         </div>
+      </div>
+    </header>
+  );
+}
+
+export function HeaderLoginCadastro() {
+  return (
+    <header className="w-full lg:max-w-[1200px] flex flex-col items-center">
+      <Image
+        src="/imagens/Logo/gatoroxotransparente.png"
+        height={100}
+        width={100}
+        alt="Logo estudare"
+        style={{ objectFit: "contain" }}
+      />
+      <div className="text-black w-full flex flex-col items-center justify-center gap-2">
+        <h1 className="text-3xl font-bold text-purple-600">ESTUDARE</h1>
+        <p className="text-zinc-600">
+          Entre na maior iniciativa da{" "}
+          <span className="font-bold text-black">ETEC</span>
+        </p>
       </div>
     </header>
   );

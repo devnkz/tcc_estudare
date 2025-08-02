@@ -1,18 +1,15 @@
 "use client";
 
-import Footer from "@/app/components/Footer";
-import { Inter } from "next/font/google";
+import Footer from "@/components/layout/footer";
 import {
   BotoesFormulario,
   MensagemRedirecionamento,
-} from "../components/button";
-import { Input } from "../components/input";
-import { HeaderLoginCadastro } from "../components/header";
+} from "../../../../../components/ui/button";
+import { Input } from "../../../../../components/ui/input";
+import { HeaderLoginCadastro } from "../../../../../components/layout/header";
 import { LockClosedIcon } from "@heroicons/react/16/solid";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-
-const inter = Inter({ subsets: ["latin"], weight: ["400"] });
 
 export default function LoginUsuario() {
   const [form, setForm] = useState({
@@ -41,12 +38,14 @@ export default function LoginUsuario() {
 
       if (res.ok) {
         const data = await res.json();
-        
+
         // Salvar o token nos cookies
-        document.cookie = `token=${data.token}; path=/; max-age=${60 * 60 * 24 * 7}; SameSite=Strict`;
-        
-        // Redirecionar para o dashboard após login
-        router.push("/Dashboard");
+        document.cookie = `token=${data.token}; path=/; max-age=${
+          60 * 60 * 24 * 7
+        }; SameSite=Strict`;
+
+        // Redirecionar para o home após login
+        router.push("/home");
       }
     } catch (error) {
       console.error("Erro ao logar usuário:", error);
@@ -54,9 +53,7 @@ export default function LoginUsuario() {
   };
 
   return (
-    <div
-      className={`${inter.className} bg-white w-full h-screen p-4 flex flex-col justify-between items-center`}
-    >
+    <div className="bg-white w-full h-screen p-4 flex flex-col justify-between items-center">
       <HeaderLoginCadastro />
       <main className="w-full lg:max-w-[1200px] flex flex-col items-center justify-center gap-4">
         <form

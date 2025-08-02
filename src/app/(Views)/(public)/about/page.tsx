@@ -1,7 +1,6 @@
 "use client";
 
-import Footer from "@/app/components/Footer";
-import { Inter } from "next/font/google";
+import Footer from "@/components/layout/footer";
 
 import {
   Accordion,
@@ -10,11 +9,9 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 
-const inter = Inter({ subsets: ["latin"], weight: ["400"] });
-
 export default function Saiba_Mais() {
   return (
-    <div className={`${inter.className} bg-white min-h-screen flex flex-col`}>
+    <div className="bg-white min-h-screen flex flex-col">
       <main className="flex-1 flex items-center justify-center py-16 px-6">
         <div className="max-w-4xl w-full">
           {/* Hero Section */}

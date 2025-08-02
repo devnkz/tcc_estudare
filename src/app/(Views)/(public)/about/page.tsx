@@ -8,6 +8,7 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
+import { Button } from "@/components/ui/button";
 
 export default function Saiba_Mais() {
   return (
@@ -94,9 +95,10 @@ export default function Saiba_Mais() {
 
           {/* CTA Section */}
           <div className="text-center mt-12">
-            <button className="bg-purple-500 hover:bg-purple-600 text-white font-semibold py-4 px-8 rounded-xl transition-all duration-200 transform hover:scale-105 shadow-lg hover:shadow-xl">
-              Faça uma pergunta
-            </button>
+            <Button
+              textButton="Faça sua pergunta"
+              rotaRedirecionamento="/pergunta"
+            />
           </div>
         </div>
       </main>

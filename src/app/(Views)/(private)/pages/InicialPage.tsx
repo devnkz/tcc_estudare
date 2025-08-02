@@ -23,7 +23,6 @@ export function InicialPage() {
         <div className="flex space-x-3 lg:hidden">
           <button
             onClick={() => {
-              console.log("Clicou nas notificações");
               router.push("/notificacoes");
             }}
             className="rounded-full bg-zinc-200 p-2 relative cursor-pointer
@@ -37,7 +36,6 @@ export function InicialPage() {
 
           <button
             onClick={() => {
-              console.log("Clicou no usuário");
               router.push("/Usuario");
             }}
             className="rounded-full bg-zinc-200 p-2 relative cursor-pointer
@@ -52,12 +50,18 @@ export function InicialPage() {
       </div>
 
       <div className="flex space-x-2 my-6">
-        <button className="p-2 rounded-md bg-purple-600 flex gap-2 justify-center items-center hover:bg-purple-950 hover:-translate-y-1 transition-all duration-300 cursor-pointer">
+        <button
+          onClick={() => router.push("/askQuestion")}
+          className="p-2 rounded-md bg-purple-600 flex gap-2 justify-center items-center hover:bg-purple-950 hover:-translate-y-1 transition-all duration-300 cursor-pointer"
+        >
           <p className="text-white text-xs lg:text-base">Faça uma pergunta</p>
           <LightBulbIcon className="h-4 w-4 text-white" />
         </button>
 
-        <button className="p-2 rounded-md bg-purple-600 flex gap-2 justify-center items-center hover:bg-purple-950 hover:-translate-y-1 transition-all duration-300 cursor-pointer">
+        <button
+          onClick={() => router.push("/groups")}
+          className="p-2 rounded-md bg-purple-600 flex gap-2 justify-center items-center hover:bg-purple-950 hover:-translate-y-1 transition-all duration-300 cursor-pointer"
+        >
           <p className="text-white text-xs lg:text-base">Criar seu grupo</p>
           <PlusIcon className="h-4 w-4 text-white" />
         </button>

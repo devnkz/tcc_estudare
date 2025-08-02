@@ -37,7 +37,7 @@ export function HeaderDesktopAutenticado() {
           </li>
           <li>
             <a
-              href="#comoFunciona"
+              href="/groups"
               className="cursor-pointer text-zinc-400 hover:text-purple-600 text-lg transition-colors duration-300 relative group"
             >
               Grupos

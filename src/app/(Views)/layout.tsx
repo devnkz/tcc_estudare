@@ -29,7 +29,7 @@ export default function RootLayoutViews({
         if (prev !== tokenValue) return tokenValue;
         return prev;
       });
-    }, 1000); // verifica a cada 1 segundo
+    }, 500); // verifica a cada meio segundo
 
     return () => clearInterval(interval);
   }, []);

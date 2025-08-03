@@ -11,11 +11,16 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { CreatePerguntaData } from "@/types/pergunta";
+import { Componente } from "@/types/componente";
+import { useCreatePergunta } from "@/hooks/pergunta/useCreate";
+import { useForm, Controller } from "react-hook-form";
+import { useUser } from "@/context/userContext";
 
 export default function AskQuestionPage({
   componentes,
 }: {
-  componentes: any[];
+  componentes: Componente[];
 }) {
   const TipsForAsking = [
     { text: "Seja específico e forneça contexto" },
@@ -23,8 +28,25 @@ export default function AskQuestionPage({
     { text: "Adicione detalhes relevantes que possam ajudar a responder" },
   ];
 
+  const { userId } = useUser();
+
+  const {
+    register,
+    handleSubmit,
+    control,
+    formState: { errors },
+  } = useForm<CreatePerguntaData>();
+
+  const { mutate, isPending } = useCreatePergunta();
+
+  const onSubmit = (data: CreatePerguntaData) => {
+    const payload = { ...data, fkIdUsuario: userId || ""};  ;
+    console.log("Dados enviados ao backend:", payload);
+    mutate(payload);
+  };
+
   return (
-    <div className="w-full min-h-screen flex flex-col justify-between items-center ">
+    <div className="w-full min-h-screen flex flex-col justify-between items-center">
       <main className="w-full flex flex-col items-center justify-center gap-4 p-4 flex-grow mt-6">
         <div className="flex gap-8 w-full md:w-3/4 lg:w-2/3 p-8">
           <div className="w-3/5">
@@ -36,52 +58,77 @@ export default function AskQuestionPage({
               </h1>
             </div>
 
-            <form className="flex flex-col gap-6">
+            <form
+              onSubmit={handleSubmit(onSubmit)}
+              className="flex flex-col gap-6"
+            >
+              {/* COMPONENTE (Select) */}
               <div className="mb-4">
                 <span className="block text-sm font-medium text-gray-700 mb-1">
-                  Matéria
+                  Componente
                 </span>
-                <Select>
-                  <SelectTrigger className="w-full text-base cursor-pointer bg-zinc-200 rounded-xs border border-zinc-200 hover:border-purple-500 hover:shadow-md transition-all duration-300">
-                    <SelectValue placeholder="Selecione o componente" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectGroup>
-                      <SelectLabel>Componentes</SelectLabel>
-                      {componentes?.map((componente) => (
-                        <SelectItem
-                          key={componente.id}
-                          value={componente.nomeComponente}
-                          className="hover:bg-purple-100 hover:text-purple-700 transition-colors duration-200"
-                        >
-                          {componente.nomeComponente}
-                        </SelectItem>
-                      )) || (
-                        <SelectItem value="no-components" disabled>
-                          No subjects available
-                        </SelectItem>
-                      )}
-                    </SelectGroup>
-                  </SelectContent>
-                </Select>
+                <Controller
+                  control={control}
+                  name="fkIdComponent"
+                  rules={{ required: "Selecione um componente" }}
+                  render={({ field }) => (
+                    <Select onValueChange={field.onChange} value={field.value}>
+                      <SelectTrigger className="w-full text-base cursor-pointer bg-zinc-200 rounded-xs border border-zinc-200 hover:border-purple-500 hover:shadow-md transition-all duration-300">
+                        <SelectValue placeholder="Selecione o componente" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectGroup>
+                          <SelectLabel>Componentes</SelectLabel>
+                          {componentes?.map((componente: Componente) => (
+                            <SelectItem
+                              key={componente.id}
+                              value={String(componente.id)}
+                              className="hover:bg-purple-100 hover:text-purple-700 transition-colors duration-200"
+                            >
+                              {componente.nomeComponente}
+                            </SelectItem>
+                          ))}
+                        </SelectGroup>
+                      </SelectContent>
+                    </Select>
+                  )}
+                />
+                {errors.fkIdComponent && (
+                  <p className="text-red-600 text-sm mt-1">
+                    {errors.fkIdComponent.message}
+                  </p>
+                )}
               </div>
 
+              {/* PERGUNTA (Textarea) */}
               <div className="mb-4">
                 <span className="block text-sm font-medium text-gray-700 mb-1">
                   Sua pergunta
                 </span>
                 <textarea
+                  {...register("pergunta", {
+                    required: "A pergunta é obrigatória",
+                  })}
                   className="w-full text-base bg-zinc-200 border border-zinc-200 rounded px-3 py-2 min-h-[150px] focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-100 resize-y transition-all duration-300 hover:border-purple-500 hover:shadow-md focus:shadow-purple-100"
                   placeholder="Descreva sua dúvida com detalhes para obter melhores respostas"
-                  required
                 />
+                {errors.pergunta && (
+                  <p className="text-red-600 text-sm mt-1">
+                    {errors.pergunta.message}
+                  </p>
+                )}
               </div>
 
+              {/* BOTÃO */}
               <div className="mt-6 flex flex-col gap-4">
                 <div className="transform transition-all duration-300 active:scale-95">
-                  <button className="p-4 rounded-md bg-purple-600 flex gap-2 justify-center items-center hover:bg-purple-950 hover:-translate-y-1 transition-all duration-300 cursor-pointer">
+                  <button
+                    type="submit"
+                    disabled={isPending}
+                    className="p-4 rounded-md bg-purple-600 flex gap-2 justify-center items-center hover:bg-purple-950 hover:-translate-y-1 transition-all duration-300 cursor-pointer disabled:opacity-60"
+                  >
                     <p className="text-white text-xs lg:text-lg">
-                      Fazer pergunta
+                      {isPending ? "Enviando..." : "Fazer pergunta"}
                     </p>
                   </button>
                 </div>
@@ -89,6 +136,7 @@ export default function AskQuestionPage({
             </form>
           </div>
 
+          {/* DICAS */}
           <div className="flex flex-col items-center">
             <Image
               src={"/imagens/ilustration_askQuestion.png"}
@@ -96,7 +144,6 @@ export default function AskQuestionPage({
               width={175}
               height={175}
             />
-
             <div className="flex flex-col h-fit gap-4 mt-2 p-4 bg-purple-50/50 rounded-lg border-l-4 border border-purple-100/50">
               <p className="text-sm text-purple-700 font-medium hover:text-purple-900">
                 Dicas para uma boa pergunta:

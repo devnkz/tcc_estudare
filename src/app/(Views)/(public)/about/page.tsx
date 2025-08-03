@@ -97,7 +97,7 @@ export default function Saiba_Mais() {
           <div className="text-center mt-12">
             <Button
               textButton="Faça sua pergunta"
-              rotaRedirecionamento="/pergunta"
+              rotaRedirecionamento="/askQuestion"
             />
           </div>
         </div>

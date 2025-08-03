@@ -1,46 +1,25 @@
 import { Artigo, CreateArtigoData, UpdateArtigoData } from "../types/artigo";
+import axios from "axios";
 
 // Busca todos os artigos
 export async function fetchArtigos(): Promise<Artigo[]> {
-  const res = await fetch("/api/artigo");
-  if (!res.ok) {
-    throw new Error("Erro ao buscar artigos");
-  }
-  return res.json();
+  const res = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/artigo`);
+  return res.data;
 }
 
 // Cria um novo artigo
 export async function createArtigo(data: CreateArtigoData): Promise<Artigo> {
-  const res = await fetch("/api/artigo", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(data),
-  });
-  if (!res.ok) {
-    throw new Error("Erro ao criar artigo");
-  }
-  return res.json();
+  const res = await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/artigo`, data);
+  return res.data;
 }
 
 // Atualiza um artigo existente
 export async function updateArtigo(data: UpdateArtigoData): Promise<Artigo> {
-  const res = await fetch(`/api/artigo/${data.id}`, {
-    method: "PUT",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(data),
-  });
-  if (!res.ok) {
-    throw new Error("Erro ao atualizar artigo");
-  }
-  return res.json();
+  const res = await axios.put(`${process.env.NEXT_PUBLIC_API_URL}/artigo/${data.id}`, data);
+  return res.data;
 }
 
 // Deleta um artigo pelo id
 export async function deleteArtigo(id: string): Promise<void> {
-  const res = await fetch(`/api/artigo/${id}`, {
-    method: "DELETE",
-  });
-  if (!res.ok) {
-    throw new Error("Erro ao deletar artigo");
-  }
+  await axios.delete(`${process.env.NEXT_PUBLIC_API_URL}/artigo/${id}`);
 }

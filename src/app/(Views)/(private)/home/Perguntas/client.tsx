@@ -17,7 +17,9 @@ export function PerguntasClientPage({
       </h1>
 
       <div className="flex flex-col gap-2">
-        <h2 className="px-2 text-zinc-600">Procure perguntas pela matéria!</h2>
+        <h2 className="px-2 text-zinc-600">
+          Procure perguntas pelo componente!
+        </h2>
         <nav
           className="w-full flex items-center gap-4 overflow-x-auto py-2 scrollbar-thin scrollbar-thumb-zinc-300 scrollbar-track-transparent"
           style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
@@ -57,7 +59,7 @@ export function PerguntasClientPage({
               Aluno: {pergunta.usuario.name} ({pergunta.usuario.apelido})
             </h2>
             <p>
-              Matéria:{" "}
+              Componente:{" "}
               <span className="text-purple-600 font-bold">
                 {pergunta.materia}
               </span>
@@ -76,7 +78,7 @@ export function PerguntasClientPage({
           </div>
         ))
       ) : (
-        <div>Sem perguntas</div> // ou você pode renderizar um texto do tipo: <p>Nenhuma pergunta no momento.</p>
+        <div>Sem perguntas até o momento</div> // ou você pode renderizar um texto do tipo: <p>Nenhuma pergunta no momento.</p>
       )}
     </div>
   );

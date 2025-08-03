@@ -1,55 +1,31 @@
 import { Componente, CreateComponenteData, UpdateComponenteData } from "../types/componente";
+import axios from "axios";
 
 // Busca todos os componentes
 export async function fetchComponentes(): Promise<Componente[]> {
-  const res = await fetch("/api/componente");
-  if (!res.ok) {
-    throw new Error("Erro ao buscar componentes");
-  }
-  return res.json();
+  const res = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/componente`);
+  return res.data;
 }
 
 // Busca componentes por curso
 export async function fetchComponentesByCurso(cursoId: string): Promise<Componente[]> {
-  const res = await fetch(`/api/componente/curso/${cursoId}`);
-  if (!res.ok) {
-    throw new Error("Erro ao buscar componentes do curso");
-  }
-  return res.json();
+  const res = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/componente/curso/${cursoId}`);
+  return res.data;
 }
 
 // Cria um novo componente
 export async function createComponente(data: CreateComponenteData): Promise<Componente> {
-  const res = await fetch("/api/componente", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(data),
-  });
-  if (!res.ok) {
-    throw new Error("Erro ao criar componente");
-  }
-  return res.json();
+  const res = await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/componente`, data);
+  return res.data;
 }
 
 // Atualiza um componente existente
 export async function updateComponente(data: UpdateComponenteData): Promise<Componente> {
-  const res = await fetch(`/api/componente/${data.id}`, {
-    method: "PUT",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(data),
-  });
-  if (!res.ok) {
-    throw new Error("Erro ao atualizar componente");
-  }
-  return res.json();
+  const res = await axios.put(`${process.env.NEXT_PUBLIC_API_URL}/componente/${data.id}`, data);
+  return res.data;
 }
 
 // Deleta um componente pelo id
 export async function deleteComponente(id: string): Promise<void> {
-  const res = await fetch(`/api/componente/${id}`, {
-    method: "DELETE",
-  });
-  if (!res.ok) {
-    throw new Error("Erro ao deletar componente");
-  }
+  await axios.delete(`${process.env.NEXT_PUBLIC_API_URL}/componente/${id}`);
 }

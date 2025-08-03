@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import Footer from "@/components/layout/footer";
 import Image from "next/image";
 import {
@@ -18,6 +17,12 @@ export default function AskQuestionPage({
 }: {
   componentes: any[];
 }) {
+  const TipsForAsking = [
+    { text: "Seja específico e forneça contexto" },
+    { text: "Verifique se sua pergunta está clara e objetiva" },
+    { text: "Adicione detalhes relevantes que possam ajudar a responder" },
+  ];
+
   return (
     <div className="w-full min-h-screen flex flex-col justify-between items-center ">
       <main className="w-full flex flex-col items-center justify-center gap-4 p-4 flex-grow mt-6">
@@ -37,12 +42,12 @@ export default function AskQuestionPage({
                   Matéria
                 </span>
                 <Select>
-                  <SelectTrigger className="w-full text-base bg-zinc-200 rounded-xs border border-zinc-200 hover:border-purple-500 hover:shadow-md transition-all duration-300">
-                    <SelectValue placeholder="Selecione a matéria" />
+                  <SelectTrigger className="w-full text-base cursor-pointer bg-zinc-200 rounded-xs border border-zinc-200 hover:border-purple-500 hover:shadow-md transition-all duration-300">
+                    <SelectValue placeholder="Selecione o componente" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectGroup>
-                      <SelectLabel>Matérias</SelectLabel>
+                      <SelectLabel>Componentes</SelectLabel>
                       {componentes?.map((componente) => (
                         <SelectItem
                           key={componente.id}
@@ -92,23 +97,19 @@ export default function AskQuestionPage({
               height={175}
             />
 
-            <div className="flex flex-col h-fit gap-4 mt-2 p-4 bg-purple-50/50 rounded-lg border-l-4 border border-purple-100/50 transition-all duration-300 hover:bg-purple-50 hover:border-purple-200/50 hover:border-l-[6px]">
-              <p className="text-sm text-purple-700 font-medium transition-all duration-300 hover:text-purple-900 hover:translate-x-1">
+            <div className="flex flex-col h-fit gap-4 mt-2 p-4 bg-purple-50/50 rounded-lg border-l-4 border border-purple-100/50">
+              <p className="text-sm text-purple-700 font-medium hover:text-purple-900">
                 Dicas para uma boa pergunta:
               </p>
               <ul className="text-sm text-gray-600 list-disc pl-5 space-y-2">
-                <li className="transition-all duration-300 hover:translate-x-2 hover:text-purple-700">
-                  <span className="font-medium">Seja específico</span> e forneça
-                  contexto
-                </li>
-                <li className="transition-all duration-300 hover:translate-x-2 hover:text-purple-700">
-                  <span className="font-medium">Verifique</span> se sua pergunta
-                  está clara e objetiva
-                </li>
-                <li className="transition-all duration-300 hover:translate-x-2 hover:text-purple-700">
-                  <span className="font-medium">Adicione detalhes</span>{" "}
-                  relevantes que possam ajudar a responder
-                </li>
+                {TipsForAsking.map((tip, index) => (
+                  <li
+                    key={index}
+                    className="hover:text-purple-700 transition-colors duration-200"
+                  >
+                    {tip.text}
+                  </li>
+                ))}
               </ul>
             </div>
           </div>

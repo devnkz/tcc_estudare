@@ -1,9 +1,9 @@
-import "../../globals.css";
+import "@/app/globals.css";
 import { Inter } from "next/font/google";
 
 const inter = Inter({ subsets: ["latin"], weight: ["400"] });
 
-export default function RootLayoutAdminViews({
+export default function RootLayoutDashboard({
   children,
 }: {
   children: React.ReactNode;

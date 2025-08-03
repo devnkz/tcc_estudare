@@ -6,6 +6,7 @@ import {
   HeaderDesktopNaoAutenticado,
 } from "../../components/layout/header";
 import { useEffect, useState } from "react";
+import { usePathname } from "next/navigation";
 
 export default function RootLayoutViews({
   children,
@@ -13,6 +14,9 @@ export default function RootLayoutViews({
   children: React.ReactNode;
 }) {
   const [token, setToken] = useState<string | null>(null);
+  const pathname = usePathname();
+
+  const isDashboard = pathname.startsWith("/Dashboard");
 
   const getCookie = (name: string) => {
     const match = document.cookie.match(
@@ -21,7 +25,6 @@ export default function RootLayoutViews({
     return match ? decodeURIComponent(match[2]) : null;
   };
 
-  // Atualiza o token sempre que ele mudar no cookie
   useEffect(() => {
     const interval = setInterval(() => {
       const tokenValue = getCookie("token");
@@ -29,14 +32,19 @@ export default function RootLayoutViews({
         if (prev !== tokenValue) return tokenValue;
         return prev;
       });
-    }, 500); // verifica a cada meio segundo
+    }, 500);
 
     return () => clearInterval(interval);
   }, []);
 
   return (
     <div className="w-full flex flex-col items-center">
-      {token ? <HeaderDesktopAutenticado /> : <HeaderDesktopNaoAutenticado />}
+      {!isDashboard &&
+        (token ? (
+          <HeaderDesktopAutenticado />
+        ) : (
+          <HeaderDesktopNaoAutenticado />
+        ))}
       {children}
     </div>
   );

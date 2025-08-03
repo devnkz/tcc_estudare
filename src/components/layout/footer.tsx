@@ -40,7 +40,7 @@ export default function Footer() {
                 <ul className="space-y-2">
                   <li>
                     <a
-                      onClick={() => router.push("/Dashboard")}
+                      onClick={() => router.push("/home")}
                       className="cursor-pointer text-gray-600 hover:text-purple-500 transition-colors duration-200 text-sm"
                     >
                       Home
@@ -61,7 +61,7 @@ export default function Footer() {
                 <ul className="space-y-2">
                   <li>
                     <a
-                      onClick={() => router.push("/Home")}
+                      onClick={() => router.push("/groups")}
                       className="cursor-pointer text-gray-600 hover:text-purple-500 transition-colors duration-200 text-sm"
                     >
                       Seus grupos

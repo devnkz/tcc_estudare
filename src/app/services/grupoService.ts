@@ -2,23 +2,16 @@
 
 export interface Grupo {
   id: string;
-  nome: string;
-  descricao?: string;
-  fkIdUsuarioCriador: string;
-  createdAt?: string;
-  updatedAt?: string;
+  nomeGrupo: string;
 }
 
 export interface CreateGrupoData {
-  nome: string;
-  descricao?: string;
-  fkIdUsuarioCriador: string;
+  nomeGrupo: string;
 }
 
 export interface UpdateGrupoData {
   id: string;
-  nome?: string;
-  descricao?: string;
+  nomeGrupo: string;
 }
 
 // Busca todos os grupos
@@ -26,15 +19,6 @@ export async function fetchGrupos(): Promise<Grupo[]> {
   const res = await fetch("/api/grupo");
   if (!res.ok) {
     throw new Error("Erro ao buscar grupos");
-  }
-  return res.json();
-}
-
-// Busca um grupo pelo id
-export async function fetchGrupoById(id: string): Promise<Grupo> {
-  const res = await fetch(`/api/grupo/${id}`);
-  if (!res.ok) {
-    throw new Error("Erro ao buscar grupo");
   }
   return res.json();
 }

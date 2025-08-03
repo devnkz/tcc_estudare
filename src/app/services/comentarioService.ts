@@ -2,26 +2,20 @@
 
 export interface Comentario {
   id: string;
-  conteudo: string;
+  comentario: string;
   fkIdUsuario: string;
-  fkIdArtigo?: string;
-  fkIdPergunta?: string;
-  fkIdResposta?: string;
-  createdAt?: string;
-  updatedAt?: string;
+  fkIdResposta: string;
 }
 
 export interface CreateComentarioData {
-  conteudo: string;
+  comentario: string;
   fkIdUsuario: string;
-  fkIdArtigo?: string;
-  fkIdPergunta?: string;
-  fkIdResposta?: string;
+  fkIdResposta: string;
 }
 
 export interface UpdateComentarioData {
   id: string;
-  conteudo: string;
+  comentario: string;
 }
 
 // Busca todos os comentários
@@ -51,7 +45,7 @@ export async function updateComentario(data: UpdateComentarioData): Promise<Come
   const res = await fetch(`/api/comentario/${data.id}`, {
     method: "PUT",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ conteudo: data.conteudo }),
+    body: JSON.stringify({ conteudo: data.comentario }),
   });
   if (!res.ok) {
     throw new Error("Erro ao atualizar comentário");

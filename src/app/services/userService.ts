@@ -2,35 +2,28 @@
 
 export interface User {
   id: string;
-  nome: string;
+  name: string;
   email: string;
-  senha?: string;
-  fotoPerfil?: string;
-  bio?: string;
-  createdAt?: string;
-  updatedAt?: string;
+  senha: string;
+  apelido: string;
+  fkIdTipoUsuario: string;
 }
 
 export interface CreateUserData {
-  nome: string;
+  name: string;
   email: string;
   senha: string;
-  fotoPerfil?: string;
-  bio?: string;
+  apelido: string;
+  fkIdTipoUsuario: string;
 }
 
 export interface UpdateUserData {
   id: string;
-  nome?: string;
-  email?: string;
-  senha?: string;
-  fotoPerfil?: string;
-  bio?: string;
-}
-
-export interface LoginData {
+  name: string;
   email: string;
   senha: string;
+  apelido: string;
+  fkIdTipoUsuario: string;
 }
 
 // Busca todos os usuários
@@ -42,14 +35,6 @@ export async function fetchUsers(): Promise<User[]> {
   return res.json();
 }
 
-// Busca um usuário pelo id
-export async function fetchUserById(id: string): Promise<User> {
-  const res = await fetch(`/api/user/${id}`);
-  if (!res.ok) {
-    throw new Error("Erro ao buscar usuário");
-  }
-  return res.json();
-}
 
 // Cria um novo usuário
 export async function createUser(data: CreateUserData): Promise<User> {
@@ -84,28 +69,5 @@ export async function deleteUser(id: string): Promise<void> {
   });
   if (!res.ok) {
     throw new Error("Erro ao deletar usuário");
-  }
-}
-
-// Login de usuário
-export async function loginUser(data: LoginData): Promise<{ user: User; token: string }> {
-  const res = await fetch("/api/auth/login", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(data),
-  });
-  if (!res.ok) {
-    throw new Error("Erro ao fazer login");
-  }
-  return res.json();
-}
-
-// Logout de usuário
-export async function logoutUser(): Promise<void> {
-  const res = await fetch("/api/auth/logout", {
-    method: "POST",
-  });
-  if (!res.ok) {
-    throw new Error("Erro ao fazer logout");
   }
 }

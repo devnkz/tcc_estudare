@@ -2,24 +2,22 @@
 
 export interface Resposta {
   id: string;
-  conteudo: string;
-  fkIdUsuario: string;
   fkIdPergunta: string;
-  isAceita?: boolean;
-  votos?: number;
-  createdAt?: string;
-  updatedAt?: string;
+  fkIdUsuario: string;
+  resposta: string;
 }
 
 export interface CreateRespostaData {
-  conteudo: string;
-  fkIdUsuario: string;
   fkIdPergunta: string;
+  fkIdUsuario: string;
+  resposta: string;
 }
 
 export interface UpdateRespostaData {
   id: string;
-  conteudo: string;
+  fkIdPergunta: string;
+  fkIdUsuario: string;
+  resposta: string;
 }
 
 // Busca todas as respostas
@@ -27,33 +25,6 @@ export async function fetchRespostas(): Promise<Resposta[]> {
   const res = await fetch("/api/resposta");
   if (!res.ok) {
     throw new Error("Erro ao buscar respostas");
-  }
-  return res.json();
-}
-
-// Busca uma resposta pelo id
-export async function fetchRespostaById(id: string): Promise<Resposta> {
-  const res = await fetch(`/api/resposta/${id}`);
-  if (!res.ok) {
-    throw new Error("Erro ao buscar resposta");
-  }
-  return res.json();
-}
-
-// Busca respostas por pergunta
-export async function fetchRespostasByPergunta(perguntaId: string): Promise<Resposta[]> {
-  const res = await fetch(`/api/resposta/pergunta/${perguntaId}`);
-  if (!res.ok) {
-    throw new Error("Erro ao buscar respostas da pergunta");
-  }
-  return res.json();
-}
-
-// Busca respostas por usuário
-export async function fetchRespostasByUsuario(usuarioId: string): Promise<Resposta[]> {
-  const res = await fetch(`/api/resposta/usuario/${usuarioId}`);
-  if (!res.ok) {
-    throw new Error("Erro ao buscar respostas do usuário");
   }
   return res.json();
 }
@@ -76,7 +47,7 @@ export async function updateResposta(data: UpdateRespostaData): Promise<Resposta
   const res = await fetch(`/api/resposta/${data.id}`, {
     method: "PUT",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ conteudo: data.conteudo }),
+    body: JSON.stringify({ conteudo: data.resposta }),
   });
   if (!res.ok) {
     throw new Error("Erro ao atualizar resposta");
@@ -84,29 +55,6 @@ export async function updateResposta(data: UpdateRespostaData): Promise<Resposta
   return res.json();
 }
 
-// Marca uma resposta como aceita
-export async function aceitaResposta(id: string): Promise<Resposta> {
-  const res = await fetch(`/api/resposta/${id}/aceitar`, {
-    method: "PUT",
-  });
-  if (!res.ok) {
-    throw new Error("Erro ao aceitar resposta");
-  }
-  return res.json();
-}
-
-// Vota em uma resposta (positivo ou negativo)
-export async function votaResposta(id: string, tipo: 'up' | 'down'): Promise<Resposta> {
-  const res = await fetch(`/api/resposta/${id}/voto`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ tipo }),
-  });
-  if (!res.ok) {
-    throw new Error("Erro ao votar na resposta");
-  }
-  return res.json();
-}
 
 // Deleta uma resposta pelo id
 export async function deleteResposta(id: string): Promise<void> {

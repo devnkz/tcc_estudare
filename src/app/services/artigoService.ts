@@ -2,29 +2,22 @@
 
 export interface Artigo {
   id: string;
-  titulo: string;
-  conteudo: string;
-  fkIdUsuario: string;
-  fkIdMateria?: string;
-  imagem?: string;
-  createdAt?: string;
-  updatedAt?: string;
+  nomeArtigo: string;
+  textoArtigo: string;
+  fkIdComponente: string;
 }
 
 export interface CreateArtigoData {
-  titulo: string;
-  conteudo: string;
-  fkIdUsuario: string;
-  fkIdMateria?: string;
-  imagem?: string;
+  nomeArtigo: string;
+  textoArtigo: string;
+  fkIdComponente: string;
 }
 
 export interface UpdateArtigoData {
   id: string;
-  titulo?: string;
-  conteudo?: string;
-  fkIdMateria?: string;
-  imagem?: string;
+  nomeArtigo: string;
+  textoArtigo: string;
+  fkIdComponente: string;
 }
 
 // Busca todos os artigos

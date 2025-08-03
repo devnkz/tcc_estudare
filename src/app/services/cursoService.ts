@@ -2,35 +2,16 @@
 
 export interface Curso {
   id: string;
-  titulo: string;
-  descricao: string;
-  imagem?: string;
-  fkIdUsuarioCriador: string;
-  fkIdMateria?: string;
-  nivel?: string; // ex: 'iniciante', 'intermediário', 'avançado'
-  duracao?: number; // em minutos
-  createdAt?: string;
-  updatedAt?: string;
+  nomeCurso: string;
 }
 
 export interface CreateCursoData {
-  titulo: string;
-  descricao: string;
-  imagem?: string;
-  fkIdUsuarioCriador: string;
-  fkIdMateria?: string;
-  nivel?: string;
-  duracao?: number;
+  nomeCurso: string;
 }
 
 export interface UpdateCursoData {
   id: string;
-  titulo?: string;
-  descricao?: string;
-  imagem?: string;
-  fkIdMateria?: string;
-  nivel?: string;
-  duracao?: number;
+  nomeCurso: string;
 }
 
 // Busca todos os cursos
@@ -38,33 +19,6 @@ export async function fetchCursos(): Promise<Curso[]> {
   const res = await fetch("/api/curso");
   if (!res.ok) {
     throw new Error("Erro ao buscar cursos");
-  }
-  return res.json();
-}
-
-// Busca um curso pelo id
-export async function fetchCursoById(id: string): Promise<Curso> {
-  const res = await fetch(`/api/curso/${id}`);
-  if (!res.ok) {
-    throw new Error("Erro ao buscar curso");
-  }
-  return res.json();
-}
-
-// Busca cursos por usuário criador
-export async function fetchCursosByUsuario(usuarioId: string): Promise<Curso[]> {
-  const res = await fetch(`/api/curso/usuario/${usuarioId}`);
-  if (!res.ok) {
-    throw new Error("Erro ao buscar cursos do usuário");
-  }
-  return res.json();
-}
-
-// Busca cursos por matéria
-export async function fetchCursosByMateria(materiaId: string): Promise<Curso[]> {
-  const res = await fetch(`/api/curso/materia/${materiaId}`);
-  if (!res.ok) {
-    throw new Error("Erro ao buscar cursos da matéria");
   }
   return res.json();
 }
@@ -103,37 +57,4 @@ export async function deleteCurso(id: string): Promise<void> {
   if (!res.ok) {
     throw new Error("Erro ao deletar curso");
   }
-}
-
-// Inscreve um usuário em um curso
-export async function inscreveUsuarioCurso(cursoId: string, usuarioId: string): Promise<void> {
-  const res = await fetch(`/api/curso/${cursoId}/inscricao`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ usuarioId }),
-  });
-  if (!res.ok) {
-    throw new Error("Erro ao inscrever usuário no curso");
-  }
-}
-
-// Cancela inscrição de um usuário em um curso
-export async function cancelaInscricaoCurso(cursoId: string, usuarioId: string): Promise<void> {
-  const res = await fetch(`/api/curso/${cursoId}/inscricao`, {
-    method: "DELETE",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ usuarioId }),
-  });
-  if (!res.ok) {
-    throw new Error("Erro ao cancelar inscrição no curso");
-  }
-}
-
-// Busca cursos em que um usuário está inscrito
-export async function fetchCursosInscritos(usuarioId: string): Promise<Curso[]> {
-  const res = await fetch(`/api/curso/inscricao/${usuarioId}`);
-  if (!res.ok) {
-    throw new Error("Erro ao buscar cursos inscritos");
-  }
-  return res.json();
 }

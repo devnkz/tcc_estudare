@@ -2,32 +2,20 @@
 
 export interface Componente {
   id: string;
-  nome: string;
-  descricao?: string;
-  tipo: string; // ex: 'video', 'texto', 'quiz', etc.
-  conteudo: string;
+  nomeComponente: string;
   fkIdCurso: string;
-  ordem: number;
-  createdAt?: string;
-  updatedAt?: string;
 }
 
 export interface CreateComponenteData {
-  nome: string;
-  descricao?: string;
-  tipo: string;
-  conteudo: string;
+  nomeComponente: string;
   fkIdCurso: string;
-  ordem: number;
 }
+
 
 export interface UpdateComponenteData {
   id: string;
-  nome?: string;
-  descricao?: string;
-  tipo?: string;
-  conteudo?: string;
-  ordem?: number;
+  nomeComponente: string;
+  fkIdCurso?: string;
 }
 
 // Busca todos os componentes

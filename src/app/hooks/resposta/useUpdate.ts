@@ -9,11 +9,6 @@ export function useUpdateResposta() {
     onSuccess: (data) => {
       // Invalidar todas as queries de respostas
       queryClient.invalidateQueries({ queryKey: ["respostas"] });
-      
-      // Se a resposta está associada a uma pergunta
-      if (data.perguntaId) {
-        queryClient.invalidateQueries({ queryKey: ["respostas", "pergunta", data.perguntaId] });
-      }
     },
   });
 }

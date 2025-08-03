@@ -53,7 +53,9 @@ export function PerguntasClientPage({
             key={index}
             className="p-2 w-full bg-zinc-200 shadow-md rounded-lg flex flex-col gap-2 text-black hover:-translate-y-1 transition-all duration-300"
           >
-            <h2 className="font-bold">Aluno: {pergunta.usuario} (TIO T.I)</h2>
+            <h2 className="font-bold">
+              Aluno: {pergunta.usuario.name} ({pergunta.usuario.apelido})
+            </h2>
             <p>
               Matéria:{" "}
               <span className="text-purple-600 font-bold">

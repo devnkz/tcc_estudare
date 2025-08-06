@@ -160,6 +160,9 @@ export function SignUpUserModal({
             )}
           />
 
+
+          <label className="text-sm">Selecione o tipo de usuário</label>
+
           {/* TIPO DE USUÁRIO (SELECT) */}
           <Controller
             name="fkIdTipoUsuario"

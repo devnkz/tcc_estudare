@@ -14,7 +14,7 @@ export default async function RootLayout({
   children: React.ReactNode;
 }) {
   const cookieStore = await cookies();
-  const token =  cookieStore.get("token")?.value;
+  const token = cookieStore.get("token")?.value;
 
   let id: string | null = null;
 
@@ -24,8 +24,7 @@ export default async function RootLayout({
         id: string;
       };
       id = decoded.id;
-    } catch {
-    }
+    } catch {}
   }
 
   console.log("ID do usuário decodificado:", id);

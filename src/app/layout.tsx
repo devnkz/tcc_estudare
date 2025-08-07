@@ -5,6 +5,7 @@ import UserProviderWrapper from "../providers/UserWrapperProvider";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import { QueryProvider } from "../providers/QueryProvider";
+import { RouteChangeLoader } from "@/components/shared/RouteChangeLoader";
 
 const inter = Inter({ subsets: ["latin"], weight: ["400"] });
 
@@ -31,11 +32,10 @@ export default async function RootLayout({
 
   return (
     <html lang="pt-br">
-      <body
-        className={`${inter.className} w-full flex flex-col justify-center`}
-      >
+      <body className={`${inter.className} w-full flex flex-col justify-center`}>
+        <RouteChangeLoader/>
+
         <QueryProvider>
-          {/* Componente Client para popular o contexto */}
           <UserProviderWrapper userId={id}>{children}</UserProviderWrapper>
         </QueryProvider>
       </body>

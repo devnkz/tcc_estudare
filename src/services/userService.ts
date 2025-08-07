@@ -1,6 +1,8 @@
 import { User, CreateUserData, UpdateUserData } from "../types/user";
 import axios from "axios";
 
+
+
 // Busca todos os usuários
 export async function fetchUsers(): Promise<User[]> {
   const res = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/user`);

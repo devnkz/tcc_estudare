@@ -1,10 +1,8 @@
+import { fetchComponentes } from "@/services/componenteService";
 import AskQuestionPage from "./client";
 
 export default async function askQuestionIndex() {
-  const resComponentes = await fetch(
-    `${process.env.NEXT_PUBLIC_API_URL}/componente`
-  );
-  const componentes = await resComponentes.json();
+  const componentes = await fetchComponentes();
 
   return <AskQuestionPage componentes={componentes} />;
 }

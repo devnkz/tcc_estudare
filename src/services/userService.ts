@@ -9,6 +9,12 @@ export async function fetchUsers(): Promise<User[]> {
   return res.data;
 }
 
+// Busca usuário por id
+export async function fetchUsersId(id : string): Promise<User[]> {
+  const res = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/user/${id}`);
+  return res.data;
+}
+
 // Cria um novo usuário
 export async function createUser(data: CreateUserData): Promise<User> {
   const res = await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/user`, data);

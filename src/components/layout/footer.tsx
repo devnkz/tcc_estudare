@@ -1,7 +1,18 @@
 "use client";
 
+import { Inter } from "next/font/google"
 import Image from "next/image";
 import { useRouter } from "next/navigation";
+
+const interthin = Inter({ subsets: ["latin"], weight: ["100"] });
+const interextraLight = Inter({ subsets: ["latin"], weight: ["200"] });
+const interlight = Inter({ subsets: ["latin"], weight: ["300"] });
+const interregular = Inter({ subsets: ["latin"], weight: ["400"] });
+const intermedium = Inter({ subsets: ["latin"], weight: ["500"] });
+const intersemibold = Inter({ subsets: ["latin"], weight: ["600"] });
+const interbold = Inter({ subsets: ["latin"], weight: ["700"] });
+const interextrabold = Inter({ subsets: ["latin"], weight: ["800"] });
+const interblack = Inter({ subsets: ["latin"], weight: ["900"] });
 
 export default function Footer() {
   const router = useRouter();
@@ -92,13 +103,6 @@ export default function Footer() {
               </p>
             </div>
           </div>
-        </div>
-
-        {/* Linha de Copyright */}
-        <div className="border-t border-gray-100 mt-8 pt-8 text-center">
-          <p className="text-gray-500 text-sm">
-            © 2025 ESTUDARE. Todos os direitos reservados.
-          </p>
         </div>
       </div>
     </footer>

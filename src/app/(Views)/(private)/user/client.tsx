@@ -4,7 +4,7 @@ import { UserIcon, PencilIcon } from "@heroicons/react/16/solid";
 import { LuFiles } from "react-icons/lu";
 import { useRouter } from "next/navigation";
 
-export default function UsuarioClientPage({users} : {users: any[]}) {
+export default function UsuarioClientPage( {user} : {user: any} ) {
   const router = useRouter();
 
   return (
@@ -12,10 +12,13 @@ export default function UsuarioClientPage({users} : {users: any[]}) {
       <div className="w-[600px] flex flex-col justify-center items-center py-14 space-y-2 relative">
         <div className="space-y-2 w-full flex flex-col justify-center items-center">
           <UserIcon className="h-20 w-20 p-4 bg-zinc-300 rounded-full" />
-          <h2 className="text-sm text-zinc-600">Estudante</h2>
+          <h2 className="text-sm text-zinc-600">
+            Estudante desde{" "}
+            {new Date(user.createdAt).toLocaleDateString("pt-BR")}
+          </h2>
         </div>
-        <h1 className="font-bold text-xl">Nyckolas Vieira</h1>
-        <h2 className="text-zinc-700 text-base">Seu apelido: Tio T.I</h2>
+        <h1 className="font-bold text-xl">{user.name}</h1>
+        <h2 className="text-zinc-700 text-base">Seu apelido: {user.apelido}</h2>
 
         <div className="p-2 rounded-xl w-full space-y-4">
           <div className="flex justify-between items-center">

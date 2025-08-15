@@ -10,7 +10,7 @@ export async function fetchUsers(): Promise<User[]> {
 }
 
 // Busca usuário por id
-export async function fetchUsersId(id : string): Promise<User[]> {
+export async function fetchUsersId(id : string | undefined): Promise<User[]> {
   const res = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/user/${id}`);
   return res.data;
 }

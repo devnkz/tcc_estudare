@@ -1,52 +1,195 @@
 "use client";
 
+import { MagnifyingGlassIcon } from "@heroicons/react/16/solid";
+import { ChevronsUpDown, Check } from "lucide-react";
+import { CreateRespostaData } from "@/types/resposta";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { cn } from "@/lib/utils";
+import { useState, useRef } from "react";
+import { useCreateResposta } from "@/hooks/resposta/useCreate";
+import { useUser } from "@/context/userContext";
+
+function getTypeFromData(items: any[]): "componente" | "curso" {
+  if (!items || items.length === 0) return "componente"; // padrão
+  if ("nomeComponente" in items[0]) return "componente";
+  if ("nomeCurso" in items[0]) return "curso";
+  return "componente"; // fallback
+}
+
+function normalizeItems(data: any[], type: "componente" | "curso") {
+  if (type === "componente") {
+    return data.map((item) => ({
+      id: String(item.id),
+      label: item.nomeComponente,
+    }));
+  }
+  if (type === "curso") {
+    return data.map((item) => ({
+      id: String(item.id),
+      label: item.nomeCurso,
+    }));
+  }
+  return [];
+}
+
+function ComboboxFilter({
+  items,
+  value,
+  setValue,
+  placeholder,
+}: {
+  items: { id: string; label: string }[];
+  value: string;
+  setValue: (v: string) => void;
+  placeholder: string;
+}) {
+  const [open, setOpen] = useState(false);
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <button
+          className="w-[300px] bg-zinc-100 rounded-md p-2 flex justify-between border-transparent border-1 items-center
+        hover:border-purple-600 hover:bg-zinc-200 hover:-translate-y-0.5 transition-all duration-300 cursor-pointer"
+        >
+          {value ? items.find((item) => item.id === value)?.label : placeholder}
+          <ChevronsUpDown className="opacity-50 ml-2" />
+        </button>
+      </PopoverTrigger>
+      <PopoverContent className="w-[200px] p-0">
+        <Command>
+          <CommandInput
+            placeholder={`Buscar ${placeholder.toLowerCase()}...`}
+            className="h-9"
+          />
+          <CommandList>
+            <CommandEmpty>Nenhum encontrado.</CommandEmpty>
+            <CommandGroup>
+              {items.map((item) => (
+                <CommandItem
+                  key={item.id}
+                  value={item.id}
+                  onSelect={(currentValue) => {
+                    setValue(currentValue === value ? "" : currentValue);
+                    setOpen(false);
+                  }}
+                >
+                  {item.label}
+                  <Check
+                    className={cn(
+                      "ml-auto",
+                      value === item.id ? "opacity-100" : "opacity-0"
+                    )}
+                  />
+                </CommandItem>
+              ))}
+            </CommandGroup>
+          </CommandList>
+        </Command>
+      </PopoverContent>
+    </Popover>
+  );
+}
+
 export function PerguntasClientPage({
   perguntas,
   componentes,
+  cursos,
 }: {
   perguntas: any[];
   componentes: any[];
+  cursos: any[];
 }) {
+  const { userId } = useUser();
+
+  const [search, setSearch] = useState("");
+  const [componente, setComponente] = useState("");
+  const [curso, setCurso] = useState("");
+  const [grupo, setGrupo] = useState("");
+  const [responderId, setResponderId] = useState<string | null>(null);
+  const [resposta, setResposta] = useState("");
+  const respostaInputRef = useRef<HTMLInputElement>(null);
+
+  const createResposta = useCreateResposta();
+
+  const handleResponder = (perguntaId: string) => {
+    setResponderId(perguntaId);
+    setResposta("");
+    setTimeout(() => {
+      respostaInputRef.current?.focus();
+    }, 100);
+  };
+
+  const handleEnviarResposta = ({
+    fkIdPergunta,
+    fkIdUsuario,
+    resposta,
+  }: CreateRespostaData) => {
+    createResposta.mutate(
+      {
+        fkIdPergunta,
+        fkIdUsuario,
+        resposta,
+      },
+      {
+        onSuccess: () => {
+          setResponderId(null);
+          setResposta("");
+        },
+      }
+    );
+  };
+
   return (
     <div
       id="respondaPerguntasPage"
       className="w-full lg:p-4 flex flex-col gap-10"
     >
-      <h1 className="text-black text-center text-xl lg:text-3xl">
-        Perguntas recentes aguardando resposta
-      </h1>
-
-      <div className="flex flex-col gap-2">
-        <h2 className="px-2 text-zinc-600">
-          Procure perguntas pelo componente!
-        </h2>
-        <nav
-          className="w-full flex items-center gap-4 overflow-x-auto py-2 scrollbar-thin scrollbar-thumb-zinc-300 scrollbar-track-transparent"
-          style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
-        >
-          <style>
-            {`
-                            #respondaPerguntasPage nav::-webkit-scrollbar {
-                                display: none;
-                            }
-                        `}
-          </style>
-
-          {componentes.length > 0 ? (
-            componentes.map((componente, index) => (
-              <p
-                key={index}
-                className="bg-zinc-200 p-2 text-black rounded-lg hover:-translate-y-1 hover:bg-purple-600 hover:text-white transition-all duration-300 cursor-pointer flex-shrink-0"
-              >
-                {componente.nomeComponente}
-              </p>
-            ))
-          ) : (
-            <p className="bg-zinc-200 p-2 text-black rounded-lg hover:-translate-y-1 hover:bg-purple-600 hover:text-white transition-all duration-300 cursor-pointer flex-shrink-0">
-              Nenhum componente encontrado
-            </p>
-          )}
-        </nav>
+      <div className="flex flex-col gap-4">
+        <div className="flex flex-col gap-2 lg:flex-row lg:gap-4">
+          <ComboboxFilter
+            items={normalizeItems(componentes, getTypeFromData(componentes))}
+            value={componente}
+            setValue={setComponente}
+            placeholder="Componente"
+          />
+          <ComboboxFilter
+            items={normalizeItems(cursos, getTypeFromData(cursos))}
+            value={curso}
+            setValue={setCurso}
+            placeholder="Curso"
+          />
+          <div className="w-[200px]">
+            <input
+              type="date"
+              className="w-full p-2 rounded-md bg-zinc-100 border border-transparent hover:border-purple-600 hover:bg-zinc-200 transition-all duration-300"
+              value={grupo}
+              onChange={(e) => setGrupo(e.target.value)}
+            />
+          </div>
+        </div>
+        <div className="flex-1 w-full">
+          <div className="flex items-center gap-2 p-2 rounded-lg border-1 border-transparent bg-zinc-100 text-black hover:border-purple-600 hover:bg-zinc-200 hover:-translate-y-0.5 transition-all duration-300 cursor-pointer">
+            <MagnifyingGlassIcon className="h-5 w-5" />
+            <input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Procure por perguntas, matérias, componentes..."
+              className="outline-none w-full bg-transparent"
+            />
+          </div>
+        </div>
       </div>
 
       {perguntas.length > 0 ? (
@@ -55,9 +198,16 @@ export function PerguntasClientPage({
             key={index}
             className="p-2 w-full bg-zinc-200 shadow-md rounded-lg flex flex-col gap-2 text-black hover:-translate-y-1 transition-all duration-300"
           >
-            <h2 className="font-bold">
-              Aluno: {pergunta.usuario.name} ({pergunta.usuario.apelido})
-            </h2>
+            <div className="w-full flex justify-between">
+              <h2 className="font-bold">
+                Aluno: {pergunta.usuario.name} ({pergunta.usuario.apelido})
+              </h2>
+              <h3 className="text-sm text-zinc-900">
+                Realizada em:{" "}
+                {new Date(pergunta.criadaEm).toLocaleDateString("pt-BR")}
+              </h3>
+            </div>
+
             <p>
               Componente:{" "}
               <span className="text-purple-600 font-bold">
@@ -68,17 +218,64 @@ export function PerguntasClientPage({
               {pergunta.pergunta}
             </p>
             <div className="flex items-center gap-2">
-              <button className="p-2 rounded-lg bg-purple-600 text-white text-xs lg:text-base">
+              <button
+                className="p-2 rounded-lg bg-purple-600 text-white text-xs lg:text-base hover:bg-purple-900 transition-colors duration-300 cursor-pointer"
+                onClick={() => handleResponder(pergunta.id)}
+              >
                 Responder
               </button>
               <button className="p-2 rounded-lg bg-white text-black text-xs lg:text-base">
                 Notificar respostas
               </button>
             </div>
+            {/* Campo de resposta */}
+            {responderId === pergunta.id && (
+              <div className="mt-2 flex flex-col gap-2">
+                <input
+                  ref={respostaInputRef}
+                  type="text"
+                  value={resposta}
+                  onChange={(e) => setResposta(e.target.value)}
+                  placeholder="Digite sua resposta..."
+                  className="p-2 rounded-md border border-zinc-300"
+                  disabled={createResposta.isPending}
+                />
+                <div className="flex gap-2">
+                  <button
+                    className="p-2 rounded-lg bg-purple-600 text-white text-xs lg:text-base hover:bg-purple-900 transition-colors duration-300 cursor-pointer"
+                    onClick={() =>
+                      handleEnviarResposta({
+                        fkIdPergunta: pergunta.id,
+                        fkIdUsuario: userId!,
+                        resposta: resposta,
+                      })
+                    }
+                    disabled={createResposta.isPending}
+                  >
+                    {createResposta.isPending
+                      ? "Enviando..."
+                      : "Enviar resposta"}
+                  </button>
+
+                  <button
+                    className="p-2 rounded-lg bg-zinc-400 text-white text-xs lg:text-base"
+                    onClick={() => setResponderId(null)}
+                    disabled={createResposta.isPending}
+                  >
+                    Cancelar
+                  </button>
+                </div>
+                {createResposta.isError && (
+                  <span className="text-red-600 text-xs">
+                    Erro ao enviar resposta. Tente novamente.
+                  </span>
+                )}
+              </div>
+            )}
           </div>
         ))
       ) : (
-        <div>Sem perguntas até o momento</div> // ou você pode renderizar um texto do tipo: <p>Nenhuma pergunta no momento.</p>
+        <div>Sem perguntas até o momento</div>
       )}
     </div>
   );

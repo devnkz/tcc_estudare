@@ -14,9 +14,9 @@ const interbold = Inter({ subsets: ["latin"], weight: ["700"] });
 const interextrabold = Inter({ subsets: ["latin"], weight: ["800"] });
 const interblack = Inter({ subsets: ["latin"], weight: ["900"] });
 
-export default function Footer() {
-  const router = useRouter();
+const router = useRouter();
 
+export default function Footer() {
   return (
     <footer
       className="bg-gradient-to-b from-white via-violet-50 to-purple-100
@@ -122,5 +122,14 @@ export default function Footer() {
         </div>
       </div>
     </footer>
+  );
+}
+
+export function HomeFooter() {
+  return (
+    <footer
+      className="bg-gradient-to-b from-white via-violet-50 to-purple-100
+    00 w-full mt-auto"
+    ></footer>
   );
 }

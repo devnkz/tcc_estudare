@@ -79,7 +79,7 @@ export function HeaderDesktopAutenticado() {
 /* ------------------ HEADER NÃO AUTENTICADO ------------------ */
 export function HeaderDesktopNaoAutenticado() {
   return (
-    <header className="w-full lg:max-w-[1450px] bg-white border-b border-gray-100 shadow-sm">
+    <header className="w-full bg-white border-b border-gray-100 shadow-sm">
       <div className="max-w-7xl mx-auto flex justify-between items-center px-8 py-5">
         {/* Logo */}
         <Link href="/" className="flex items-center gap-3">

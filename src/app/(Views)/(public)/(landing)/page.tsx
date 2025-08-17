@@ -3,7 +3,7 @@
 import { ArrowRightIcon } from "@heroicons/react/16/solid";
 import Image from "next/image";
 import { useEffect, useState } from "react";
-import Footer from "@/components/layout/footer";
+import Footer, { HomeFooter } from "@/components/layout/footer";
 import { useRouter } from "next/navigation";
 import { Inter } from "next/font/google";
 
@@ -39,10 +39,10 @@ export default function TelaHome() {
   const router = useRouter();
 
   return (
-    <div className="w-full h-full  bg-white flex flex-col overflow-y-hidden">
+    <div className="w-full h-full bg-[url(/imagens/bear.png)] bg-right bg-no-repeat bg-size-[1000px_1000px] flex flex-col overflow-y-hidden">
       {/* Main */}
-      <main className="flex-1 m  w-full lg:max-w-[1450px] mx-auto flex justify-between items-center">
-        <div className="w-full mt-55 lg:w-3/5 flex flex-col items-start gap-5 p-5">
+      <main className="flex-1 w-full lg:max-w-[1700px] mx-auto flex justify-between items-center">
+        <div className="w-full mt-35 lg:w-3/5 flex flex-col items-start gap-5 p-30 ">
           <h1
             className={`${interextrabold.className} font-extrabold text-purple-600 mr-90 text-5xl gap-1`}
           >
@@ -84,7 +84,7 @@ export default function TelaHome() {
       </main>
 
       {/* Footer */}
-      {/* <Footer /> */}
+      <HomeFooter />
     </div>
   );
 }

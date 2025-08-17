@@ -1,9 +1,26 @@
-import { fetchUsers } from "@/services/userService";
+import { fetchUsersId } from "@/services/userService";
 import UsuarioClientPage from "./client";
-export default async function UsuarioPage() {
+import { jwtDecode } from "jwt-decode";
+import { cookies } from "next/headers";
 
-  const users = await fetchUsers();
-  console.log(users)
+interface JWTPayload {
+  id: string;
+}
 
-  return <UsuarioClientPage users={users}/>
+export default async function IndexUser() {
+  const cookieStore = await cookies();
+  const token = cookieStore.get("token")?.value;
+
+  let userId: string | undefined = undefined;
+
+  if (typeof token === "string") {
+    const decoded = jwtDecode<JWTPayload>(token);
+    userId = decoded.id;
+  }
+
+  const users = await fetchUsersId(userId);
+  const user = users[0]
+  console.log(user)
+
+  return <UsuarioClientPage user={user} />;
 }

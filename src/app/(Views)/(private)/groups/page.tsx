@@ -1,4 +1,5 @@
 "use client";
+import { Check, ChevronsUpDown } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -8,6 +9,8 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
   Card,
@@ -19,6 +22,19 @@ import {
 import { useState } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import Footer from "@/components/layout/footer";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 
 interface StudyGroup {
   id: number;
@@ -29,7 +45,33 @@ interface StudyGroup {
   createdAt: string;
 }
 
+const frameworks = [
+  {
+    value: "next.js",
+    label: "Next.js",
+  },
+  {
+    value: "sveltekit",
+    label: "SvelteKit",
+  },
+  {
+    value: "nuxt.js",
+    label: "Nuxt.js",
+  },
+  {
+    value: "remix",
+    label: "Remix",
+  },
+  {
+    value: "astro",
+    label: "Astro",
+  },
+];
+
 export default function GroupsPage() {
+  const [openComboBox, setOpenComboBox] = useState(false);
+  const [value, setValue] = useState("");
+
   const [open, setOpen] = useState(false);
   const [groups, setGroups] = useState<StudyGroup[]>([
     {
@@ -118,18 +160,16 @@ export default function GroupsPage() {
           <DialogContent>
             <form onSubmit={handleCreateGroup}>
               <DialogHeader>
-                <DialogTitle>Create Study Group</DialogTitle>
+                <DialogTitle>Crie seu grupo com seus colegas</DialogTitle>
                 <DialogDescription>
-                  Create a new study group to collaborate with other students.
+                  Preencha os campos abaixo para criar um novo grupo de estudo
+                  fechado.
                 </DialogDescription>
               </DialogHeader>
               <div className="grid gap-4 py-4">
                 <div className="grid gap-2"></div>
                 <div className="grid gap-2">
                   <Input label="Nome" />
-                </div>
-                <div className="grid gap-2">
-                  <Input label="Descricao" />
                 </div>
               </div>
               <DialogFooter>

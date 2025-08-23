@@ -7,6 +7,12 @@ export async function fetchPerguntas(): Promise<Pergunta[]> {
   return res.data;
 }
 
+// Busca perguntas com base no id do usuario
+export async function fetchPerguntasByIdUser({userId} : {userId: string}): Promise<Pergunta[]> {
+  const res = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/pergunta/usuario/${userId}`);
+  return res.data;
+}
+
 // Cria uma nova pergunta
 export async function createPergunta(data: CreatePerguntaData): Promise<Pergunta> {
   const res = await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/pergunta`, data);

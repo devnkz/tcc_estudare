@@ -14,9 +14,9 @@ const interbold = Inter({ subsets: ["latin"], weight: ["700"] });
 const interextrabold = Inter({ subsets: ["latin"], weight: ["800"] });
 const interblack = Inter({ subsets: ["latin"], weight: ["900"] });
 
-const router = useRouter();
-
 export default function Footer() {
+  const router = useRouter();
+
   return (
     <footer
       className="bg-gradient-to-b from-white via-violet-50 to-purple-100

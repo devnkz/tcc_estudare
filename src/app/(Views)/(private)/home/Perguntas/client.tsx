@@ -60,7 +60,7 @@ function ComboboxFilter({
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
         <button
-          className="w-[300px] bg-zinc-100 rounded-md p-2 flex justify-between border-transparent border-1 items-center
+          className="w-[200px] bg-zinc-100 rounded-md p-2 flex justify-between border-transparent border-1 items-center
         hover:border-purple-600 hover:bg-zinc-200 hover:-translate-y-0.5 transition-all duration-300 cursor-pointer"
         >
           {value ? items.find((item) => item.id === value)?.label : placeholder}
@@ -106,10 +106,12 @@ export function PerguntasClientPage({
   perguntas,
   componentes,
   cursos,
+  respostas,
 }: {
   perguntas: any[];
   componentes: any[];
   cursos: any[];
+  respostas: any[];
 }) {
   const { userId } = useUser();
 
@@ -117,6 +119,7 @@ export function PerguntasClientPage({
   const [componente, setComponente] = useState("");
   const [curso, setCurso] = useState("");
   const [grupo, setGrupo] = useState("");
+  const [filtroStatus, setFiltroStatus] = useState("Todas");
   const [responderId, setResponderId] = useState<string | null>(null);
   const [resposta, setResposta] = useState("");
   const respostaInputRef = useRef<HTMLInputElement>(null);
@@ -151,6 +154,47 @@ export function PerguntasClientPage({
     );
   };
 
+  const filtros: string[] = ["Todas", "Respondidas", "Não Respondidas"];
+
+  const perguntasFiltradas = perguntas.filter((pergunta) => {
+    const respostasFiltradas = respostas.filter(
+      (r) => r.fkIdPergunta === pergunta.id
+    );
+    const temResposta = respostasFiltradas.length > 0;
+
+    // Filtro por status
+    if (filtroStatus === "Respondidas" && !temResposta) return false;
+    if (filtroStatus === "Não Respondidas" && temResposta) return false;
+
+    // Filtro por componente
+    if (componente && pergunta.idComponente !== Number(componente))
+      return false;
+
+    // Filtro por curso
+    if (curso && pergunta.idCurso !== Number(curso)) return false;
+
+    // Filtro por data (grupo)
+    if (grupo) {
+      const dataPergunta = new Date(pergunta.criadaEm)
+        .toISOString()
+        .split("T")[0];
+      if (dataPergunta !== grupo) return false;
+    }
+
+    // Filtro por busca
+    if (search) {
+      const termo = search.toLowerCase();
+      if (
+        !pergunta.pergunta.toLowerCase().includes(termo) &&
+        !pergunta.materia.toLowerCase().includes(termo)
+      ) {
+        return false;
+      }
+    }
+
+    return true;
+  });
+
   return (
     <div
       id="respondaPerguntasPage"
@@ -169,6 +213,12 @@ export function PerguntasClientPage({
             value={curso}
             setValue={setCurso}
             placeholder="Curso"
+          />
+          <ComboboxFilter
+            items={filtros.map((f) => ({ id: f, label: f }))}
+            value={filtroStatus}
+            setValue={setFiltroStatus}
+            placeholder="Status"
           />
           <div className="w-[200px]">
             <input
@@ -192,88 +242,116 @@ export function PerguntasClientPage({
         </div>
       </div>
 
-      {perguntas.length > 0 ? (
-        perguntas.map((pergunta, index) => (
-          <div
-            key={index}
-            className="p-2 w-full bg-zinc-200 shadow-md rounded-lg flex flex-col gap-2 text-black hover:-translate-y-1 transition-all duration-300"
-          >
-            <div className="w-full flex justify-between">
-              <h2 className="font-bold">
-                Aluno: {pergunta.usuario.name} ({pergunta.usuario.apelido})
-              </h2>
-              <h3 className="text-sm text-zinc-900">
-                Realizada em:{" "}
-                {new Date(pergunta.criadaEm).toLocaleDateString("pt-BR")}
-              </h3>
-            </div>
+      {perguntasFiltradas.length > 0 ? (
+        perguntasFiltradas.map((pergunta, index) => {
+          const respostasFiltradas = respostas.filter(
+            (r) => r.fkIdPergunta === pergunta.id
+          );
+          const temResposta = respostasFiltradas.length > 0;
 
-            <p>
-              Componente:{" "}
-              <span className="text-purple-600 font-bold">
-                {pergunta.materia}
-              </span>
-            </p>
-            <p className="bg-white p-2 rounded-md shadow-lg text-sm lg:text-base">
-              {pergunta.pergunta}
-            </p>
-            <div className="flex items-center gap-2">
-              <button
-                className="p-2 rounded-lg bg-purple-600 text-white text-xs lg:text-base hover:bg-purple-900 transition-colors duration-300 cursor-pointer"
-                onClick={() => handleResponder(pergunta.id)}
-              >
-                Responder
-              </button>
-              <button className="p-2 rounded-lg bg-white text-black text-xs lg:text-base">
-                Notificar respostas
-              </button>
-            </div>
-            {/* Campo de resposta */}
-            {responderId === pergunta.id && (
-              <div className="mt-2 flex flex-col gap-2">
-                <input
-                  ref={respostaInputRef}
-                  type="text"
-                  value={resposta}
-                  onChange={(e) => setResposta(e.target.value)}
-                  placeholder="Digite sua resposta..."
-                  className="p-2 rounded-md border border-zinc-300"
-                  disabled={createResposta.isPending}
-                />
-                <div className="flex gap-2">
-                  <button
-                    className="p-2 rounded-lg bg-purple-600 text-white text-xs lg:text-base hover:bg-purple-900 transition-colors duration-300 cursor-pointer"
-                    onClick={() =>
-                      handleEnviarResposta({
-                        fkIdPergunta: pergunta.id,
-                        fkIdUsuario: userId!,
-                        resposta: resposta,
-                      })
-                    }
-                    disabled={createResposta.isPending}
-                  >
-                    {createResposta.isPending
-                      ? "Enviando..."
-                      : "Enviar resposta"}
-                  </button>
-
-                  <button
-                    className="p-2 rounded-lg bg-zinc-400 text-white text-xs lg:text-base"
-                    onClick={() => setResponderId(null)}
-                    disabled={createResposta.isPending}
-                  >
-                    Cancelar
-                  </button>
+          return (
+            <div
+              key={index}
+              className={`p-2 w-full shadow-md rounded-lg flex flex-col gap-2 text-black hover:-translate-y-1 transition-all duration-300
+                ${
+                  temResposta
+                    ? "bg-green-100 border-green-400"
+                    : "bg-zinc-200 border-transparent"
+                } border-2`}
+            >
+              <div className="w-full flex justify-between items-center">
+                <h2 className="font-bold">
+                  Aluno: {pergunta.usuario.name} ({pergunta.usuario.apelido})
+                </h2>
+                <div className="flex flex-col items-end gap-2">
+                  <h3 className="text-sm text-zinc-900">
+                    Realizada em:{" "}
+                    {new Date(pergunta.criadaEm).toLocaleDateString("pt-BR")}
+                  </h3>
+                  {temResposta && (
+                    <span className="text-green-700 text-xs font-semibold">
+                      Já respondida
+                    </span>
+                  )}
                 </div>
-                {createResposta.isError && (
-                  <span className="text-red-600 text-xs">
-                    Erro ao enviar resposta. Tente novamente.
-                  </span>
-                )}
               </div>
-            )}
-          </div>
-        ))
+
+              <p>
+                Componente:{" "}
+                <span className="text-purple-600 font-bold">
+                  {pergunta.materia}
+                </span>
+              </p>
+              <p className="bg-white p-2 rounded-md shadow-lg text-sm lg:text-base">
+                {pergunta.pergunta}
+              </p>
+              <div className="flex items-center gap-2">
+                <button
+                  className="p-2 rounded-lg bg-purple-600 text-white text-xs lg:text-base hover:bg-purple-900 transition-colors duration-300 cursor-pointer"
+                  onClick={() => handleResponder(pergunta.id)}
+                >
+                  Responder
+                </button>
+                <button className="p-2 rounded-lg bg-white text-black text-xs lg:text-base">
+                  Notificar respostas
+                </button>
+              </div>
+
+              {temResposta && (
+                <div className="mt-4">
+                  <h3 className="font-bold mb-2">Respostas:</h3>
+                  {respostasFiltradas.map((resposta, idx) => (
+                    <div key={idx}>{resposta.resposta}</div>
+                  ))}
+                </div>
+              )}
+
+              {responderId === pergunta.id && (
+                <div className="mt-2 flex flex-col gap-2">
+                  <input
+                    ref={respostaInputRef}
+                    type="text"
+                    value={resposta}
+                    onChange={(e) => setResposta(e.target.value)}
+                    placeholder="Digite sua resposta..."
+                    className="p-2 rounded-md border border-zinc-300"
+                    disabled={createResposta.isPending}
+                  />
+                  <div className="flex gap-2">
+                    <button
+                      className="p-2 rounded-lg bg-purple-600 text-white text-xs lg:text-base hover:bg-purple-900 transition-colors duration-300 cursor-pointer"
+                      onClick={() =>
+                        handleEnviarResposta({
+                          fkIdPergunta: pergunta.id,
+                          fkIdUsuario: userId!,
+                          resposta: resposta,
+                        })
+                      }
+                      disabled={createResposta.isPending}
+                    >
+                      {createResposta.isPending
+                        ? "Enviando..."
+                        : "Enviar resposta"}
+                    </button>
+
+                    <button
+                      className="p-2 rounded-lg bg-zinc-400 text-white text-xs lg:text-base"
+                      onClick={() => setResponderId(null)}
+                      disabled={createResposta.isPending}
+                    >
+                      Cancelar
+                    </button>
+                  </div>
+                  {createResposta.isError && (
+                    <span className="text-red-600 text-xs">
+                      Erro ao enviar resposta. Tente novamente.
+                    </span>
+                  )}
+                </div>
+              )}
+            </div>
+          );
+        })
       ) : (
         <div>Sem perguntas até o momento</div>
       )}

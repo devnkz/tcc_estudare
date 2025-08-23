@@ -1,4 +1,5 @@
 import { fetchUsersId } from "@/services/userService";
+import { fetchPerguntasByIdUser } from "@/services/perguntaService";
 import UsuarioClientPage from "./client";
 import { jwtDecode } from "jwt-decode";
 import { cookies } from "next/headers";
@@ -19,8 +20,8 @@ export default async function IndexUser() {
   }
 
   const users = await fetchUsersId(userId);
-  const user = users[0]
-  console.log(user)
+  const perguntas = await fetchPerguntasByIdUser({ userId: userId! });
+  const user = users[0];
 
-  return <UsuarioClientPage user={user} />;
+  return <UsuarioClientPage user={user} perguntas={perguntas} />;
 }

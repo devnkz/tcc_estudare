@@ -15,7 +15,6 @@ export default function NotFoundPage() {
 
   return (
     <div className="w-full h-screen bg-white flex flex-col justify-between items-center">
-      <HeaderDesktopNaoAutenticado />
       <main className="p-9 w-full lg:max-w-[1300px] flex flex-col lg:flex-row justify-between items-center h-dvh gap-10 mt-10 mb-25">
         {/* Texto */}
         <div className="w-full lg:w-3/5 flex flex-col items-start gap-4">

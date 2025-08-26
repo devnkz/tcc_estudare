@@ -1,8 +1,11 @@
 "use client";
 
+import { useState, useRef } from "react";
 import { MagnifyingGlassIcon } from "@heroicons/react/16/solid";
 import { ChevronsUpDown, Check } from "lucide-react";
 import { CreateRespostaData } from "@/types/resposta";
+import { useCreateResposta } from "@/hooks/resposta/useCreate";
+import { useUser } from "@/context/userContext";
 import {
   Command,
   CommandEmpty,
@@ -17,15 +20,13 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
-import { useState, useRef } from "react";
-import { useCreateResposta } from "@/hooks/resposta/useCreate";
-import { useUser } from "@/context/userContext";
+import { user } from "@heroui/react";
 
 function getTypeFromData(items: any[]): "componente" | "curso" {
-  if (!items || items.length === 0) return "componente"; // padrão
+  if (!items || items.length === 0) return "componente";
   if ("nomeComponente" in items[0]) return "componente";
   if ("nomeCurso" in items[0]) return "curso";
-  return "componente"; // fallback
+  return "componente";
 }
 
 function normalizeItems(data: any[], type: "componente" | "curso") {
@@ -36,10 +37,7 @@ function normalizeItems(data: any[], type: "componente" | "curso") {
     }));
   }
   if (type === "curso") {
-    return data.map((item) => ({
-      id: String(item.id),
-      label: item.nomeCurso,
-    }));
+    return data.map((item) => ({ id: String(item.id), label: item.nomeCurso }));
   }
   return [];
 }
@@ -56,6 +54,7 @@ function ComboboxFilter({
   placeholder: string;
 }) {
   const [open, setOpen] = useState(false);
+
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
@@ -67,6 +66,7 @@ function ComboboxFilter({
           <ChevronsUpDown className="opacity-50 ml-2" />
         </button>
       </PopoverTrigger>
+
       <PopoverContent className="w-[200px] p-0">
         <Command>
           <CommandInput
@@ -114,17 +114,20 @@ export function PerguntasClientPage({
   respostas: any[];
 }) {
   const { userId } = useUser();
+  const createResposta = useCreateResposta();
 
+  // Estados para filtros
   const [search, setSearch] = useState("");
   const [componente, setComponente] = useState("");
   const [curso, setCurso] = useState("");
   const [grupo, setGrupo] = useState("");
   const [filtroStatus, setFiltroStatus] = useState("Todas");
+  const [verMinhasPerguntas, setVerMinhasPerguntas] = useState(false);
+
+  // Estados para respostas
   const [responderId, setResponderId] = useState<string | null>(null);
   const [resposta, setResposta] = useState("");
   const respostaInputRef = useRef<HTMLInputElement>(null);
-
-  const createResposta = useCreateResposta();
 
   const handleResponder = (perguntaId: string) => {
     setResponderId(perguntaId);
@@ -140,11 +143,7 @@ export function PerguntasClientPage({
     resposta,
   }: CreateRespostaData) => {
     createResposta.mutate(
-      {
-        fkIdPergunta,
-        fkIdUsuario,
-        resposta,
-      },
+      { fkIdPergunta, fkIdUsuario, resposta },
       {
         onSuccess: () => {
           setResponderId(null);
@@ -156,50 +155,46 @@ export function PerguntasClientPage({
 
   const filtros: string[] = ["Todas", "Respondidas", "Não Respondidas"];
 
-  const perguntasFiltradas = perguntas.filter((pergunta) => {
-    const respostasFiltradas = respostas.filter(
-      (r) => r.fkIdPergunta === pergunta.id
-    );
-    const temResposta = respostasFiltradas.length > 0;
+  const perguntasFiltradas = perguntas
+    .filter((pergunta) => verMinhasPerguntas || pergunta.usuario.id !== userId)
+    .filter((pergunta) => {
+      const respostasFiltradas = respostas.filter(
+        (r) => r.fkIdPergunta === pergunta.id
+      );
+      const temResposta = respostasFiltradas.length > 0;
 
-    // Filtro por status
-    if (filtroStatus === "Respondidas" && !temResposta) return false;
-    if (filtroStatus === "Não Respondidas" && temResposta) return false;
+      if (filtroStatus === "Respondidas" && !temResposta) return false;
+      if (filtroStatus === "Não Respondidas" && temResposta) return false;
 
-    // Filtro por componente
-    if (componente && pergunta.idComponente !== Number(componente))
-      return false;
-
-    // Filtro por curso
-    if (curso && pergunta.idCurso !== Number(curso)) return false;
-
-    // Filtro por data (grupo)
-    if (grupo) {
-      const dataPergunta = new Date(pergunta.criadaEm)
-        .toISOString()
-        .split("T")[0];
-      if (dataPergunta !== grupo) return false;
-    }
-
-    // Filtro por busca
-    if (search) {
-      const termo = search.toLowerCase();
-      if (
-        !pergunta.pergunta.toLowerCase().includes(termo) &&
-        !pergunta.materia.toLowerCase().includes(termo)
-      ) {
+      if (componente && pergunta.idComponente !== Number(componente))
         return false;
-      }
-    }
+      if (curso && pergunta.idCurso !== Number(curso)) return false;
 
-    return true;
-  });
+      if (grupo) {
+        const dataPergunta = new Date(pergunta.criadaEm)
+          .toISOString()
+          .split("T")[0];
+        if (dataPergunta !== grupo) return false;
+      }
+
+      if (search) {
+        const termo = search.toLowerCase();
+        if (
+          !pergunta.pergunta.toLowerCase().includes(termo) &&
+          !pergunta.materia.toLowerCase().includes(termo)
+        )
+          return false;
+      }
+
+      return true;
+    });
 
   return (
     <div
       id="respondaPerguntasPage"
       className="w-full lg:p-4 flex flex-col gap-10"
     >
+      {/* FILTROS */}
       <div className="flex flex-col gap-4">
         <div className="flex flex-col gap-2 lg:flex-row lg:gap-4">
           <ComboboxFilter
@@ -228,7 +223,23 @@ export function PerguntasClientPage({
               onChange={(e) => setGrupo(e.target.value)}
             />
           </div>
+
+          {/* Checkbox Ver minhas perguntas */}
+          <label
+            className="flex items-center bg-purple-600 text-white p-2 rounded-sm gap-2 cursor-pointer select-none
+          hover:bg-purple-900 transition-colors duration-300"
+          >
+            <input
+              type="checkbox"
+              className="w-4 h-4 accent-purple-600"
+              checked={verMinhasPerguntas}
+              onChange={(e) => setVerMinhasPerguntas(e.target.checked)}
+            />
+            Ver minhas perguntas
+          </label>
         </div>
+
+        {/* BUSCA */}
         <div className="flex-1 w-full">
           <div className="flex items-center gap-2 p-2 rounded-lg border-1 border-transparent bg-zinc-100 text-black hover:border-purple-600 hover:bg-zinc-200 hover:-translate-y-0.5 transition-all duration-300 cursor-pointer">
             <MagnifyingGlassIcon className="h-5 w-5" />
@@ -242,6 +253,7 @@ export function PerguntasClientPage({
         </div>
       </div>
 
+      {/* PERGUNTAS */}
       {perguntasFiltradas.length > 0 ? (
         perguntasFiltradas.map((pergunta, index) => {
           const respostasFiltradas = respostas.filter(
@@ -285,13 +297,20 @@ export function PerguntasClientPage({
               <p className="bg-white p-2 rounded-md shadow-lg text-sm lg:text-base">
                 {pergunta.pergunta}
               </p>
+
               <div className="flex items-center gap-2">
-                <button
-                  className="p-2 rounded-lg bg-purple-600 text-white text-xs lg:text-base hover:bg-purple-900 transition-colors duration-300 cursor-pointer"
-                  onClick={() => handleResponder(pergunta.id)}
-                >
-                  Responder
-                </button>
+                {userId !== pergunta.usuario.id ? (
+                  <button
+                    className="p-2 rounded-lg bg-purple-600 text-white text-xs lg:text-base hover:bg-purple-900 transition-colors duration-300 cursor-pointer"
+                    onClick={() => handleResponder(pergunta.id)}
+                  >
+                    Responder
+                  </button>
+                ) : (
+                  <span className="text-purple-600 text-sm">
+                    Não é possível responder sua própria pergunta
+                  </span>
+                )}
                 <button className="p-2 rounded-lg bg-white text-black text-xs lg:text-base">
                   Notificar respostas
                 </button>
@@ -324,7 +343,7 @@ export function PerguntasClientPage({
                         handleEnviarResposta({
                           fkIdPergunta: pergunta.id,
                           fkIdUsuario: userId!,
-                          resposta: resposta,
+                          resposta,
                         })
                       }
                       disabled={createResposta.isPending}

@@ -40,7 +40,7 @@ export default function AskQuestionPage({
   const { mutate, isPending } = useCreatePergunta();
 
   const onSubmit = (data: CreatePerguntaData) => {
-    const payload = { ...data, fkIdUsuario: userId || ""};  ;
+    const payload = { ...data, fkIdUsuario: userId || "" };
     console.log("Dados enviados ao backend:", payload);
     mutate(payload);
   };
@@ -121,7 +121,7 @@ export default function AskQuestionPage({
 
               {/* BOTÃO */}
               <div className="mt-6 flex flex-col gap-4">
-                <div className="transform transition-all duration-300 active:scale-95">
+                <div className="transform transition-all duration-300">
                   <button
                     type="submit"
                     disabled={isPending}

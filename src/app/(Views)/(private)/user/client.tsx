@@ -5,6 +5,7 @@ import { LuFiles } from "react-icons/lu";
 import { useRouter } from "next/navigation";
 import { UpdateUserModal } from "./updateUserModal";
 import { useState } from "react";
+import { deleteToken } from "@/lib/deleteToken";
 
 export default function UsuarioClientPage({
   user,
@@ -87,6 +88,14 @@ export default function UsuarioClientPage({
                 Você ainda não fez nenhuma pergunta.
               </h2>
             )}
+
+            <button
+              onClick={() => {
+                deleteToken("token");
+              }}
+            >
+              Sair
+            </button>
           </div>
         </div>
       </div>

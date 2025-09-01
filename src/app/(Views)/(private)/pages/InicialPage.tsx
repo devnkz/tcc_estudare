@@ -30,7 +30,7 @@ export function InicialPage() {
             </span>
           </button>
           <button
-            onClick={() => router.push("/Usuario")}
+            onClick={() => router.push("/user")}
             className="rounded-full bg-zinc-200 p-2 relative cursor-pointer hover:-translate-y-1 hover:bg-purple-600 hover:text-white transition-all duration-300 group"
           >
             <UserIcon className="h-6 w-6 text-black group-hover:text-white" />

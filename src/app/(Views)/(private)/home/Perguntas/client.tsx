@@ -1,11 +1,17 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useMemo } from "react";
 import { MagnifyingGlassIcon } from "@heroicons/react/16/solid";
 import { ChevronsUpDown, Check } from "lucide-react";
 import { CreateRespostaData } from "@/types/resposta";
 import { useCreateResposta } from "@/hooks/resposta/useCreate";
 import { useUser } from "@/context/userContext";
+
+import { useListPerguntas } from "@/hooks/pergunta/useList";
+import { useListComponentes } from "@/hooks/componente/useList";
+import { useListCursos } from "@/hooks/curso/useList";
+import { useListRespostas } from "@/hooks/resposta/useList";
+
 import {
   Command,
   CommandEmpty,
@@ -20,7 +26,6 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
-import { user } from "@heroui/react";
 
 function getTypeFromData(items: any[]): "componente" | "curso" {
   if (!items || items.length === 0) return "componente";
@@ -30,15 +35,13 @@ function getTypeFromData(items: any[]): "componente" | "curso" {
 }
 
 function normalizeItems(data: any[], type: "componente" | "curso") {
-  if (type === "componente") {
+  if (type === "componente")
     return data.map((item) => ({
       id: String(item.id),
       label: item.nomeComponente,
     }));
-  }
-  if (type === "curso") {
+  if (type === "curso")
     return data.map((item) => ({ id: String(item.id), label: item.nomeCurso }));
-  }
   return [];
 }
 
@@ -59,14 +62,13 @@ function ComboboxFilter({
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
         <button
-          className="w-[200px] bg-zinc-100 rounded-md p-2 flex justify-between border-transparent border-1 items-center
-        hover:border-purple-600 hover:bg-zinc-200 hover:-translate-y-0.5 transition-all duration-300 cursor-pointer"
+          className="w-[200px] bg-zinc-100 rounded-md p-2 flex justify-between items-center
+            hover:border-purple-600 hover:bg-zinc-200 hover:-translate-y-0.5 transition-all duration-300 border border-transparent cursor-pointer"
         >
           {value ? items.find((item) => item.id === value)?.label : placeholder}
           <ChevronsUpDown className="opacity-50 ml-2" />
         </button>
       </PopoverTrigger>
-
       <PopoverContent className="w-[200px] p-0">
         <Command>
           <CommandInput
@@ -103,20 +105,32 @@ function ComboboxFilter({
 }
 
 export function PerguntasClientPage({
-  perguntas,
-  componentes,
-  cursos,
-  respostas,
+  initialPerguntas,
+  initialComponentes,
+  initialCursos,
+  initialRespostas,
 }: {
-  perguntas: any[];
-  componentes: any[];
-  cursos: any[];
-  respostas: any[];
+  initialPerguntas: any[];
+  initialComponentes: any[];
+  initialCursos: any[];
+  initialRespostas: any[];
 }) {
   const { userId } = useUser();
   const createResposta = useCreateResposta();
+  const respostaInputRef = useRef<HTMLInputElement>(null);
 
-  // Estados para filtros
+  // Queries com React Query
+  const perguntasQuery = useListPerguntas(initialPerguntas);
+  const componentesQuery = useListComponentes(initialComponentes);
+  const cursosQuery = useListCursos(initialCursos);
+  const respostasQuery = useListRespostas(initialRespostas);
+
+  const perguntas = perguntasQuery.data || [];
+  const componentes = componentesQuery.data || [];
+  const cursos = cursosQuery.data || [];
+  const respostas = respostasQuery.data || [];
+
+  // Estados de filtros
   const [search, setSearch] = useState("");
   const [componente, setComponente] = useState("");
   const [curso, setCurso] = useState("");
@@ -124,17 +138,14 @@ export function PerguntasClientPage({
   const [filtroStatus, setFiltroStatus] = useState("Todas");
   const [verMinhasPerguntas, setVerMinhasPerguntas] = useState(false);
 
-  // Estados para respostas
+  // Estados para responder
   const [responderId, setResponderId] = useState<string | null>(null);
   const [resposta, setResposta] = useState("");
-  const respostaInputRef = useRef<HTMLInputElement>(null);
 
   const handleResponder = (perguntaId: string) => {
     setResponderId(perguntaId);
     setResposta("");
-    setTimeout(() => {
-      respostaInputRef.current?.focus();
-    }, 100);
+    setTimeout(() => respostaInputRef.current?.focus(), 100);
   };
 
   const handleEnviarResposta = ({
@@ -153,15 +164,16 @@ export function PerguntasClientPage({
     );
   };
 
-  const filtros: string[] = ["Todas", "Respondidas", "Não Respondidas"];
+  const filtros = ["Todas", "Respondidas", "Não Respondidas"];
 
-  const perguntasFiltradas = perguntas
-    .filter((pergunta) => verMinhasPerguntas || pergunta.usuario.id !== userId)
-    .filter((pergunta) => {
-      const respostasFiltradas = respostas.filter(
+  const perguntasFiltradas = useMemo(() => {
+    return perguntas.filter((pergunta) => {
+      if (!verMinhasPerguntas && pergunta.usuario.id === userId) return false;
+
+      const respostasPergunta = respostas.filter(
         (r) => r.fkIdPergunta === pergunta.id
       );
-      const temResposta = respostasFiltradas.length > 0;
+      const temResposta = respostasPergunta.length > 0;
 
       if (filtroStatus === "Respondidas" && !temResposta) return false;
       if (filtroStatus === "Não Respondidas" && temResposta) return false;
@@ -188,12 +200,20 @@ export function PerguntasClientPage({
 
       return true;
     });
+  }, [
+    perguntas,
+    respostas,
+    search,
+    componente,
+    curso,
+    grupo,
+    filtroStatus,
+    verMinhasPerguntas,
+    userId,
+  ]);
 
   return (
-    <div
-      id="respondaPerguntasPage"
-      className="w-full lg:p-4 flex flex-col gap-10"
-    >
+    <div className="w-full lg:p-4 flex flex-col gap-10">
       {/* FILTROS */}
       <div className="flex flex-col gap-4">
         <div className="flex flex-col gap-2 lg:flex-row lg:gap-4">
@@ -223,12 +243,7 @@ export function PerguntasClientPage({
               onChange={(e) => setGrupo(e.target.value)}
             />
           </div>
-
-          {/* Checkbox Ver minhas perguntas */}
-          <label
-            className="flex items-center bg-purple-600 text-white p-2 rounded-sm gap-2 cursor-pointer select-none
-          hover:bg-purple-900 transition-colors duration-300"
-          >
+          <label className="flex items-center bg-purple-600 text-white p-2 rounded-sm gap-2 cursor-pointer select-none hover:bg-purple-900 transition-colors duration-300">
             <input
               type="checkbox"
               className="w-4 h-4 accent-purple-600"
@@ -241,7 +256,7 @@ export function PerguntasClientPage({
 
         {/* BUSCA */}
         <div className="flex-1 w-full">
-          <div className="flex items-center gap-2 p-2 rounded-lg border-1 border-transparent bg-zinc-100 text-black hover:border-purple-600 hover:bg-zinc-200 hover:-translate-y-0.5 transition-all duration-300 cursor-pointer">
+          <div className="flex items-center gap-2 p-2 rounded-lg border border-transparent bg-zinc-100 text-black hover:border-purple-600 hover:bg-zinc-200 hover:-translate-y-0.5 transition-all duration-300">
             <MagnifyingGlassIcon className="h-5 w-5" />
             <input
               value={search}
@@ -255,21 +270,21 @@ export function PerguntasClientPage({
 
       {/* PERGUNTAS */}
       {perguntasFiltradas.length > 0 ? (
-        perguntasFiltradas.map((pergunta, index) => {
-          const respostasFiltradas = respostas.filter(
+        perguntasFiltradas.map((pergunta) => {
+          const respostasPergunta = respostas.filter(
             (r) => r.fkIdPergunta === pergunta.id
           );
-          const temResposta = respostasFiltradas.length > 0;
+          const temResposta = respostasPergunta.length > 0;
 
           return (
             <div
-              key={index}
+              key={pergunta.id}
               className={`p-2 w-full shadow-md rounded-lg flex flex-col gap-2 text-black hover:-translate-y-1 transition-all duration-300
-                ${
-                  temResposta
-                    ? "bg-green-100 border-green-400"
-                    : "bg-zinc-200 border-transparent"
-                } border-2`}
+              ${
+                temResposta
+                  ? "bg-green-100 border-green-400"
+                  : "bg-zinc-200 border-transparent"
+              } border-2`}
             >
               <div className="w-full flex justify-between items-center">
                 <h2 className="font-bold">
@@ -301,7 +316,7 @@ export function PerguntasClientPage({
               <div className="flex items-center gap-2">
                 {userId !== pergunta.usuario.id ? (
                   <button
-                    className="p-2 rounded-lg bg-purple-600 text-white text-xs lg:text-base hover:bg-purple-900 transition-colors duration-300 cursor-pointer"
+                    className="p-2 rounded-lg bg-purple-600 text-white text-xs lg:text-base hover:bg-purple-900 transition-colors duration-300"
                     onClick={() => handleResponder(pergunta.id)}
                   >
                     Responder
@@ -319,8 +334,8 @@ export function PerguntasClientPage({
               {temResposta && (
                 <div className="mt-4">
                   <h3 className="font-bold mb-2">Respostas:</h3>
-                  {respostasFiltradas.map((resposta, idx) => (
-                    <div key={idx}>{resposta.resposta}</div>
+                  {respostasPergunta.map((r) => (
+                    <div key={r.id}>{r.resposta}</div>
                   ))}
                 </div>
               )}
@@ -338,7 +353,7 @@ export function PerguntasClientPage({
                   />
                   <div className="flex gap-2">
                     <button
-                      className="p-2 rounded-lg bg-purple-600 text-white text-xs lg:text-base hover:bg-purple-900 transition-colors duration-300 cursor-pointer"
+                      className="p-2 rounded-lg bg-purple-600 text-white text-xs lg:text-base hover:bg-purple-900 transition-colors duration-300"
                       onClick={() =>
                         handleEnviarResposta({
                           fkIdPergunta: pergunta.id,
@@ -352,7 +367,6 @@ export function PerguntasClientPage({
                         ? "Enviando..."
                         : "Enviar resposta"}
                     </button>
-
                     <button
                       className="p-2 rounded-lg bg-zinc-400 text-white text-xs lg:text-base"
                       onClick={() => setResponderId(null)}
@@ -363,7 +377,8 @@ export function PerguntasClientPage({
                   </div>
                   {createResposta.isError && (
                     <span className="text-red-600 text-xs">
-                      Erro ao enviar resposta. Tente novamente.
+                      Erro ao enviar resposta.{" "}
+                      {createResposta.error?.message || ""}
                     </span>
                   )}
                 </div>

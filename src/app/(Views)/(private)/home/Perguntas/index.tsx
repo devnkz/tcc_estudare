@@ -14,10 +14,10 @@ export default async function PerguntasIndex() {
 
   return (
     <PerguntasClientPage
-      perguntas={perguntas}
-      componentes={componentes}
-      cursos={cursos}
-      respostas={respostas}
+      initialPerguntas={perguntas}
+      initialComponentes={componentes}
+      initialCursos={cursos}
+      initialRespostas={respostas}
     />
   );
 }

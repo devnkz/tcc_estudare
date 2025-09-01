@@ -46,25 +46,27 @@ export function middleware(request: NextRequest) {
     }
 
     if (authToken && !publicRoute) {
-        function isTokenExpired(token: string): boolean {
-            try {
-                const decoded = jwtDecode<JWTPayload>(token);
-                const currentTime = Math.floor(Date.now() / 1000);
-                return decoded.exp < currentTime;
-            } catch (error) {
-                return true;
-            }
+    function isTokenExpired(token: string): boolean {
+        try {
+            const decoded = jwtDecode<JWTPayload>(token);
+            const currentTime = Math.floor(Date.now() / 1000);
+            return decoded.exp < currentTime;
+        } catch (error) {
+            return true;
         }
-
-
-        if (isTokenExpired(authToken.value)) {
-             const redirectUrl = request.nextUrl.clone();
-             redirectUrl.pathname = REDIRECT_NOT_AUTENTICATED_ROUTE;
-             return NextResponse.redirect(redirectUrl);
-         }
-
-        return NextResponse.next();
     }
+
+    if (isTokenExpired(authToken.value)) {
+        const redirectUrl = request.nextUrl.clone();
+        redirectUrl.pathname = REDIRECT_NOT_AUTENTICATED_ROUTE;
+        const response = NextResponse.redirect(redirectUrl);
+        response.cookies.set("token", "", { maxAge: -1 });
+        return response;
+    }
+
+    return NextResponse.next();
+}
+
 }
 
 export const config: MiddlewareConfig = {

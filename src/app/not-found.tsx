@@ -31,7 +31,7 @@ export default function NotFoundPage() {
 
           <div className="flex gap-3 mt-4">
             <button
-              onClick={() => router.push("/")}
+              onClick={() => router.push("/home")}
               className="bg-purple-500 p-4 rounded-md text-white font-bold flex gap-2 justify-center items-center hover:bg-purple-700 transition-all duration-500 cursor-pointer"
             >
               <ArrowLeftIcon className="h-5 w-5" />

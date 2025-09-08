@@ -1,13 +1,20 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { createGrupo } from "@/services/grupoService";
+import { CreateGrupoData, Grupo } from "@/types/grupo";
 
 export function useCreateGrupo() {
   const queryClient = useQueryClient();
 
-  return useMutation({
+  const mutation = useMutation<Grupo, Error, CreateGrupoData>({
     mutationFn: createGrupo,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["grupos"] });
     },
+    onError: (error, variables) => {
+      console.error("Erro ao criar grupo:", error);
+      console.log("Dados enviados:", variables);
+    },
   });
+
+  return mutation;
 }

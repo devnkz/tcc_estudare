@@ -1,0 +1,145 @@
+"use client";
+import React, { useState } from "react";
+import { useCreateGrupo } from "@/hooks/grupo/useCreate";
+import { CreateGrupoData, Grupo } from "@/types/grupo";
+import { User } from "@/types/user";
+import { Componente } from "@/types/componente";
+import { Input } from "@/components/ui/input";
+import { MultiSelectCombobox } from "@/components/ui/comboxFilter";
+
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+
+interface GroupsPageProps {
+  users: User[];
+  componentes: Componente[];
+  grupos: Grupo[];
+}
+
+const GroupsPage: React.FC<GroupsPageProps> = ({
+  users,
+  componentes,
+  grupos,
+}) => {
+  const [open, setOpen] = useState(false);
+  const [selectedUserIds, setSelectedUserIds] = useState<string[]>([]);
+  const [selectedComponentId, setSelectedComponentId] = useState<string>("");
+  const [nomeGrupo, setNomeGrupo] = useState("");
+
+  const createGrupo = useCreateGrupo();
+
+  const handleCreateGroup = () => {
+    if (!nomeGrupo) return;
+
+    const data: CreateGrupoData = {
+      nomeGrupo,
+      membrosIds: selectedUserIds,
+      fkIdComponente: selectedComponentId,
+    };
+
+    createGrupo.mutate(data, {
+      onSuccess: () => {
+        console.log("Grupo criado com sucesso!", data);
+        setSelectedUserIds([]);
+        setSelectedComponentId("");
+        setNomeGrupo("");
+        setOpen(false);
+      },
+      onError: (error) => {
+        console.error("Erro ao criar grupo:", error);
+        console.log("Dados enviados:", data);
+      },
+    });
+  };
+
+  return (
+    <div className="py-6 md:w-3/4 lg:w-2/3 min-h-screen max-w-[1200px] flex flex-col">
+      <div className="flex justify-between items-center mb-6">
+        <div className="space-y-4">
+          <h1 className="text-6xl font-bold bg-gradient-to-r bg-clip-text text-transparent from-purple-500 to-zinc-900">
+            GRUPOS
+          </h1>
+          <h2 className="text-base text-zinc-600 w-3/6">
+            Participe de conversas exclusivas com seus colegas em grupos
+            fechados e compartilhe ideias, dúvidas e conhecimentos com mais
+            liberdade e privacidade!
+          </h2>
+        </div>
+
+        <Dialog open={open} onOpenChange={setOpen}>
+          <DialogTrigger asChild>
+            <button className="w-[200px] bg-purple-600 p-3 rounded-lg text-white cursor-pointer hover:-translate-y-1 transition-all duration-300">
+              Criar novo grupo
+            </button>
+          </DialogTrigger>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Crie seu grupo com seus colegas</DialogTitle>
+            </DialogHeader>
+
+            <div className="grid gap-4 py-4">
+              <Input
+                label="Nome do grupo"
+                placeholder="Nome do grupo"
+                value={nomeGrupo}
+                onChange={(e) => setNomeGrupo(e.target.value)}
+              />
+
+              <MultiSelectCombobox
+                items={users}
+                selectedIds={selectedUserIds}
+                setSelectedIds={setSelectedUserIds}
+                placeholder="Selecionar membros"
+                getLabel={(user) => user.name}
+              />
+
+              <MultiSelectCombobox
+                items={componentes}
+                selectedIds={selectedComponentId ? [selectedComponentId] : []}
+                setSelectedIds={(ids) => setSelectedComponentId(ids[0] || "")}
+                placeholder="Selecionar componente"
+                getLabel={(c) => c.nomeComponente}
+              />
+            </div>
+
+            <DialogFooter>
+              <button
+                className="p-2 rounded-lg bg-purple-600 text-white hover:bg-purple-900 transition-colors duration-300"
+                onClick={handleCreateGroup}
+                disabled={createGrupo.isPending}
+              >
+                {createGrupo.isPending ? "Criando..." : "Criar Grupo"}
+              </button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {grupos.map((group) => (
+          <div key={group.id}>
+            <Card className="hover:shadow-lg hover:-translate-y-1 hover:bg-purple-50 transition-all duration-300 cursor-pointer">
+              <CardHeader>
+                <CardTitle>{group.nomeGrupo}</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm">Membros {group.membrosIds}</span>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
+
+export default GroupsPage;

@@ -4,6 +4,7 @@ import { UserIcon, PencilIcon } from "@heroicons/react/16/solid";
 import { LuFiles } from "react-icons/lu";
 import { useRouter } from "next/navigation";
 import { UpdateUserModal } from "./updateUserModal";
+import { UpdateUserFotoModal } from "./fotoPerfilUser/index";
 import { useState } from "react";
 import { deleteToken } from "@/lib/deleteToken";
 
@@ -17,13 +18,31 @@ export default function UsuarioClientPage({
   const router = useRouter();
   const cores = ["bg-blue-600", "bg-green-600", "bg-red-600", "bg-yellow-600"];
 
-  const [openDialog, setOpenDialog] = useState<null | "usuario">(null);
+  const [openDialog, setOpenDialog] = useState<null | "usuario" | "foto">(null);
 
   return (
     <div className="w-full flex justify-center bg-white p-2">
       <div className="w-[600px] flex flex-col justify-center items-center py-14 space-y-2 relative">
         <div className="space-y-2 w-full flex flex-col justify-center items-center">
-          <UserIcon className="h-20 w-20 p-4 bg-zinc-300 rounded-full" />
+          {/* Foto do usuário clicável */}
+          <div
+            className="relative cursor-pointer"
+            onClick={() => setOpenDialog("foto")}
+          >
+            {user.fotoPerfil ? (
+              <img
+                src={user.fotoPerfil}
+                alt="Foto do usuário"
+                className="h-20 w-20 rounded-full object-cover border-2 border-zinc-300"
+              />
+            ) : (
+              <UserIcon className="h-20 w-20 p-4 bg-zinc-300 rounded-full" />
+            )}
+            <span className="absolute bottom-0 right-0 bg-purple-600 p-1 rounded-full text-white text-xs">
+              ✏️
+            </span>
+          </div>
+
           <h2 className="text-sm text-zinc-600">
             Estudante desde{" "}
             {new Date(user.createdAt).toLocaleDateString("pt-BR")}
@@ -100,8 +119,14 @@ export default function UsuarioClientPage({
         </div>
       </div>
 
+      {/* Modais */}
       <UpdateUserModal
-        openDialog={openDialog}
+        openDialog={openDialog === "usuario" ? "usuario" : null}
+        setOpenDialog={setOpenDialog}
+        user={user}
+      />
+      <UpdateUserFotoModal
+        openDialog={openDialog === "foto" ? "foto" : null}
         setOpenDialog={setOpenDialog}
         user={user}
       />

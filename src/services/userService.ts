@@ -1,8 +1,6 @@
 import { User, CreateUserData, UpdateUserData } from "../types/user";
 import axios from "axios";
 
-
-
 // Busca todos os usuários
 export async function fetchUsers(): Promise<User[]> {
   const res = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/user`);
@@ -18,6 +16,14 @@ export async function fetchUsersId(id : string | undefined): Promise<User[]> {
 // Cria um novo usuário
 export async function createUser(data: CreateUserData): Promise<User> {
   const res = await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/user`, data);
+  return res.data;
+}
+
+// Cria ou atualiza a foto do usuário
+export async function createFotoUser(formData: FormData, id: string): Promise<User> {
+  const res = await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/user/${id}/foto`, formData, {
+    headers: { "Content-Type": "multipart/form-data" },
+  });
   return res.data;
 }
 

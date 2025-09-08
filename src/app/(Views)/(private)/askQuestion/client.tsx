@@ -16,6 +16,7 @@ import { Componente } from "@/types/componente";
 import { useCreatePergunta } from "@/hooks/pergunta/useCreate";
 import { useForm, Controller } from "react-hook-form";
 import { useUser } from "@/context/userContext";
+import { useRouter } from "next/navigation";
 
 export default function AskQuestionPage({
   componentes,
@@ -28,6 +29,7 @@ export default function AskQuestionPage({
     { text: "Adicione detalhes relevantes que possam ajudar a responder" },
   ];
 
+  const router = useRouter();
   const { userId } = useUser();
 
   const {
@@ -41,8 +43,11 @@ export default function AskQuestionPage({
 
   const onSubmit = (data: CreatePerguntaData) => {
     const payload = { ...data, fkIdUsuario: userId || "" };
-    console.log("Dados enviados ao backend:", payload);
-    mutate(payload);
+    mutate(payload, {
+      onSuccess: () => {
+        router.push("/home");
+      },
+    });
   };
 
   return (

@@ -30,7 +30,6 @@ export function UpdateUserModal({
       name: user.name,
       apelido: user.apelido,
       email: user.email,
-      senha: user.senha,
     },
   });
 
@@ -85,18 +84,6 @@ export function UpdateUserModal({
                 {...field}
                 label="Seu email"
                 placeholder="Digitar seu novo email"
-                podeMostrarSenha={false}
-              />
-            )}
-          />
-          <Controller
-            name="senha"
-            control={control}
-            render={({ field }) => (
-              <Input
-                {...field}
-                label="Sua senha"
-                placeholder="Digitar sua nova senha"
                 podeMostrarSenha={false}
               />
             )}

@@ -6,7 +6,8 @@ import { User } from "@/types/user";
 import { Componente } from "@/types/componente";
 import { Input } from "@/components/ui/input";
 import { MultiSelectCombobox } from "@/components/ui/comboxFilter";
-
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { useRouter } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Dialog,
@@ -59,6 +60,8 @@ const GroupsPage: React.FC<GroupsPageProps> = ({
     });
   };
 
+  const router = useRouter();
+
   return (
     <div className="py-6 md:w-3/4 lg:w-2/3 min-h-screen max-w-[1200px] flex flex-col">
       <div className="flex justify-between items-center mb-6">
@@ -105,7 +108,7 @@ const GroupsPage: React.FC<GroupsPageProps> = ({
                 selectedIds={selectedComponentId ? [selectedComponentId] : []}
                 setSelectedIds={(ids) => setSelectedComponentId(ids[0] || "")}
                 placeholder="Selecionar componente"
-                getLabel={(c) => c.nomeComponente}
+                getLabel={(c) => c.nome}
               />
             </div>
 
@@ -125,13 +128,32 @@ const GroupsPage: React.FC<GroupsPageProps> = ({
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {grupos.map((group) => (
           <div key={group.id}>
-            <Card className="hover:shadow-lg hover:-translate-y-1 hover:bg-purple-50 transition-all duration-300 cursor-pointer">
+            <Card
+              className="hover:shadow-lg hover:-translate-y-1 hover:bg-purple-50 transition-all duration-300 cursor-pointer"
+              onClick={() => router.push(`/groups/groupDetail/${group.id}`)}
+            >
               <CardHeader>
                 <CardTitle>{group.nomeGrupo}</CardTitle>
+                <h2 className="text-sm text-zinc-600">
+                  {group.componente?.nome}
+                </h2>
               </CardHeader>
               <CardContent>
-                <div className="flex items-center justify-between">
-                  <span className="text-sm">Membros {group.membrosIds}</span>
+                <div className="flex items-center font-bold text-sm justify-between">
+                  Membros{" "}
+                  <span className="*:data-[slot=avatar]:ring-background flex -space-x-2 *:data-[slot=avatar]:ring-2 *:data-[slot=avatar]:grayscale">
+                    {group.membros?.map((membro) => (
+                      <Avatar key={membro.id} className="w-8 h-8">
+                        <AvatarImage
+                          src={
+                            membro.user.fotoPerfil ??
+                            "/imagens/default-avatar.png"
+                          }
+                        />
+                        <AvatarFallback>CN</AvatarFallback>
+                      </Avatar>
+                    ))}
+                  </span>
                 </div>
               </CardContent>
             </Card>

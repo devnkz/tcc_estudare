@@ -1,7 +1,7 @@
 Front-end:
 
 NEXT_PUBLIC_API_URL=http://localhost:3333
-JWT_SECRET=7qRO7AZLTpUi1pnoPSAo2nBFJBlDPn6S0P4iQw9gDuzujJDMJ9
+JWT_SECRET=meuSegredo123@!
 
 Set-ExecutionPolicy Unrestricted
 
@@ -9,12 +9,11 @@ Afazeres:
 
 
 
-*PRIORIDADE - USUARIO PODER COLOCAR FOTO DE PERFIL. NECESSARIO PARA TERMINAR OS GRUPOS* //90% completo, falta atualizar dinamicamente
+*PRIORIDADE - USUARIO PODER COLOCAR FOTO DE PERFIL. NECESSARIO PARA TERMINAR OS GRUPOS* //100% completo, atualizar dinamicamente
 
 
 
-1 - Conseguir criar grupos // Ja é possivel criar um grupo mas ainda precisa de ajustes.
-
+1 - Conseguir criar grupos // Ja é possivel criar um grupo e acessa-lo
 
 
 2 - Criar hierarquia, separar alunos de professores e administradores.
@@ -26,6 +25,8 @@ Afazeres:
 Back-end:
 
 DATABASE_URL="mysql://root:@localhost:3306/bd_tcc"
-JWT_SECRET=7qRO7AZLTpUi1pnoPSAo2nBFJBlDPn6S0P4iQw9gDuzujJDMJ9
+JWT_SECRET=meuSegredo123@!
 
 importar o banco de dados esta nos arquivos do backend
+
+acmitech.com.br atividade alexandre

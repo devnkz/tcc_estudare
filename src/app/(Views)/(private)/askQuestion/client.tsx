@@ -42,7 +42,7 @@ export default function AskQuestionPage({
   const { mutate, isPending } = useCreatePergunta();
 
   const onSubmit = (data: CreatePerguntaData) => {
-    const payload = { ...data, fkIdUsuario: userId || "" };
+    const payload = { ...data, userId: userId || "" };
     mutate(payload, {
       onSuccess: () => {
         router.push("/home");
@@ -74,7 +74,7 @@ export default function AskQuestionPage({
                 </span>
                 <Controller
                   control={control}
-                  name="fkIdComponent"
+                  name="fkIdComponente"
                   rules={{ required: "Selecione um componente" }}
                   render={({ field }) => (
                     <Select onValueChange={field.onChange} value={field.value}>
@@ -90,7 +90,7 @@ export default function AskQuestionPage({
                               value={String(componente.id)}
                               className="hover:bg-purple-100 hover:text-purple-700 transition-colors duration-200"
                             >
-                              {componente.nomeComponente}
+                              {componente.nome}
                             </SelectItem>
                           ))}
                         </SelectGroup>
@@ -98,9 +98,9 @@ export default function AskQuestionPage({
                     </Select>
                   )}
                 />
-                {errors.fkIdComponent && (
+                {errors.fkIdComponente && (
                   <p className="text-red-600 text-sm mt-1">
-                    {errors.fkIdComponent.message}
+                    {errors.fkIdComponente.message}
                   </p>
                 )}
               </div>
@@ -111,15 +111,15 @@ export default function AskQuestionPage({
                   Sua pergunta
                 </span>
                 <textarea
-                  {...register("pergunta", {
+                  {...register("conteudo", {
                     required: "A pergunta é obrigatória",
                   })}
                   className="w-full text-base bg-zinc-200 border border-zinc-200 rounded px-3 py-2 min-h-[150px] focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-100 resize-y transition-all duration-300 hover:border-purple-500 hover:shadow-md focus:shadow-purple-100"
                   placeholder="Descreva sua dúvida com detalhes para obter melhores respostas"
                 />
-                {errors.pergunta && (
+                {errors.conteudo && (
                   <p className="text-red-600 text-sm mt-1">
-                    {errors.pergunta.message}
+                    {errors.conteudo.message}
                   </p>
                 )}
               </div>

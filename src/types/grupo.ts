@@ -1,8 +1,19 @@
+import { User } from "./user";
+import { Componente } from "./componente";
+
+interface Membro {
+  id: string;
+  grupoId: string;
+  userId: string;
+  user: User;
+}
+
 export interface Grupo {
   id: string;
   nomeGrupo: string;
   fkIdComponente?: string;
-  membrosIds?: string[];
+  membros?: Membro[];
+  componente?: Componente;
 }
 
 export interface CreateGrupoData {

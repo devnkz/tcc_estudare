@@ -1,5 +1,5 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { updateGrupo } from "@/services/grupoService";
+import { updateGrupo } from "@/services/grupos/grupoService";
 
 export function useUpdateGrupo() {
   const queryClient = useQueryClient();

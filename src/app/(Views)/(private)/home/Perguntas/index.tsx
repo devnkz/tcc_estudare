@@ -10,8 +10,6 @@ export default async function PerguntasIndex() {
   const cursos = await fetchCursos();
   const respostas = await fetchRespostas();
 
-  console.log(respostas);
-
   return (
     <PerguntasClientPage
       initialPerguntas={perguntas}

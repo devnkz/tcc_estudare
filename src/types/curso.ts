@@ -1,13 +1,13 @@
 export interface Curso {
   id: string;
-  nomeCurso: string;
+  nome: string;
 }
 
 export interface CreateCursoData {
-  nomeCurso: string;
+  nome: string;
 }
 
 export interface UpdateCursoData {
   id: string;
-  nomeCurso: string;
+  nome: string;
 }

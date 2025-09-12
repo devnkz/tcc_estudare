@@ -3,19 +3,12 @@
 import { ArrowRightIcon } from "@heroicons/react/16/solid";
 import Image from "next/image";
 import { useEffect, useState } from "react";
-import Footer, { HomeFooter } from "@/components/layout/footer";
+import { HomeFooter } from "@/components/layout/footer";
 import { useRouter } from "next/navigation";
 import { Inter } from "next/font/google";
-
-const interthin = Inter({ subsets: ["latin"], weight: ["100"] });
-const interextraLight = Inter({ subsets: ["latin"], weight: ["200"] });
-const interlight = Inter({ subsets: ["latin"], weight: ["300"] });
 const interregular = Inter({ subsets: ["latin"], weight: ["400"] });
-const intermedium = Inter({ subsets: ["latin"], weight: ["500"] });
-const intersemibold = Inter({ subsets: ["latin"], weight: ["600"] });
 const interbold = Inter({ subsets: ["latin"], weight: ["700"] });
 const interextrabold = Inter({ subsets: ["latin"], weight: ["800"] });
-const interblack = Inter({ subsets: ["latin"], weight: ["900"] });
 
 export default function TelaHome() {
   const [width, setWidth] = useState(

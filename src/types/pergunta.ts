@@ -2,14 +2,14 @@ export interface Pergunta {
   id: string;
   pergunta: string;
   fkIdUsuario?: string;
-  fkIdComponent?: string;
+  fkIdComponente?: string;
   createdAt?: string;
 }
 
 export interface CreatePerguntaData {
-  pergunta: string;
-  fkIdUsuario: string;
-  fkIdComponent: string;
+  conteudo: string;
+  userId: string;
+  fkIdComponente: string;
 }
 
 export interface UpdatePerguntaData {

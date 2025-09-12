@@ -7,6 +7,7 @@ import { UpdateUserModal } from "./updateUserModal";
 import { UpdateUserFotoModal } from "./fotoPerfilUser/index";
 import { useState } from "react";
 import { deleteToken } from "@/lib/deleteToken";
+import { GoPencil } from "react-icons/go";
 
 export default function UsuarioClientPage({
   user,
@@ -26,20 +27,20 @@ export default function UsuarioClientPage({
         <div className="space-y-2 w-full flex flex-col justify-center items-center">
           {/* Foto do usuário clicável */}
           <div
-            className="relative cursor-pointer"
+            className="relative cursor-pointer hover:opacity-70 transition-opacity duration-300"
             onClick={() => setOpenDialog("foto")}
           >
             {user.fotoPerfil ? (
               <img
                 src={user.fotoPerfil}
                 alt="Foto do usuário"
-                className="h-20 w-20 rounded-full object-cover border-2 border-zinc-300"
+                className="h-40 w-40 rounded-full object-cover border-2 border-zinc-300"
               />
             ) : (
               <UserIcon className="h-20 w-20 p-4 bg-zinc-300 rounded-full" />
             )}
-            <span className="absolute bottom-0 right-0 bg-purple-600 p-1 rounded-full text-white text-xs">
-              ✏️
+            <span className="absolute bottom-0 right-0 bg-purple-600 p-2 rounded-full text-white text-xl">
+              <GoPencil />
             </span>
           </div>
 
@@ -69,7 +70,7 @@ export default function UsuarioClientPage({
             <div className="flex justify-between px-2 py-4 border-b-2 border-zinc-300">
               <div>
                 <h2 className="text-zinc-600 text-xs">Série/Curso</h2>
-                <h1 className="font-bold text-xl">3 Infonet</h1>
+                <h1 className="font-bold text-xl">{user.curso.nome}</h1>
               </div>
 
               <div>

@@ -1,11 +1,20 @@
+// app/layout.tsx
+
 import React from "react";
-import { cookies } from "next/headers";
-import jwt from "jsonwebtoken";
-import UserProviderWrapper from "../providers/UserWrapperProvider";
 import { Inter } from "next/font/google";
-import "./globals.css";
+import { verify } from "jsonwebtoken";
+import { getTokenFromCookie } from "@/lib/getTokenServer";
+
+import UserProviderWrapper from "../providers/UserWrapperProvider";
 import { QueryProvider } from "../providers/QueryProvider";
 import { RouteChangeLoader } from "@/components/shared/RouteChangeLoader";
+
+import "./globals.css";
+
+// Definimos a interface do payload para garantir que ele tenha a propriedade 'id'
+interface DecodedTokenPayload {
+  id: string;
+}
 
 const inter = Inter({ subsets: ["latin"], weight: ["400"] });
 
@@ -14,28 +23,40 @@ export default async function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const cookieStore = await cookies();
-  const token = cookieStore.get("token")?.value;
+  // Await é crucial para que a promessa seja resolvida.
+  // get token from a server action.
+  const token = await getTokenFromCookie();
 
   let id: string | null = null;
 
   if (token) {
     try {
-      const decoded = jwt.verify(token, process.env.JWT_SECRET!) as {
-        id: string;
-      };
-      id = decoded.id;
-    } catch {}
-  }
+      // Usamos a tipagem genérica para garantir que o resultado decodificado
+      // tenha a estrutura que esperamos.
+      const decoded = verify(
+        token,
+        process.env.JWT_SECRET!
+      ) as DecodedTokenPayload;
 
-  console.log("ID do usuário decodificado:", id);
+      // Verificamos se 'id' existe no objeto decodificado antes de atribuir
+      if (decoded.id) {
+        id = decoded.id;
+      }
+    } catch (error) {
+      console.error("Erro ao verificar o token:", error);
+      // O token é inválido ou expirou, então definimos id como null
+      id = null;
+    }
+  }
 
   return (
     <html lang="pt-br">
-      <body className={`${inter.className} w-full flex flex-col justify-center`}>
-        <RouteChangeLoader/>
-
+      <body
+        className={`${inter.className} w-full flex flex-col justify-center`}
+      >
+        <RouteChangeLoader />
         <QueryProvider>
+          {/* Agora o ID sempre será uma string ou null */}
           <UserProviderWrapper userId={id}>{children}</UserProviderWrapper>
         </QueryProvider>
       </body>

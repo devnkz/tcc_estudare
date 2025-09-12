@@ -1,5 +1,5 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { deleteGrupo } from "@/services/grupoService";
+import { deleteGrupo } from "@/services/grupos/grupoService";
 
 export function useDeleteGrupo() {
   const queryClient = useQueryClient();

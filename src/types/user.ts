@@ -4,6 +4,7 @@ export interface User {
   email: string;
   senha: string;
   apelido: string;
+  fotoPerfil?: string;
   fkIdTipoUsuario: string;
 }
 
@@ -12,6 +13,7 @@ export interface CreateUserData {
   email: string;
   senha: string;
   apelido: string;
+  fotoPerfil?: string;
   fkIdTipoUsuario: string;
 }
 
@@ -21,5 +23,6 @@ export interface UpdateUserData {
   email: string;
   senha: string;
   apelido: string;
+  fotoPerfil?: string;
   fkIdTipoUsuario: string;
 }

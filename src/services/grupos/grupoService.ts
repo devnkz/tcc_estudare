@@ -7,6 +7,12 @@ export async function fetchGrupos(): Promise<Grupo[]> {
   return res.data;
 }
 
+// Busca grupo por ID
+export async function fetchGruposById({ id }: { id: string }): Promise<Grupo> {
+  const res = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/grupo/${id}`);
+  return res.data;
+}
+
 // Cria um novo grupo
 export async function createGrupo(data: CreateGrupoData): Promise<Grupo> {
   const res = await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/grupo`, data);

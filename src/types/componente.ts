@@ -1,17 +1,17 @@
 export interface Componente {
   id: string;
-  nomeComponente: string;
+  nome: string;
   fkIdCurso: string;
 }
 
 export interface CreateComponenteData {
-  nomeComponente: string;
+  nome: string;
   fkIdCurso: string;
 }
 
 export interface UpdateComponenteData {
   id: string;
-  nomeComponente: string;
+  nome: string;
   fkIdCurso?: string;
 }
 

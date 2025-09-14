@@ -1,4 +1,4 @@
-import { Grupo, CreateGrupoData, UpdateGrupoData } from "../types/grupo";
+import { CreateGrupoData, Grupo } from "../../types/grupo";
 import axios from "axios";
 
 // Busca todos os grupos
@@ -19,10 +19,13 @@ export async function createGrupo(data: CreateGrupoData): Promise<Grupo> {
   return res.data;
 }
 
-// Atualiza um grupo existente
-export async function updateGrupo(data: UpdateGrupoData): Promise<Grupo> {
-  const res = await axios.put(`${process.env.NEXT_PUBLIC_API_URL}/grupo/${data.id}`, data);
-  return res.data;
+export async function RemoveMemberAndGroup(grupoId: string, membroId: string, token: string): Promise<void> {
+  await axios.delete(
+    `${process.env.NEXT_PUBLIC_API_URL}/grupo/${grupoId}/membro/${membroId}`,
+    {
+      headers: { Authorization: `Bearer ${token}` },
+    }
+  );
 }
 
 // Deleta um grupo pelo id

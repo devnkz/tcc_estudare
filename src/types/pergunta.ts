@@ -14,5 +14,5 @@ export interface CreatePerguntaData {
 
 export interface UpdatePerguntaData {
   id: string;
-  pergunta: string;
+  conteudo: string;
 }

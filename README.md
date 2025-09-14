@@ -9,7 +9,6 @@ O Estudare é uma aplicação web desenvolvida com Next.js, focada em oferecer u
 ## 🚀 Tecnologias utilizadas
 
 - **[Next.js](https://nextjs.org/)** – Framework React full-stack
-- **[React](https://reactjs.org/)** – Biblioteca JavaScript para interfaces
 - **[Tailwind CSS](https://tailwindcss.com/)** – Framework de estilização moderna
 - **[TypeScript](https://www.typescriptlang.org/)** – Tipagem estática (em progresso)
 - **[Node.js](https://nodejs.org/)** e **[Express](https://expressjs.com/)** – Back-end da aplicação (em desenvolvimento)
@@ -23,10 +22,10 @@ O Estudare é uma aplicação web desenvolvida com Next.js, focada em oferecer u
 - [x] Responsividade para mobile, tablet e desktop
 - [x] Aulas extracurriculares e interacao e resolucao de duvidas
 - [x] Componentização com React e Tailwind
-- [ ] Sistema de cadastro e login
+- [x] Sistema de cadastro e login
 - [ ] Área de chat entre os alunos
-- [ ] Dashboard administrativo
-- [ ] Integração com banco de dados MySQL
+- [x] Dashboard administrativo
+- [x] Integração com banco de dados MySQL
 
 ---
 
@@ -37,4 +36,4 @@ O Estudare é uma aplicação web desenvolvida com Next.js, focada em oferecer u
 ![Home](./public/screenshots/home.png)
 
 rode projeto escola: Set-ExecutionPolicy RemoteSigned
-
+```

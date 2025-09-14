@@ -8,9 +8,10 @@ import { UpdateUserFotoModal } from "./fotoPerfilUser/index";
 import { useState } from "react";
 import { deleteToken } from "@/lib/deleteToken";
 import { GoPencil } from "react-icons/go";
+import { useGetUser } from "@/hooks/user/useListId";
 
 export default function UsuarioClientPage({
-  user,
+  user: initialUser,
   perguntas,
 }: {
   user: any;
@@ -21,6 +22,9 @@ export default function UsuarioClientPage({
 
   const [openDialog, setOpenDialog] = useState<null | "usuario" | "foto">(null);
 
+  const { data: userData } = useGetUser(initialUser.id, initialUser);
+  console.log("User data do react-query: ", userData);
+
   return (
     <div className="w-full flex justify-center bg-white p-2">
       <div className="w-[600px] flex flex-col justify-center items-center py-14 space-y-2 relative">
@@ -30,9 +34,9 @@ export default function UsuarioClientPage({
             className="relative cursor-pointer hover:opacity-70 transition-opacity duration-300"
             onClick={() => setOpenDialog("foto")}
           >
-            {user.fotoPerfil ? (
+            {userData.fotoPerfil ? (
               <img
-                src={user.fotoPerfil}
+                src={userData.fotoPerfil}
                 alt="Foto do usuário"
                 className="h-40 w-40 rounded-full object-cover border-2 border-zinc-300"
               />
@@ -46,11 +50,15 @@ export default function UsuarioClientPage({
 
           <h2 className="text-sm text-zinc-600">
             Estudante desde{" "}
-            {new Date(user.createdAt).toLocaleDateString("pt-BR")}
+            {userData.createdAt
+              ? new Date(userData.createdAt).toLocaleDateString("pt-BR")
+              : "-"}
           </h2>
         </div>
-        <h1 className="font-bold text-xl">{user.name}</h1>
-        <h2 className="text-zinc-700 text-base">Seu apelido: {user.apelido}</h2>
+        <h1 className="font-bold text-xl">{userData.name}</h1>
+        <h2 className="text-zinc-700 text-base">
+          Seu apelido: {userData.apelido}
+        </h2>
 
         <div className="p-2 rounded-xl w-full space-y-4">
           <div className="flex justify-between items-center">
@@ -70,7 +78,7 @@ export default function UsuarioClientPage({
             <div className="flex justify-between px-2 py-4 border-b-2 border-zinc-300">
               <div>
                 <h2 className="text-zinc-600 text-xs">Série/Curso</h2>
-                <h1 className="font-bold text-xl">{user.curso.nome}</h1>
+                <h1 className="font-bold text-xl">{userData.curso?.nome}</h1>
               </div>
 
               <div>
@@ -78,6 +86,7 @@ export default function UsuarioClientPage({
                 <h1 className="font-bold text-xl">{perguntas.length}</h1>
               </div>
             </div>
+
             {perguntas.length > 0 ? (
               perguntas.map((p, index) => {
                 const cor = cores[index % cores.length];
@@ -111,7 +120,7 @@ export default function UsuarioClientPage({
 
             <button
               onClick={() => {
-                deleteToken("token");
+                deleteToken("token"), router.push("/login");
               }}
             >
               Sair
@@ -124,12 +133,12 @@ export default function UsuarioClientPage({
       <UpdateUserModal
         openDialog={openDialog === "usuario" ? "usuario" : null}
         setOpenDialog={setOpenDialog}
-        user={user}
+        user={userData}
       />
       <UpdateUserFotoModal
         openDialog={openDialog === "foto" ? "foto" : null}
         setOpenDialog={setOpenDialog}
-        user={user}
+        user={userData}
       />
     </div>
   );

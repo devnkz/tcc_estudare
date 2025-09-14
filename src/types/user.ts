@@ -6,6 +6,11 @@ export interface User {
   apelido: string;
   fotoPerfil?: string;
   fkIdTipoUsuario: string;
+  createdAt: string;
+  curso: {
+    id: string;
+    nome: string;
+  };
 }
 
 export interface CreateUserData {

@@ -27,7 +27,14 @@ export function UpdateUserFotoModal({
     const formData = new FormData();
     formData.append("foto", file);
 
-    mutate({ id: user.id, data: formData });
+    mutate(
+      { id: user.id, data: formData },
+      {
+        onSuccess: () => {
+          setOpenDialog(null);
+        },
+      }
+    );
   };
 
   return (

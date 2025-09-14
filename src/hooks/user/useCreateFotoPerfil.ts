@@ -8,6 +8,7 @@ export function useUpdateUserFoto() {
     mutationFn: ({ id, data }: { id: string; data: FormData }) =>
       createFotoUser(data, id),
     onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ["users"] });
       // Atualiza a lista de usuários
       queryClient.setQueryData(["users"], (old: any) => {
         if (!old) return [data];

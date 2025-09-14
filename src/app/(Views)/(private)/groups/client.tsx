@@ -1,5 +1,5 @@
 "use client";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useCreateGrupo } from "@/hooks/grupo/useCreate";
 import { CreateGrupoData, Grupo } from "@/types/grupo";
 import { User } from "@/types/user";
@@ -9,6 +9,10 @@ import { MultiSelectCombobox } from "@/components/ui/comboxFilter";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useRouter } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useUser } from "@/context/userContext";
+import { useQueryClient } from "@tanstack/react-query";
+import { useListGruposByUser } from "@/hooks/grupo/useListByUser";
+
 import {
   Dialog,
   DialogContent,
@@ -34,7 +38,11 @@ const GroupsPage: React.FC<GroupsPageProps> = ({
   const [selectedComponentId, setSelectedComponentId] = useState<string>("");
   const [nomeGrupo, setNomeGrupo] = useState("");
 
+  const { data: gruposData = [] } = useListGruposByUser(grupos);
+
   const createGrupo = useCreateGrupo();
+  const router = useRouter();
+  const { userId } = useUser();
 
   const handleCreateGroup = () => {
     if (!nomeGrupo) return;
@@ -43,11 +51,11 @@ const GroupsPage: React.FC<GroupsPageProps> = ({
       nomeGrupo,
       membrosIds: selectedUserIds,
       fkIdComponente: selectedComponentId,
+      createdById: userId!,
     };
 
     createGrupo.mutate(data, {
       onSuccess: () => {
-        console.log("Grupo criado com sucesso!", data);
         setSelectedUserIds([]);
         setSelectedComponentId("");
         setNomeGrupo("");
@@ -59,8 +67,6 @@ const GroupsPage: React.FC<GroupsPageProps> = ({
       },
     });
   };
-
-  const router = useRouter();
 
   return (
     <div className="py-6 md:w-3/4 lg:w-2/3 min-h-screen max-w-[1200px] flex flex-col">
@@ -126,7 +132,7 @@ const GroupsPage: React.FC<GroupsPageProps> = ({
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {grupos.map((group) => (
+        {gruposData.map((group: any) => (
           <div key={group.id}>
             <Card
               className="hover:shadow-lg hover:-translate-y-1 hover:bg-purple-50 transition-all duration-300 cursor-pointer"
@@ -142,7 +148,7 @@ const GroupsPage: React.FC<GroupsPageProps> = ({
                 <div className="flex items-center font-bold text-sm justify-between">
                   Membros{" "}
                   <span className="*:data-[slot=avatar]:ring-background flex -space-x-2 *:data-[slot=avatar]:ring-2 *:data-[slot=avatar]:grayscale">
-                    {group.membros?.map((membro) => (
+                    {group.membros?.map((membro: any) => (
                       <Avatar key={membro.id} className="w-8 h-8">
                         <AvatarImage
                           src={

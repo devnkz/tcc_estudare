@@ -1,20 +1,24 @@
 import { fetchGruposById } from "@/services/grupos/grupoService";
 import ClientGrupoDetail from "./client";
+import { fetchUsers } from "@/services/userService";
 
 interface GrupoDetailPageProps {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }
 
 export default async function GrupoDetailPage({
   params,
 }: GrupoDetailPageProps) {
-  const grupoId = params.id;
+  const { id } = await params;
 
-  const grupo = await fetchGruposById({ id: grupoId });
+  const grupo = await fetchGruposById({ id });
+  const users = await fetchUsers();
+
+  console.log("Grupo fetched:", grupo);
 
   if (!grupo) {
     return <div>Grupo não encontrado</div>;
   }
 
-  return <ClientGrupoDetail grupoAtual={grupo} />;
+  return <ClientGrupoDetail grupoAtual={grupo} users={users} />;
 }

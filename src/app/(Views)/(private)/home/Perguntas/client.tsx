@@ -29,8 +29,8 @@ import { cn } from "@/lib/utils";
 
 function getTypeFromData(items: any[]): "componente" | "curso" {
   if (!items || items.length === 0) return "componente";
-  if ("nomeComponente" in items[0]) return "componente";
-  if ("nomeCurso" in items[0]) return "curso";
+  if ("nome" in items[0]) return "componente";
+  if ("nome" in items[0]) return "curso";
   return "componente";
 }
 
@@ -38,10 +38,10 @@ function normalizeItems(data: any[], type: "componente" | "curso") {
   if (type === "componente")
     return data.map((item) => ({
       id: String(item.id),
-      label: item.nomeComponente,
+      label: item.nome,
     }));
   if (type === "curso")
-    return data.map((item) => ({ id: String(item.id), label: item.nomeCurso }));
+    return data.map((item) => ({ id: String(item.id), label: item.nome }));
   return [];
 }
 
@@ -140,25 +140,25 @@ export function PerguntasClientPage({
 
   // Estados para responder
   const [responderId, setResponderId] = useState<string | null>(null);
-  const [resposta, setResposta] = useState("");
+  const [conteudo, setConteudo] = useState("");
 
   const handleResponder = (perguntaId: string) => {
     setResponderId(perguntaId);
-    setResposta("");
+    setConteudo("");
     setTimeout(() => respostaInputRef.current?.focus(), 100);
   };
 
   const handleEnviarResposta = ({
-    fkIdPergunta,
-    fkIdUsuario,
-    resposta,
+    perguntaId,
+    userId,
+    conteudo,
   }: CreateRespostaData) => {
     createResposta.mutate(
-      { fkIdPergunta, fkIdUsuario, resposta },
+      { perguntaId, userId, conteudo },
       {
         onSuccess: () => {
           setResponderId(null);
-          setResposta("");
+          setConteudo("");
         },
       }
     );
@@ -171,7 +171,7 @@ export function PerguntasClientPage({
       if (!verMinhasPerguntas && pergunta.usuario.id === userId) return false;
 
       const respostasPergunta = respostas.filter(
-        (r) => r.fkIdPergunta === pergunta.id
+        (r) => r.perguntaId === pergunta.id
       );
       const temResposta = respostasPergunta.length > 0;
 
@@ -218,18 +218,6 @@ export function PerguntasClientPage({
       <div className="flex flex-col gap-4">
         <div className="flex flex-col gap-2 lg:flex-row lg:gap-4">
           <ComboboxFilter
-            items={normalizeItems(componentes, getTypeFromData(componentes))}
-            value={componente}
-            setValue={setComponente}
-            placeholder="Componente"
-          />
-          <ComboboxFilter
-            items={normalizeItems(cursos, getTypeFromData(cursos))}
-            value={curso}
-            setValue={setCurso}
-            placeholder="Curso"
-          />
-          <ComboboxFilter
             items={filtros.map((f) => ({ id: f, label: f }))}
             value={filtroStatus}
             setValue={setFiltroStatus}
@@ -272,7 +260,7 @@ export function PerguntasClientPage({
       {perguntasFiltradas.length > 0 ? (
         perguntasFiltradas.map((pergunta) => {
           const respostasPergunta = respostas.filter(
-            (r) => r.fkIdPergunta === pergunta.id
+            (r) => r.perguntaId === pergunta.id
           );
           const temResposta = respostasPergunta.length > 0;
 
@@ -335,7 +323,7 @@ export function PerguntasClientPage({
                 <div className="mt-4">
                   <h3 className="font-bold mb-2">Respostas:</h3>
                   {respostasPergunta.map((r) => (
-                    <div key={r.id}>{r.resposta}</div>
+                    <div key={r.id}>{r.conteudo}</div>
                   ))}
                 </div>
               )}
@@ -345,8 +333,8 @@ export function PerguntasClientPage({
                   <input
                     ref={respostaInputRef}
                     type="text"
-                    value={resposta}
-                    onChange={(e) => setResposta(e.target.value)}
+                    value={conteudo}
+                    onChange={(e) => setConteudo(e.target.value)}
                     placeholder="Digite sua resposta..."
                     className="p-2 rounded-md border border-zinc-300"
                     disabled={createResposta.isPending}
@@ -356,9 +344,9 @@ export function PerguntasClientPage({
                       className="p-2 rounded-lg bg-purple-600 text-white text-xs lg:text-base hover:bg-purple-900 transition-colors duration-300"
                       onClick={() =>
                         handleEnviarResposta({
-                          fkIdPergunta: pergunta.id,
-                          fkIdUsuario: userId!,
-                          resposta,
+                          perguntaId: pergunta.id,
+                          userId: userId!,
+                          conteudo,
                         })
                       }
                       disabled={createResposta.isPending}

@@ -6,9 +6,9 @@ export interface Resposta {
 }
 
 export interface CreateRespostaData {
-  fkIdPergunta: string;
-  fkIdUsuario: string;
-  resposta: string;
+  perguntaId: string;
+  userId: string;
+  conteudo: string;
 }
 
 export interface UpdateRespostaData {

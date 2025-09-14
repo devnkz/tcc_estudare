@@ -39,7 +39,12 @@ export function UpdateUserModal({
 
   const onSubmit = (data: UpdateUserData) => {
     console.log("Dados enviados ao backend:", data);
-    mutate(data);
+
+    mutate(data, {
+      onSuccess: () => {
+        setOpenDialog(null); // fecha o modal
+      },
+    });
   };
 
   return (

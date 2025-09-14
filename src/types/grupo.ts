@@ -14,17 +14,22 @@ export interface Grupo {
   fkIdComponente?: string;
   membros?: Membro[];
   componente?: Componente;
+  createdBy: {
+    name: string;
+  }
+  createdById: string;
 }
 
 export interface CreateGrupoData {
   nomeGrupo: string;
   fkIdComponente?: string;
   membrosIds?: string[];
+  createdById: string;
 }
 
 export interface UpdateGrupoData {
   id: string;
-  nomeGrupo: string;
+  nomeGrupo?: string;
   fkIdComponente?: string;
   membrosIds?: string[];
 }

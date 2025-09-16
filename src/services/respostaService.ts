@@ -21,6 +21,10 @@ export async function updateResposta(data: UpdateRespostaData): Promise<Resposta
 }
 
 // Deleta uma resposta pelo id
-export async function deleteResposta(id: string): Promise<void> {
-  await axios.delete(`${process.env.NEXT_PUBLIC_API_URL}/resposta/${id}`);
+export async function deleteResposta(id: string, token: string): Promise<void> {
+  await axios.delete(`${process.env.NEXT_PUBLIC_API_URL}/resposta/delete/${id}`,{
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
 }

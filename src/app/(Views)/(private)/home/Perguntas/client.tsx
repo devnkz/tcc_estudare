@@ -11,6 +11,8 @@ import { useListPerguntas } from "@/hooks/pergunta/useList";
 import { useListComponentes } from "@/hooks/componente/useList";
 import { useListCursos } from "@/hooks/curso/useList";
 import { useListRespostas } from "@/hooks/resposta/useList";
+import { useDeletePergunta } from "@/hooks/pergunta/useDelete";
+import { useDeleteResposta } from "@/hooks/resposta/useDelete";
 
 import {
   Command,
@@ -20,6 +22,19 @@ import {
   CommandItem,
   CommandList,
 } from "@/components/ui/command";
+
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+
+import { MultiSelectCombobox } from "@/components/ui/comboxFilter";
+import { Input } from "@/components/ui/input";
+
 import {
   Popover,
   PopoverContent,
@@ -118,6 +133,8 @@ export function PerguntasClientPage({
   const { userId } = useUser();
   const createResposta = useCreateResposta();
   const respostaInputRef = useRef<HTMLInputElement>(null);
+  const [openModal, setOpenModal] = useState(false);
+  const [selectedComponentId, setSelectedComponentId] = useState<string>("");
 
   // Queries com React Query
   const perguntasQuery = useListPerguntas(initialPerguntas);
@@ -146,6 +163,16 @@ export function PerguntasClientPage({
     setResponderId(perguntaId);
     setConteudo("");
     setTimeout(() => respostaInputRef.current?.focus(), 100);
+  };
+
+  const { mutate: deletePergunta } = useDeletePergunta();
+  const handleDelete = (id: string) => {
+    deletePergunta({ id });
+  };
+
+  const { mutate: deleteResposta } = useDeleteResposta();
+  const handleDeleteResposta = (id: string) => {
+    deleteResposta({ id });
   };
 
   const handleEnviarResposta = ({
@@ -302,6 +329,53 @@ export function PerguntasClientPage({
               </p>
 
               <div className="flex items-center gap-2">
+                {userId === pergunta.usuario.id && (
+                  <div>
+                    <button
+                      onClick={() => handleDelete(pergunta.id)}
+                      className="p-2 rounded-lg bg-red-500 text-white text-xs lg:text-base cursor-pointer"
+                    >
+                      Excluir pergunta
+                    </button>
+
+                    <Dialog open={openModal} onOpenChange={setOpenModal}>
+                      <DialogTrigger asChild>
+                        <button className="w-[200px] bg-purple-600 p-3 rounded-lg text-white cursor-pointer hover:-translate-y-1 transition-all duration-300">
+                          Editar sua pergunta
+                        </button>
+                      </DialogTrigger>
+                      <DialogContent>
+                        <DialogHeader>
+                          <DialogTitle>Edite sua pergunta</DialogTitle>
+                        </DialogHeader>
+
+                        <div className="grid gap-4 py-4">
+                          <Input
+                            label="Sua pergunta"
+                            placeholder={pergunta.pergunta}
+                            value={conteudo}
+                            onChange={(e) => setConteudo(e.target.value)}
+                          />
+
+                          <MultiSelectCombobox
+                            items={componentes}
+                            selectedIds={
+                              selectedComponentId ? [selectedComponentId] : []
+                            }
+                            setSelectedIds={(ids) =>
+                              setSelectedComponentId(ids[0] || "")
+                            }
+                            placeholder="Altere o componente caso queira"
+                            getLabel={(c) => c.nome}
+                          />
+                        </div>
+
+                        <DialogFooter></DialogFooter>
+                      </DialogContent>
+                    </Dialog>
+                  </div>
+                )}
+
                 {userId !== pergunta.usuario.id ? (
                   <button
                     className="p-2 rounded-lg bg-purple-600 text-white text-xs lg:text-base hover:bg-purple-900 transition-colors duration-300"
@@ -314,6 +388,7 @@ export function PerguntasClientPage({
                     Não é possível responder sua própria pergunta
                   </span>
                 )}
+
                 <button className="p-2 rounded-lg bg-white text-black text-xs lg:text-base">
                   Notificar respostas
                 </button>
@@ -323,7 +398,22 @@ export function PerguntasClientPage({
                 <div className="mt-4">
                   <h3 className="font-bold mb-2">Respostas:</h3>
                   {respostasPergunta.map((r) => (
-                    <div key={r.id}>{r.conteudo}</div>
+                    <div
+                      key={r.id}
+                      className="border p-2 rounded-md mb-2 flex justify-between items-center"
+                    >
+                      <span>{r.conteudo}</span>
+
+                      {(userId === r.userId ||
+                        userId === pergunta.usuario.id) && (
+                        <button
+                          className="p-2 bg-white text-black rounded-md hover:bg-red-400 transition-colors duration-300 hover:text-black cursor-pointer"
+                          onClick={() => handleDeleteResposta(r.id)}
+                        >
+                          Deletar resposta
+                        </button>
+                      )}
+                    </div>
                   ))}
                 </div>
               )}

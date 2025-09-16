@@ -15,4 +15,5 @@ export interface CreatePerguntaData {
 export interface UpdatePerguntaData {
   id: string;
   conteudo: string;
+  fkIdComponente: string;
 }

@@ -1,5 +1,5 @@
 "use client";
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import { useCreateGrupo } from "@/hooks/grupo/useCreate";
 import { CreateGrupoData, Grupo } from "@/types/grupo";
 import { User } from "@/types/user";
@@ -10,7 +10,6 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useRouter } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useUser } from "@/context/userContext";
-import { useQueryClient } from "@tanstack/react-query";
 import { useListGruposByUser } from "@/hooks/grupo/useListByUser";
 
 import {

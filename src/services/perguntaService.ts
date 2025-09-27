@@ -20,8 +20,12 @@ export async function createPergunta(data: CreatePerguntaData): Promise<Pergunta
 }
 
 // Atualiza uma pergunta existente
-export async function updatePergunta(data: UpdatePerguntaData): Promise<Pergunta> {
-  const res = await axios.put(`${process.env.NEXT_PUBLIC_API_URL}/pergunta/${data.id}`, { pergunta: data.conteudo, fkIdComponente: data.fkIdComponente });
+export async function updatePergunta(data: UpdatePerguntaData, token: string): Promise<Pergunta> {
+  const res = await axios.put(`${process.env.NEXT_PUBLIC_API_URL}/pergunta/${data.id}`, data, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
   return res.data;
 }
 

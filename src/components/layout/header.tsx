@@ -118,21 +118,13 @@ export function HeaderLoginCadastro() {
     <header className="w-full max-w-7xl flex flex-col items-center mx-auto py-6">
       <Link href="/" className="flex flex-col items-center">
         <Image
-          src="/imagens/Logo/logoroxofundobrando.png"
+          src="/imagens/Logo/logopurple500transparente.png"
           height={270}
           width={270}
           alt="Logo Estudare"
           style={{ objectFit: "contain" }}
         />
       </Link>
-      {/* <div className=" w-full flex flex-col items-center justify-center mt-2">
-        <p className={`${interregular.className} text-zinc-600 text-center`}>
-          Entre para a maior iniciativa da <br />{" "}
-          <span className="font-bold bg-gradient-to-r from-purple-500 to-purple-700 bg-clip-text text-transparent ">
-            ETEC de Santa Fé do Sul
-          </span>
-        </p>
-      </div> */}
     </header>
   );
 }

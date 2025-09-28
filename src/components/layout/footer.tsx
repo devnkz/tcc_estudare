@@ -38,12 +38,12 @@ export default function Footer() {
             <p
               className={`${interregular.className} text-gray-600 text-center lg:text-left max-w-xs leading-relaxed`}
             >
-              Plataforma colaborativa de auxílio a estudantes
+              Plataforma colaborativa para auxílio de estudantes.
             </p>
             <p
               className={`${interlight.className} text-sm text-gray-500 text-center lg:text-left`}
             >
-              Desenvolvido por Nyckolas, Gabriel, Enzo e Vinicius
+              Desenvolvido por Enzo, Gabriel, Nyckolas e Vinicius.
             </p>
           </div>
 
@@ -122,14 +122,5 @@ export default function Footer() {
         </div>
       </div>
     </footer>
-  );
-}
-
-export function HomeFooter() {
-  return (
-    <footer
-      className="bg-gradient-to-b from-white via-violet-50 to-purple-100
-    00 w-full mt-auto"
-    ></footer>
   );
 }

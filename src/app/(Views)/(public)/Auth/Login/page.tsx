@@ -69,7 +69,7 @@ export default function LoginUsuario() {
       <div className="w-full lg:max-w-[1300px] mx-auto flex-1 flex flex-col">
         <HeaderLoginCadastro />
 
-        <main className="flex-1 flex flex-col items-center justify-center px-2 mt-10 mb-45">
+        <main className="flex-1 flex flex-col items-center justify-center px-2 mb-25">
           <form
             onSubmit={login}
             className="bg-white shadow-lg rounded-2xl p-8 w-full max-w-md border border-gray-100 flex flex-col gap-5"

@@ -1,11 +1,10 @@
 "use client";
 
 import { ArrowRightIcon } from "@heroicons/react/16/solid";
-import Image from "next/image";
 import { useEffect, useState } from "react";
-import { HomeFooter } from "@/components/layout/footer";
 import { useRouter } from "next/navigation";
 import { Inter } from "next/font/google";
+import Footer from "@/components/layout/footer";
 const interregular = Inter({ subsets: ["latin"], weight: ["400"] });
 const interbold = Inter({ subsets: ["latin"], weight: ["700"] });
 const interextrabold = Inter({ subsets: ["latin"], weight: ["800"] });
@@ -32,52 +31,53 @@ export default function TelaHome() {
   const router = useRouter();
 
   return (
-    <div className="w-full h-full bg-[url(/imagens/bear.png)] bg-right bg-no-repeat bg-size-[1000px_1000px] flex flex-col overflow-y-hidden">
-      {/* Main */}
-      <main className="flex-1 w-full lg:max-w-[1700px] mx-auto flex justify-between items-center">
-        <div className="w-full mt-35 lg:w-3/5 flex flex-col items-start gap-5 p-30 ">
-          <h1
-            className={`${interextrabold.className} font-extrabold text-purple-600 mr-90 text-5xl gap-1`}
-          >
-            BEM-VINDO (A)
-          </h1>
-          <h2 className={`${interbold.className} text-5xl mr-5`}>
-            Estudare: uma iniciativa dos alunos.
-          </h2>
-          <h3
-            className={`${interregular.className} text-zinc-600 text-xl gap-1 mr-15`}
-          >
-            Além de apenas na escola, agora você pode acessar o site da maior
-            iniciativa da ETEC de Santa Fé do Sul no seu computador ou celular,
-            diretamente da sua casa.
-          </h3>
-          <div className={`${interregular.className} flex gap-3 mt-0.5`}>
-            <button
-              onClick={() => router.push("/home")}
-              className="bg-purple-600 p-4 rounded-md text-white font-extrabold flex gap-2 justify-center items-center hover:bg-purple-800 transition-all duration-500 cursor-pointer"
+    <div className="h-full w-full">
+      <div className="flex flex-col scrollbar-hide">
+        {/* Main */}
+        <main className="flex justify-between items-center">
+          <div className="w-full lg:w-3/5 flex flex-col items-start gap-5 pl-60 p-20 mt-44 mb-34 ">
+            <h1
+              className={`${interextrabold.className} font-extrabold text-purple-600 mr-90 text-5xl gap-1`}
             >
-              <p className="text-center">Começar agora</p>
-              <ArrowRightIcon className="h-4 w-4 text-white" />
-            </button>
-            <button
-              onClick={() => router.push("/about")}
-              className="bg-zinc-200 p-4 text-black rounded-lg hover:bg-zinc-300 transition-all duration-500 cursor-pointer"
+              BEM-VINDO (A)
+            </h1>
+            <h2 className={`${interbold.className} text-5xl mr-5`}>
+              Estudare: uma iniciativa dos alunos.
+            </h2>
+            <h3
+              className={`${interregular.className} text-zinc-600 text-xl gap-1 mr-10`}
             >
-              Saiba mais
-            </button>
+              Além de apenas na escola, agora você pode acessar o site da maior
+              iniciativa da ETEC de Santa Fé do Sul no seu computador ou
+              celular, diretamente da sua casa.
+            </h3>
+            <div className={`${interregular.className} flex gap-3 mt-0.5`}>
+              <button
+                onClick={() => router.push("/home")}
+                className="bg-purple-600 p-4 rounded-md text-white font-extrabold flex gap-2 justify-center items-center hover:bg-purple-800 transition-all duration-500 cursor-pointer"
+              >
+                <p className="text-center">Começar agora</p>
+                <ArrowRightIcon className="h-4 w-4 text-white" />
+              </button>
+              <button
+                onClick={() => router.push("/about")}
+                className="bg-zinc-200 p-4 text-black rounded-lg hover:bg-zinc-300 transition-all duration-500 cursor-pointer"
+              >
+                Saiba mais
+              </button>
+            </div>
           </div>
-        </div>
-        {/* <Image
-          src="/imagens/imagem_pergunta1.png"
-          height={600}
-          width={600}
-          // style={{ objectFit: "contain" }}
-          alt="Imagem representativa"
-        /> */}
-      </main>
-
-      {/* Footer */}
-      <HomeFooter />
+          {showImage && (
+            <div className="lg:block mr-45 mb-10">
+              <img
+                className="h-170 w-170"
+                src="/imagens/meeting_13543798.png"
+              ></img>
+            </div>
+          )}
+        </main>
+      </div>
+      <Footer />
     </div>
   );
 }

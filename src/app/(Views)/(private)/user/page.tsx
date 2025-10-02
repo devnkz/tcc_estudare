@@ -19,9 +19,9 @@ export default async function IndexUser() {
     userId = decoded.id;
   }
 
-  const users = await fetchUsersId(userId);
+  const usuariosId = await fetchUsersId(userId);
   const perguntas = await fetchPerguntasByIdUser({ userId: userId! });
-  const user = users[0];
+  const usuario = usuariosId;
 
-  return <UsuarioClientPage user={user} perguntas={perguntas} />;
+  return <UsuarioClientPage usuario={usuario} perguntas={perguntas} />;
 }

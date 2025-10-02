@@ -1,18 +1,30 @@
 export interface Pergunta {
-  id: string;
+  id_pergunta: string;
   pergunta: string;
-  fkIdUsuario?: string;
-  fkIdComponente?: string;
-  createdAt?: string;
+  fkId_usuario?: string;
+  fkId_componente?: string;
+  dataCriacao_pergunta?: Date;
+  usuario:{
+    id_usuario: string;
+    nome_usuario: string;
+    apelido_usuario: string;
+  }
+  componente: {
+    nome_componente: string;
+  };
+  curso: {
+    nome_curso: string;
+  }
 }
 
 export interface CreatePerguntaData {
-  conteudo: string;
-  userId: string;
-  fkIdComponente: string;
+  pergunta: string;
+  fkId_usuario: string;
+  fkId_componente: string;
+  fkId_curso: string;
 }
 
 export interface UpdatePerguntaData {
-  id: string;
-  conteudo: string;
+  id_pergunta: string;
+  pergunta: string;
 }

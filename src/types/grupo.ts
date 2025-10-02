@@ -1,35 +1,32 @@
 import { User } from "./user";
 import { Componente } from "./componente";
 
-interface Membro {
-  id: string;
+export interface Membro {
+  id_membro: string;
   grupoId: string;
   userId: string;
-  user: User;
+  usuario: User;
 }
 
 export interface Grupo {
-  id: string;
-  nomeGrupo: string;
-  fkIdComponente?: string;
+  id_grupo: string;
+  nome_grupo: string;
   membros?: Membro[];
-  componente?: Componente;
-  createdBy: {
-    name: string;
+  usuario: {
+    nome_usuario: string;
   }
-  createdById: string;
+  fkId_usuario: string;
 }
 
 export interface CreateGrupoData {
-  nomeGrupo: string;
-  fkIdComponente?: string;
+  nome_grupo: string;
   membrosIds?: string[];
   createdById: string;
 }
 
 export interface UpdateGrupoData {
   id: string;
-  nomeGrupo?: string;
+  nome_grupo?: string;
   fkIdComponente?: string;
   membrosIds?: string[];
 }

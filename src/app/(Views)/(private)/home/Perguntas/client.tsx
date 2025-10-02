@@ -46,11 +46,11 @@ export function PerguntasClientPage({
 
   // Estados para responder
   const [responderId, setResponderId] = useState<string | null>(null);
-  const [conteudo, setConteudo] = useState("");
+  const [resposta, setResposta] = useState("");
 
-  const handleResponder = (perguntaId: string) => {
-    setResponderId(perguntaId);
-    setConteudo("");
+  const handleResponder = (fkId_pergunta: string) => {
+    setResponderId(fkId_pergunta);
+    setResposta("");
     setTimeout(() => respostaInputRef.current?.focus(), 100);
   };
 
@@ -65,16 +65,16 @@ export function PerguntasClientPage({
   };
 
   const handleEnviarResposta = ({
-    perguntaId,
-    userId,
-    conteudo,
+    fkId_pergunta,
+    fkId_usuario,
+    resposta,
   }: CreateRespostaData) => {
     createResposta.mutate(
-      { perguntaId, userId, conteudo },
+      { fkId_pergunta, fkId_usuario, resposta },
       {
         onSuccess: () => {
           setResponderId(null);
-          setConteudo("");
+          setResposta("");
         },
       }
     );
@@ -86,13 +86,13 @@ export function PerguntasClientPage({
       {perguntas.length > 0 ? (
         perguntas.map((pergunta) => {
           const respostasPergunta = respostas.filter(
-            (r) => r.perguntaId === pergunta.id
+            (r) => r.fkId_pergunta === pergunta.id_pergunta
           );
           const temResposta = respostasPergunta.length > 0;
 
           return (
             <div
-              key={pergunta.id}
+              key={pergunta.id_pergunta}
               className={`p-2 w-full shadow-md rounded-lg flex flex-col gap-2 text-black hover:-translate-y-1 transition-all duration-300
               ${
                 temResposta
@@ -102,12 +102,17 @@ export function PerguntasClientPage({
             >
               <div className="w-full flex justify-between items-center">
                 <h2 className="font-bold">
-                  Aluno: {pergunta.usuario.name} ({pergunta.usuario.apelido})
+                  Aluno: {pergunta.usuario.nome_usuario} (
+                  {pergunta.usuario.apelido_usuario})
                 </h2>
                 <div className="flex flex-col items-end gap-2">
                   <h3 className="text-sm text-zinc-900">
                     Realizada em:{" "}
-                    {new Date(pergunta.criadaEm).toLocaleDateString("pt-BR")}
+                    {pergunta.dataCriacao_pergunta
+                      ? new Date(
+                          pergunta.dataCriacao_pergunta
+                        ).toLocaleDateString("pt-BR")
+                      : "--/--/----"}
                   </h3>
                   {temResposta && (
                     <span className="text-green-700 text-xs font-semibold">
@@ -118,9 +123,16 @@ export function PerguntasClientPage({
               </div>
 
               <p>
+                Curso:{" "}
+                <span className="text-purple-600 font-bold">
+                  {pergunta.curso.nome_curso}
+                </span>
+              </p>
+
+              <p>
                 Componente:{" "}
                 <span className="text-purple-600 font-bold">
-                  {pergunta.materia}
+                  {pergunta.componente.nome_componente}
                 </span>
               </p>
               <p className="bg-white p-2 rounded-md shadow-lg text-sm lg:text-base">
@@ -128,10 +140,10 @@ export function PerguntasClientPage({
               </p>
 
               <div className="flex items-center gap-2">
-                {userId === pergunta.usuario.id && (
+                {userId === pergunta.usuario.id_usuario && (
                   <div className="flex gap-2">
                     <button
-                      onClick={() => handleDelete(pergunta.id)}
+                      onClick={() => handleDelete(pergunta.id_pergunta)}
                       className="p-2 rounded-lg bg-red-500 text-white text-xs lg:text-base cursor-pointer"
                     >
                       Excluir pergunta
@@ -145,10 +157,10 @@ export function PerguntasClientPage({
                   </div>
                 )}
 
-                {userId !== pergunta.usuario.id ? (
+                {userId !== pergunta.usuario.id_usuario ? (
                   <button
                     className="p-2 rounded-lg bg-purple-600 text-white text-xs lg:text-base hover:bg-purple-900 transition-colors duration-300"
-                    onClick={() => handleResponder(pergunta.id)}
+                    onClick={() => handleResponder(pergunta.id_pergunta)}
                   >
                     Responder
                   </button>
@@ -168,16 +180,16 @@ export function PerguntasClientPage({
                   <h3 className="font-bold mb-2">Respostas:</h3>
                   {respostasPergunta.map((r) => (
                     <div
-                      key={r.id}
+                      key={r.id_resposta}
                       className="border p-2 rounded-md mb-2 flex justify-between items-center"
                     >
-                      <span>{r.conteudo}</span>
+                      <span>{r.resposta}</span>
 
                       {(userId === r.userId ||
-                        userId === pergunta.usuario.id) && (
+                        userId === pergunta.usuario.id_usuario) && (
                         <button
                           className="p-2 bg-white text-black rounded-md hover:bg-red-400 transition-colors duration-300 hover:text-black cursor-pointer"
-                          onClick={() => handleDeleteResposta(r.id)}
+                          onClick={() => handleDeleteResposta(r.id_resposta)}
                         >
                           Deletar resposta
                         </button>
@@ -187,13 +199,13 @@ export function PerguntasClientPage({
                 </div>
               )}
 
-              {responderId === pergunta.id && (
+              {responderId === pergunta.id_pergunta && (
                 <div className="mt-2 flex flex-col gap-2">
                   <input
                     ref={respostaInputRef}
                     type="text"
-                    value={conteudo}
-                    onChange={(e) => setConteudo(e.target.value)}
+                    value={resposta}
+                    onChange={(e) => setResposta(e.target.value)}
                     placeholder="Digite sua resposta..."
                     className="p-2 rounded-md border border-zinc-300"
                     disabled={createResposta.isPending}
@@ -203,9 +215,9 @@ export function PerguntasClientPage({
                       className="p-2 rounded-lg bg-purple-600 text-white text-xs lg:text-base hover:bg-purple-900 transition-colors duration-300"
                       onClick={() =>
                         handleEnviarResposta({
-                          perguntaId: pergunta.id,
-                          userId: userId!,
-                          conteudo,
+                          fkId_pergunta: pergunta.id_pergunta,
+                          fkId_usuario: userId!,
+                          resposta,
                         })
                       }
                       disabled={createResposta.isPending}

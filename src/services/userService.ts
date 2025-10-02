@@ -11,7 +11,7 @@ export async function fetchUsers(): Promise<User[]> {
 export async function fetchUsersId(id : string | undefined): Promise<User> {
   const res = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/user/${id}`);
   return res.data;
-}
+} 
 
 // Cria um novo usuário
 export async function createUser(data: CreateUserData): Promise<User> {
@@ -29,7 +29,7 @@ export async function createFotoUser(formData: FormData, id: string): Promise<Us
 
 // Atualiza um usuário existente
 export async function updateUser(data: UpdateUserData): Promise<User> {
-  const res = await axios.put(`${process.env.NEXT_PUBLIC_API_URL}/user/${data.id}`, data);
+  const res = await axios.put(`${process.env.NEXT_PUBLIC_API_URL}/user/${data.id_usuario}`, data);
   return res.data;
 }
 

@@ -32,15 +32,15 @@ export default function CadastroUsuario() {
     formState: { errors, isSubmitting },
   } = useForm({
     defaultValues: {
-      name: "",
-      apelido: "",
-      fkIdCurso: "",
-      email: "",
-      senha: "",
+      nome_usuario: "",
+      apelido_usuario: "",
+      email_usuario: "",
+      senha_usuario: "",
+      fkIdTipoUsuario: "61e8c572-f4cd-4008-886d-2c7ca0b11f48",
     },
   });
 
-  const senha = watch("senha");
+  const senha = watch("senha_usuario");
 
   const onSubmit = async (data: any) => {
     setMensagem({ tipo: null, texto: "" });
@@ -60,6 +60,8 @@ export default function CadastroUsuario() {
         setTimeout(() => {
           router.push("/Auth/Login");
         }, 1500);
+
+        console.log("Usuário cadastrado com sucesso", data);
       } else if (res.status === 409) {
         setMensagem({
           tipo: "erro",
@@ -71,6 +73,8 @@ export default function CadastroUsuario() {
           tipo: "erro",
           texto: errorData.message || "Erro ao cadastrar usuário.",
         });
+        console.error("Erro ao cadastrar usuário:", errorData);
+        console.log("Resposta do servidor:", data);
       }
     } catch (error) {
       console.error("Erro ao cadastrar usuário:", error);
@@ -126,7 +130,7 @@ export default function CadastroUsuario() {
               <div className="relative">
                 <UserIcon className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
                 <Controller
-                  name="name"
+                  name="nome_usuario"
                   control={control}
                   rules={{ required: "Nome é obrigatório." }}
                   render={({ field }) => (
@@ -139,9 +143,9 @@ export default function CadastroUsuario() {
                   )}
                 />
               </div>
-              {errors.name && (
+              {errors.nome_usuario && (
                 <p className="text-red-500 text-xs mt-1">
-                  {errors.name.message}
+                  {errors.nome_usuario.message}
                 </p>
               )}
             </div>
@@ -154,7 +158,7 @@ export default function CadastroUsuario() {
               <div className="relative">
                 <UserCircleIcon className="w-5 h-5 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
                 <Controller
-                  name="apelido"
+                  name="apelido_usuario"
                   control={control}
                   rules={{ required: "Apelido é obrigatório." }}
                   render={({ field }) => (
@@ -167,9 +171,9 @@ export default function CadastroUsuario() {
                   )}
                 />
               </div>
-              {errors.apelido && (
+              {errors.apelido_usuario && (
                 <p className="text-red-500 text-xs mt-1">
-                  {errors.apelido.message}
+                  {errors.apelido_usuario.message}
                 </p>
               )}
             </div>
@@ -182,7 +186,7 @@ export default function CadastroUsuario() {
               <div className="relative">
                 <EnvelopeIcon className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
                 <Controller
-                  name="email"
+                  name="email_usuario"
                   control={control}
                   rules={{
                     required: "Email é obrigatório.",
@@ -194,16 +198,16 @@ export default function CadastroUsuario() {
                   render={({ field }) => (
                     <input
                       {...field}
-                      type="email"
+                      type="email_usuario"
                       placeholder="Digite seu email"
                       className="w-full pl-10 pr-4 py-2 border rounded-lg border-gray-300 focus:border-purple-500 focus:ring focus:ring-purple-200 outline-none"
                     />
                   )}
                 />
               </div>
-              {errors.email && (
+              {errors.email_usuario && (
                 <p className="text-red-500 text-xs mt-1">
-                  {errors.email.message}
+                  {errors.email_usuario.message}
                 </p>
               )}
             </div>
@@ -216,7 +220,7 @@ export default function CadastroUsuario() {
               <div className="relative">
                 <LockClosedIcon className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
                 <Controller
-                  name="senha"
+                  name="senha_usuario"
                   control={control}
                   rules={{
                     required: "Senha é obrigatória.",
@@ -248,9 +252,9 @@ export default function CadastroUsuario() {
                   )}
                 </button>
               </div>
-              {errors.senha && (
+              {errors.senha_usuario && (
                 <p className="text-red-500 text-xs mt-1">
-                  {errors.senha.message}
+                  {errors.senha_usuario.message}
                 </p>
               )}
 

@@ -1,6 +1,6 @@
 export interface Curso {
-  id: string;
-  nome: string;
+  id_curso: string;
+  nome_curso: string;
 }
 
 export interface CreateCursoData {

@@ -8,6 +8,10 @@ export async function fetchGruposByUser(): Promise<Grupo[]> {
    const token = (await cookieStore).get("token")?.value; // pega o valor do token
    console.log(token)
 
+   if (!token) {
+    throw new Error("Token não encontrado. Usuário não autenticado.");
+  }
+
   const res = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/grupo/user`, {
     headers: {
       Authorization: `Bearer ${token}`,

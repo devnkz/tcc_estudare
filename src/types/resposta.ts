@@ -1,14 +1,14 @@
 export interface Resposta {
-  id: string;
-  fkIdPergunta: string;
-  fkIdUsuario: string;
+  id_resposta: string;
+  fkId_pergunta: string;
+  fkId_usuario: string;
   resposta: string;
 }
 
 export interface CreateRespostaData {
-  perguntaId: string;
-  userId: string;
-  conteudo: string;
+  fkId_pergunta: string;
+  fkId_usuario: string;
+  resposta: string;
 }
 
 export interface UpdateRespostaData {

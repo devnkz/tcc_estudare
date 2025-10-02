@@ -9,21 +9,25 @@ import { useState } from "react";
 import { deleteToken } from "@/lib/deleteToken";
 import { GoPencil } from "react-icons/go";
 import { useGetUser } from "@/hooks/user/useListId";
+import { Pergunta } from "@/types/pergunta";
+import { User } from "@/types/user";
 
 export default function UsuarioClientPage({
-  user: initialUser,
+  usuario: initialUser,
   perguntas,
 }: {
-  user: any;
-  perguntas: any[];
+  usuario: User;
+  perguntas: Pergunta[];
 }) {
   const router = useRouter();
   const cores = ["bg-blue-600", "bg-green-600", "bg-red-600", "bg-yellow-600"];
 
   const [openDialog, setOpenDialog] = useState<null | "usuario" | "foto">(null);
 
-  const { data: userData } = useGetUser(initialUser.id, initialUser);
-  console.log("User data do react-query: ", userData);
+  const { data: usuario_data } = useGetUser(
+    initialUser.id_usuario,
+    initialUser
+  );
 
   return (
     <div className="w-full flex justify-center bg-white p-2">
@@ -34,9 +38,9 @@ export default function UsuarioClientPage({
             className="relative cursor-pointer hover:opacity-70 transition-opacity duration-300"
             onClick={() => setOpenDialog("foto")}
           >
-            {userData.fotoPerfil ? (
+            {usuario_data.foto_perfil ? (
               <img
-                src={userData.fotoPerfil}
+                src={usuario_data.foto_perfil}
                 alt="Foto do usuário"
                 className="h-40 w-40 rounded-full object-cover border-2 border-zinc-300"
               />
@@ -50,14 +54,16 @@ export default function UsuarioClientPage({
 
           <h2 className="text-sm text-zinc-600">
             Estudante desde{" "}
-            {userData.createdAt
-              ? new Date(userData.createdAt).toLocaleDateString("pt-BR")
+            {usuario_data.dataCriacao_usuario
+              ? new Date(usuario_data.dataCriacao_usuario).toLocaleDateString(
+                  "pt-BR"
+                )
               : "-"}
           </h2>
         </div>
-        <h1 className="font-bold text-xl">{userData.name}</h1>
+        <h1 className="font-bold text-xl">{usuario_data.nome_usuario}</h1>
         <h2 className="text-zinc-700 text-base">
-          Seu apelido: {userData.apelido}
+          Seu apelido: {usuario_data.apelido_usuario}
         </h2>
 
         <div className="p-2 rounded-xl w-full space-y-4">
@@ -77,11 +83,6 @@ export default function UsuarioClientPage({
           <div className="bg-white p-2 rounded-lg h-[400px]">
             <div className="flex justify-between px-2 py-4 border-b-2 border-zinc-300">
               <div>
-                <h2 className="text-zinc-600 text-xs">Série/Curso</h2>
-                <h1 className="font-bold text-xl">{userData.curso?.nome}</h1>
-              </div>
-
-              <div>
                 <h2 className="text-zinc-600 text-xs">Perguntas Feitas</h2>
                 <h1 className="font-bold text-xl">{perguntas.length}</h1>
               </div>
@@ -92,7 +93,7 @@ export default function UsuarioClientPage({
                 const cor = cores[index % cores.length];
                 return (
                   <div
-                    key={p.id}
+                    key={p.id_pergunta}
                     className="flex gap-2 px-2 py-4 border-b-2 border-zinc-300"
                   >
                     <LuFiles
@@ -100,7 +101,7 @@ export default function UsuarioClientPage({
                     />
                     <div>
                       <h1 className="font-bold text-black text-xs">
-                        {p.materia}
+                        {p.componente.nome_componente}
                       </h1>
                       <p
                         className="max-w-[200px] truncate text-base text-zinc-600"
@@ -133,12 +134,12 @@ export default function UsuarioClientPage({
       <UpdateUserModal
         openDialog={openDialog === "usuario" ? "usuario" : null}
         setOpenDialog={setOpenDialog}
-        user={userData}
+        user={usuario_data}
       />
       <UpdateUserFotoModal
         openDialog={openDialog === "foto" ? "foto" : null}
         setOpenDialog={setOpenDialog}
-        user={userData}
+        user={usuario_data}
       />
     </div>
   );

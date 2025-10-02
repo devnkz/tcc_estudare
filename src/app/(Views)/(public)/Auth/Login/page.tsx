@@ -25,8 +25,8 @@ const interblack = Inter({ subsets: ["latin"], weight: ["900"] });
 
 export default function LoginUsuario() {
   const [form, setForm] = useState({
-    email: "",
-    senha: "",
+    email_usuario: "",
+    senha_usuario: "",
   });
   const router = useRouter();
 
@@ -84,8 +84,10 @@ export default function LoginUsuario() {
                 <input
                   type="email"
                   placeholder="Digite seu email"
-                  value={form.email}
-                  onChange={(e) => handleChange("email", e.target.value)}
+                  value={form.email_usuario}
+                  onChange={(e) =>
+                    handleChange("email_usuario", e.target.value)
+                  }
                   className="w-full pl-10 pr-4 py-2 border rounded-lg border-gray-300 focus:border-purple-500 focus:ring focus:ring-purple-200 outline-none"
                 />
               </div>
@@ -101,8 +103,10 @@ export default function LoginUsuario() {
                 <input
                   type={mostrarSenha ? "text" : "password"}
                   placeholder="Digite sua senha"
-                  value={form.senha}
-                  onChange={(e) => handleChange("senha", e.target.value)}
+                  value={form.senha_usuario}
+                  onChange={(e) =>
+                    handleChange("senha_usuario", e.target.value)
+                  }
                   className="w-full pl-10 pr-10 py-2 border rounded-lg border-gray-300 focus:border-purple-500 focus:ring focus:ring-purple-200 outline-none"
                 />
                 <button

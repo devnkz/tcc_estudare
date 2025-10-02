@@ -1,33 +1,29 @@
 export interface User {
-  id: string;
-  name: string;
-  email: string;
-  senha: string;
-  apelido: string;
-  fotoPerfil?: string;
+  id_usuario: string;
+  nome_usuario: string;
+  email_usuario: string;
+  senha_usuario: string;
+  apelido_usuario: string;
+  foto_perfil?: string;
   fkIdTipoUsuario: string;
-  createdAt: string;
-  curso: {
-    id: string;
-    nome: string;
-  };
+  dataCriacao_usuario: string;
 }
 
 export interface CreateUserData {
-  name: string;
-  email: string;
-  senha: string;
-  apelido: string;
-  fotoPerfil?: string;
+  nome_usuario: string;
+  email_usuario: string;
+  senha_usuario: string;
+  apelido_usuario: string;
+  foto_perfil?: string;
   fkIdTipoUsuario: string;
 }
 
 export interface UpdateUserData {
-  id: string;
-  name: string;
-  email: string;
-  senha: string;
-  apelido: string;
-  fotoPerfil?: string;
+  id_usuario: string;
+  nome_usuario: string;
+  email_usuario: string;
+  senha_usuario: string;
+  apelido_usuario: string;
+  foto_perfil?: string;
   fkIdTipoUsuario: string;
 }

@@ -30,22 +30,16 @@ export default async function RootLayout({
   let id: string | null = null;
 
   if (token) {
-    try {
-      // Usamos a tipagem genérica para garantir que o resultado decodificado
-      // tenha a estrutura que esperamos.
-      const decoded = verify(
-        token,
-        process.env.JWT_SECRET!
-      ) as DecodedTokenPayload;
+    // Usamos a tipagem genérica para garantir que o resultado decodificado
+    // tenha a estrutura que esperamos.
+    const decoded = verify(
+      token,
+      process.env.JWT_SECRET!
+    ) as DecodedTokenPayload;
 
-      // Verificamos se 'id' existe no objeto decodificado antes de atribuir
-      if (decoded.id) {
-        id = decoded.id;
-      }
-    } catch (error) {
-      console.error("Erro ao verificar o token:", error);
-      // O token é inválido ou expirou, então definimos id como null
-      id = null;
+    // Verificamos se 'id' existe no objeto decodificado antes de atribuir
+    if (decoded.id) {
+      id = decoded.id;
     }
   }
 

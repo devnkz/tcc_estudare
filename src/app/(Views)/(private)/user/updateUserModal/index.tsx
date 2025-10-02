@@ -26,10 +26,10 @@ export function UpdateUserModal({
     formState: { errors },
   } = useForm<UpdateUserData>({
     defaultValues: {
-      id: user.id,
-      name: user.name,
-      apelido: user.apelido,
-      email: user.email,
+      id_usuario: user.id_usuario,
+      nome_usuario: user.nome_usuario,
+      apelido_usuario: user.apelido_usuario,
+      email_usuario: user.email_usuario,
     },
   });
 
@@ -42,7 +42,7 @@ export function UpdateUserModal({
 
     mutate(data, {
       onSuccess: () => {
-        setOpenDialog(null); // fecha o modal
+        setOpenDialog(null);
       },
     });
   };
@@ -58,7 +58,7 @@ export function UpdateUserModal({
         </DialogHeader>
         <form className="space-y-4" onSubmit={handleSubmit(onSubmit)}>
           <Controller
-            name="name"
+            name="nome_usuario"
             control={control}
             render={({ field }) => (
               <Input
@@ -70,7 +70,7 @@ export function UpdateUserModal({
             )}
           />
           <Controller
-            name="apelido"
+            name="apelido_usuario"
             control={control}
             render={({ field }) => (
               <Input
@@ -82,7 +82,7 @@ export function UpdateUserModal({
             )}
           />
           <Controller
-            name="email"
+            name="email_usuario"
             control={control}
             render={({ field }) => (
               <Input

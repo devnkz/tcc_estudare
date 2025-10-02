@@ -12,7 +12,7 @@ export function useUpdateUser() {
       queryClient.invalidateQueries({ queryKey: ["users"] });
 
       // Atualiza cache de um usuário específico
-      queryClient.setQueryData<User>(["user", updatedUser.id], updatedUser);
+      queryClient.setQueryData<User>(["user", updatedUser.id_usuario], updatedUser);
     },
   });
 }

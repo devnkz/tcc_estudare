@@ -17,11 +17,14 @@ import { useCreatePergunta } from "@/hooks/pergunta/useCreate";
 import { useForm, Controller } from "react-hook-form";
 import { useUser } from "@/context/userContext";
 import { useRouter } from "next/navigation";
+import { Curso } from "@/types/curso";
 
 export default function AskQuestionPage({
   componentes,
+  cursos,
 }: {
   componentes: Componente[];
+  cursos: Curso[];
 }) {
   const TipsForAsking = [
     { text: "Seja específico e forneça contexto" },
@@ -42,7 +45,7 @@ export default function AskQuestionPage({
   const { mutate, isPending } = useCreatePergunta();
 
   const onSubmit = (data: CreatePerguntaData) => {
-    const payload = { ...data, userId: userId || "" };
+    const payload = { ...data, fkId_usuario: userId || "" };
     mutate(payload, {
       onSuccess: () => {
         router.push("/home");
@@ -67,6 +70,43 @@ export default function AskQuestionPage({
               onSubmit={handleSubmit(onSubmit)}
               className="flex flex-col gap-6"
             >
+              <div className="mb-4">
+                <span className="block text-sm font-medium text-gray-700 mb-1">
+                  Curso
+                </span>
+                <Controller
+                  control={control}
+                  name="fkId_curso"
+                  rules={{ required: "Selecione um curso" }}
+                  render={({ field }) => (
+                    <Select onValueChange={field.onChange} value={field.value}>
+                      <SelectTrigger className="w-full text-base cursor-pointer bg-zinc-200 rounded-xs border border-zinc-200 hover:border-purple-500 hover:shadow-md transition-all duration-300">
+                        <SelectValue placeholder="Selecione o curso" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectGroup>
+                          <SelectLabel>Cursos</SelectLabel>
+                          {cursos?.map((curso: Curso) => (
+                            <SelectItem
+                              key={curso.id_curso}
+                              value={String(curso.id_curso)}
+                              className="hover:bg-purple-100 hover:text-purple-700 transition-colors duration-200"
+                            >
+                              {curso.nome_curso}
+                            </SelectItem>
+                          ))}
+                        </SelectGroup>
+                      </SelectContent>
+                    </Select>
+                  )}
+                />
+                {errors.fkId_curso && (
+                  <p className="text-red-600 text-sm mt-1">
+                    {errors.fkId_curso.message}
+                  </p>
+                )}
+              </div>
+
               {/* COMPONENTE (Select) */}
               <div className="mb-4">
                 <span className="block text-sm font-medium text-gray-700 mb-1">
@@ -74,7 +114,7 @@ export default function AskQuestionPage({
                 </span>
                 <Controller
                   control={control}
-                  name="fkIdComponente"
+                  name="fkId_componente"
                   rules={{ required: "Selecione um componente" }}
                   render={({ field }) => (
                     <Select onValueChange={field.onChange} value={field.value}>
@@ -86,11 +126,11 @@ export default function AskQuestionPage({
                           <SelectLabel>Componentes</SelectLabel>
                           {componentes?.map((componente: Componente) => (
                             <SelectItem
-                              key={componente.id}
-                              value={String(componente.id)}
+                              key={componente.id_componente}
+                              value={String(componente.id_componente)}
                               className="hover:bg-purple-100 hover:text-purple-700 transition-colors duration-200"
                             >
-                              {componente.nome}
+                              {componente.nome_componente}
                             </SelectItem>
                           ))}
                         </SelectGroup>
@@ -98,9 +138,9 @@ export default function AskQuestionPage({
                     </Select>
                   )}
                 />
-                {errors.fkIdComponente && (
+                {errors.fkId_componente && (
                   <p className="text-red-600 text-sm mt-1">
-                    {errors.fkIdComponente.message}
+                    {errors.fkId_componente.message}
                   </p>
                 )}
               </div>
@@ -111,15 +151,15 @@ export default function AskQuestionPage({
                   Sua pergunta
                 </span>
                 <textarea
-                  {...register("conteudo", {
+                  {...register("pergunta", {
                     required: "A pergunta é obrigatória",
                   })}
                   className="w-full text-base bg-zinc-200 border border-zinc-200 rounded px-3 py-2 min-h-[150px] focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-100 resize-y transition-all duration-300 hover:border-purple-500 hover:shadow-md focus:shadow-purple-100"
                   placeholder="Descreva sua dúvida com detalhes para obter melhores respostas"
                 />
-                {errors.conteudo && (
+                {errors.pergunta && (
                   <p className="text-red-600 text-sm mt-1">
-                    {errors.conteudo.message}
+                    {errors.pergunta.message}
                   </p>
                 )}
               </div>

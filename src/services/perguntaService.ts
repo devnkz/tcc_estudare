@@ -4,6 +4,7 @@ import axios from "axios";
 // Busca todas as perguntas
 export async function fetchPerguntas(): Promise<Pergunta[]> {
   const res = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/pergunta`);
+  console.log(res.data);
   return res.data;
 }
 
@@ -21,7 +22,7 @@ export async function createPergunta(data: CreatePerguntaData): Promise<Pergunta
 
 // Atualiza uma pergunta existente
 export async function updatePergunta(data: UpdatePerguntaData, token: string): Promise<Pergunta> {
-  const res = await axios.put(`${process.env.NEXT_PUBLIC_API_URL}/pergunta/${data.id}`, data, {
+  const res = await axios.put(`${process.env.NEXT_PUBLIC_API_URL}/pergunta/${data.id_pergunta}`, data, {
     headers: {
       Authorization: `Bearer ${token}`,
     },

@@ -28,7 +28,7 @@ export function UpdateUserFotoModal({
     formData.append("foto", file);
 
     mutate(
-      { id: user.id, data: formData },
+      { id: user.id_usuario, data: formData },
       {
         onSuccess: () => {
           setOpenDialog(null);

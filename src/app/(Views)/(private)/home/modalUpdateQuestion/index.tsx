@@ -27,7 +27,7 @@ export default function ModalUpdateQuestion({
 }: ModalUpdateQuestionProps) {
   const [conteudoUpdate, setConteudoUpdate] = useState(pergunta.pergunta);
   const [selectedComponentId, setSelectedComponentId] = useState<string>(
-    pergunta.fkIdComponente || ""
+    pergunta.fkId_componente || ""
   );
 
   const [isOpen, setIsOpen] = useState(false);
@@ -39,8 +39,8 @@ export default function ModalUpdateQuestion({
 
     updatePergunta(
       {
-        id: pergunta.id,
-        conteudo: conteudoUpdate,
+        id_pergunta: pergunta.id_pergunta,
+        pergunta: conteudoUpdate,
       },
       {
         onSuccess: () => {
@@ -69,14 +69,6 @@ export default function ModalUpdateQuestion({
             placeholder="Edite sua pergunta"
             value={conteudoUpdate}
             onChange={(e) => setConteudoUpdate(e.target.value)}
-          />
-
-          <MultiSelectCombobox
-            items={componentes || []}
-            selectedIds={selectedComponentId ? [selectedComponentId] : []}
-            setSelectedIds={(ids) => setSelectedComponentId(ids[0] || "")}
-            placeholder="Altere o componente caso queira"
-            getLabel={(c) => c.nome}
           />
         </div>
 

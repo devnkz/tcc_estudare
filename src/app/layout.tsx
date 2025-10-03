@@ -5,7 +5,6 @@ import { Inter } from "next/font/google";
 import { verify } from "jsonwebtoken";
 import { getTokenFromCookie } from "@/lib/getTokenServer";
 
-import UserProviderWrapper from "../providers/UserWrapperProvider";
 import { QueryProvider } from "../providers/QueryProvider";
 import { RouteChangeLoader } from "@/components/shared/RouteChangeLoader";
 
@@ -49,10 +48,7 @@ export default async function RootLayout({
         className={`${inter.className} w-full flex flex-col justify-center`}
       >
         <RouteChangeLoader />
-        <QueryProvider>
-          {/* Agora o ID sempre será uma string ou null */}
-          <UserProviderWrapper userId={id}>{children}</UserProviderWrapper>
-        </QueryProvider>
+        <QueryProvider>{children}</QueryProvider>
       </body>
     </html>
   );

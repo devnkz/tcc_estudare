@@ -1,6 +1,10 @@
 "use client";
 
 import { Grupo, Membro } from "@/types/grupo";
+import { User } from "@/types/user";
+import { useState, useEffect, useRef } from "react";
+import { useRouter } from "next/navigation";
+import { io, Socket } from "socket.io-client";
 import {
   Dialog,
   DialogContent,
@@ -10,29 +14,39 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { MultiSelectCombobox } from "@/components/ui/comboxFilter";
-import { User } from "@/types/user";
-import { useState } from "react";
 import { useUpdateGrupo, UpdateGrupoData } from "@/hooks/grupo/useUpdate";
 import { useRemoveGrupoMember } from "@/hooks/grupo/useRemoveMember";
 import { useLeaveGroup } from "@/hooks/grupo/useLeave";
-import { useRouter } from "next/navigation";
 import { useGrupoById } from "@/hooks/grupo/useListById";
 
 interface ClientGrupoDetailProps {
   grupoAtual: Grupo;
   users: User[];
+  id_usuario_logado: string; // ID do usuário logado
+}
+
+interface Mensagem {
+  id_mensagem: string;
+  mensagem: string;
+  fkId_usuario: string;
+  dataCriacao_Mensagem: string;
+  usuario: {
+    id_usuario: string;
+    nome_usuario: string;
+    apelido_usuario: string;
+  };
 }
 
 export default function ClientGrupoDetail({
   grupoAtual,
   users,
+  id_usuario_logado,
 }: ClientGrupoDetailProps) {
   const [open, setOpen] = useState(false);
   const [selectedUserIds, setSelectedUserIds] = useState<string[]>([]);
   const router = useRouter();
 
   const { data: grupoData } = useGrupoById(grupoAtual.id_grupo);
-  console.log("Grupo data do react-query: ", grupoData);
 
   const updateGrupoMutation = useUpdateGrupo();
   const removeMemberMutation = useRemoveGrupoMember();
@@ -73,8 +87,52 @@ export default function ClientGrupoDetail({
     router.push("/groups");
   };
 
+  // --- Chat ---
+  const [mensagens, setMensagens] = useState<Mensagem[]>([]);
+  const [novaMensagem, setNovaMensagem] = useState("");
+  const socketRef = useRef<Socket | null>(null);
+  const chatEndRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    const socket = io("http://localhost:3333"); // Backend
+    socketRef.current = socket;
+
+    socket.emit("join", grupoAtual.id_grupo);
+
+    socket.on("historico", (msgs: Mensagem[]) => {
+      setMensagens(msgs);
+    });
+
+    socket.on("mensagem_recebida", (msg: Mensagem) => {
+      setMensagens((prev) => [...prev, msg]);
+    });
+
+    return () => {
+      socket.disconnect();
+    };
+  }, [grupoAtual.id_grupo]);
+
+  const handleEnviarMensagem = () => {
+    if (!novaMensagem.trim()) return;
+
+    const msgPayload = {
+      text: novaMensagem,
+      userId: id_usuario_logado,
+      grupoId: grupoAtual.id_grupo,
+    };
+
+    socketRef.current?.emit("nova_mensagem", msgPayload);
+    setNovaMensagem("");
+  };
+
+  useEffect(() => {
+    // Scroll automático
+    chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [mensagens]);
+
   return (
     <div className="p-4">
+      {/* Grupo */}
       <h1 className="text-2xl font-bold">{grupoAtual.nome_grupo}</h1>
 
       <button
@@ -85,6 +143,7 @@ export default function ClientGrupoDetail({
         {leaveGroupMutation.isPending ? "Saindo..." : "Sair do grupo"}
       </button>
 
+      {/* Modal adicionar membros */}
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogTrigger asChild>
           <button className="w-[200px] mt-2 bg-purple-600 p-3 rounded-lg text-white cursor-pointer hover:-translate-y-1 transition-all duration-300">
@@ -120,7 +179,10 @@ export default function ClientGrupoDetail({
         </DialogContent>
       </Dialog>
 
-      <h1>Criador do grupo: {grupoAtual.usuario.nome_usuario}</h1>
+      {/* Criador e membros */}
+      <h1 className="mt-4">
+        Criador do grupo: {grupoAtual.usuario.nome_usuario}
+      </h1>
 
       <h2 className="mt-4 mb-2 font-semibold">Membros:</h2>
       <div className="flex gap-4 overflow-x-auto">
@@ -147,6 +209,54 @@ export default function ClientGrupoDetail({
             )}
           </div>
         ))}
+      </div>
+
+      {/* --- CHAT --- */}
+      <div className="mt-6">
+        <h2 className="font-bold text-lg mb-2">Chat do grupo</h2>
+        <div className="border p-2 rounded-lg h-64 overflow-y-auto mb-2 bg-gray-100 flex flex-col">
+          {mensagens.map((m) => (
+            <div
+              key={m.id_mensagem}
+              className={`mb-1 flex ${
+                m.fkId_usuario === id_usuario_logado
+                  ? "justify-end"
+                  : "justify-start"
+              }`}
+            >
+              <div
+                className={`px-3 py-1 rounded-lg max-w-xs break-words ${
+                  m.fkId_usuario === id_usuario_logado
+                    ? "bg-purple-600 text-white"
+                    : "bg-white text-black"
+                }`}
+              >
+                <span className="font-bold text-sm mr-1">
+                  {m.usuario.apelido_usuario}:
+                </span>
+                <span className="text-sm">{m.mensagem}</span>
+              </div>
+            </div>
+          ))}
+          <div ref={chatEndRef} />
+        </div>
+
+        <div className="flex gap-2">
+          <input
+            type="text"
+            className="flex-1 p-2 border rounded-md"
+            placeholder="Digite sua mensagem..."
+            value={novaMensagem}
+            onChange={(e) => setNovaMensagem(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && handleEnviarMensagem()}
+          />
+          <button
+            className="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-800"
+            onClick={handleEnviarMensagem}
+          >
+            Enviar
+          </button>
+        </div>
       </div>
     </div>
   );

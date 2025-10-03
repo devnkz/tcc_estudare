@@ -16,7 +16,7 @@ export async function createResposta(data: CreateRespostaData): Promise<Resposta
 
 // Atualiza uma resposta existente
 export async function updateResposta(data: UpdateRespostaData): Promise<Resposta> {
-  const res = await axios.put(`${process.env.NEXT_PUBLIC_API_URL}/resposta/${data.id}`, { conteudo: data.resposta });
+  const res = await axios.put(`${process.env.NEXT_PUBLIC_API_URL}/resposta/${data.id_resposta}`, data);
   return res.data;
 }
 

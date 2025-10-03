@@ -12,8 +12,8 @@ export interface CreateRespostaData {
 }
 
 export interface UpdateRespostaData {
-  id: string;
-  fkIdPergunta: string;
-  fkIdUsuario: string;
+  id_resposta: string;
+  fkId_pergunta: string;
+  fkId_usuario: string;
   resposta: string;
 }

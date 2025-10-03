@@ -3,7 +3,6 @@
 import { useState, useRef } from "react";
 import { CreateRespostaData, Resposta } from "@/types/resposta";
 import { useCreateResposta } from "@/hooks/resposta/useCreate";
-import { useUser } from "@/context/userContext";
 
 import { useListPerguntas } from "@/hooks/pergunta/useList";
 import { useListComponentes } from "@/hooks/componente/useList";
@@ -15,7 +14,8 @@ import { useDeleteResposta } from "@/hooks/resposta/useDelete";
 import { Pergunta } from "@/types/pergunta";
 import { Componente } from "@/types/componente";
 import { Curso } from "@/types/curso";
-import ModalUpdateQuestion from "../modalUpdateQuestion";
+import ModalUpdateQuestion from "./modalUpdateQuestion";
+import ModalUpdateResponse from "./modalUpdateResponse";
 
 export function PerguntasClientPage({
   initialPerguntas,
@@ -87,6 +87,13 @@ export function PerguntasClientPage({
           const respostasPergunta = respostas.filter(
             (r) => r.fkId_pergunta === pergunta.id_pergunta
           );
+
+          const minhaResposta = respostasPergunta.find(
+            (r) => r.usuario.id_usuario === id_usuario
+          );
+
+          const jaRespondida = !!minhaResposta;
+
           const temResposta = respostasPergunta.length > 0;
 
           return (
@@ -156,13 +163,16 @@ export function PerguntasClientPage({
                   </div>
                 )}
 
-                {id_usuario !== pergunta.usuario.id_usuario ? (
+                {id_usuario !== pergunta.usuario.id_usuario && !jaRespondida ? (
                   <button
                     className="p-2 rounded-lg bg-purple-600 text-white text-xs lg:text-base hover:bg-purple-900 transition-colors duration-300"
                     onClick={() => handleResponder(pergunta.id_pergunta)}
                   >
                     Responder
                   </button>
+                ) : id_usuario !== pergunta.usuario.id_usuario &&
+                  jaRespondida ? (
+                  <p>So e possivel uma unica resposta</p>
                 ) : (
                   <span className="text-purple-600 text-sm">
                     Não é possível responder sua própria pergunta
@@ -180,23 +190,28 @@ export function PerguntasClientPage({
                   {respostasPergunta.map((r) => (
                     <div
                       key={r.id_resposta}
-                      className="border p-2 rounded-md mb-2 flex items-center gap-2"
+                      className="border p-2 rounded-md mb-2 flex items-center justify-between"
                     >
-                      <p className="font-bold">
-                        {r.usuario.nome_usuario +
-                          ` (${r.usuario.apelido_usuario}) `}
-                        :
-                      </p>
-                      <span>{r.resposta}</span>
+                      <div className="flex gap-2">
+                        <p className="font-bold">
+                          {r.usuario.nome_usuario +
+                            ` (${r.usuario.apelido_usuario}) `}
+                          :
+                        </p>
+                        <span>{r.resposta}</span>
+                      </div>
 
-                      {(id_usuario === r.id_usuario ||
+                      {(id_usuario === r.usuario.id_usuario ||
                         id_usuario === pergunta.usuario.id_usuario) && (
-                        <button
-                          className="p-2 bg-white text-black rounded-md hover:bg-red-400 transition-colors duration-300 hover:text-black cursor-pointer"
-                          onClick={() => handleDeleteResposta(r.id_resposta)}
-                        >
-                          Deletar resposta
-                        </button>
+                        <div className="flex gap-2">
+                          <button
+                            className="p-2 bg-white text-black rounded-md hover:bg-red-400 transition-colors duration-300 hover:text-black cursor-pointer"
+                            onClick={() => handleDeleteResposta(r.id_resposta)}
+                          >
+                            Deletar resposta
+                          </button>
+                          <ModalUpdateResponse resposta={r} />
+                        </div>
                       )}
                     </div>
                   ))}

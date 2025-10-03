@@ -8,8 +8,6 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-
-import { MultiSelectCombobox } from "@/components/ui/comboxFilter";
 import { Input } from "@/components/ui/input";
 import { Componente } from "@/types/componente";
 import { Pergunta } from "@/types/pergunta";
@@ -22,13 +20,9 @@ interface ModalUpdateQuestionProps {
 }
 
 export default function ModalUpdateQuestion({
-  componentes,
   pergunta,
 }: ModalUpdateQuestionProps) {
   const [conteudoUpdate, setConteudoUpdate] = useState(pergunta.pergunta);
-  const [selectedComponentId, setSelectedComponentId] = useState<string>(
-    pergunta.fkId_componente || ""
-  );
 
   const [isOpen, setIsOpen] = useState(false);
 

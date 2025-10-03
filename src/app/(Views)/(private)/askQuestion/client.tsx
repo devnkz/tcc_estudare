@@ -22,9 +22,11 @@ import { Curso } from "@/types/curso";
 export default function AskQuestionPage({
   componentes,
   cursos,
+  id_usuario,
 }: {
   componentes: Componente[];
   cursos: Curso[];
+  id_usuario: string;
 }) {
   const TipsForAsking = [
     { text: "Seja específico e forneça contexto" },
@@ -33,7 +35,6 @@ export default function AskQuestionPage({
   ];
 
   const router = useRouter();
-  const { userId } = useUser();
 
   const {
     register,
@@ -45,7 +46,7 @@ export default function AskQuestionPage({
   const { mutate, isPending } = useCreatePergunta();
 
   const onSubmit = (data: CreatePerguntaData) => {
-    const payload = { ...data, fkId_usuario: userId || "" };
+    const payload = { ...data, fkId_usuario: id_usuario || "" };
     mutate(payload, {
       onSuccess: () => {
         router.push("/home");

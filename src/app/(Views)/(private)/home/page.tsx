@@ -27,7 +27,6 @@ export default async function HomePage() {
   }
 
   const usuarioId = await fetchUsersId(userId);
-  console.log(usuarioId);
 
   return (
     <div className="bg-white w-full flex flex-col justify-between items-center">
@@ -93,7 +92,7 @@ export default async function HomePage() {
               AJUDE COLEGAS <span className="text-purple-600">!</span>
             </h1>
           </div>
-          <PerguntasIndex />
+          <PerguntasIndex id_usuario={userId as string} />
         </div>
       </div>
       <Footer />

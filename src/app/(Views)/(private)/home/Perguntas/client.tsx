@@ -16,21 +16,20 @@ import { Pergunta } from "@/types/pergunta";
 import { Componente } from "@/types/componente";
 import { Curso } from "@/types/curso";
 import ModalUpdateQuestion from "../modalUpdateQuestion";
-import { UpdatePerguntaData } from "@/types/pergunta";
-import { useUpdatePergunta } from "@/hooks/pergunta/useUpdate";
 
 export function PerguntasClientPage({
   initialPerguntas,
   initialComponentes,
   initialCursos,
   initialRespostas,
+  id_usuario,
 }: {
   initialPerguntas: Pergunta[];
   initialComponentes: Componente[];
   initialCursos: Curso[];
   initialRespostas: Resposta[];
+  id_usuario: string;
 }) {
-  const { userId } = useUser();
   const createResposta = useCreateResposta();
   const respostaInputRef = useRef<HTMLInputElement>(null);
 
@@ -140,7 +139,7 @@ export function PerguntasClientPage({
               </p>
 
               <div className="flex items-center gap-2">
-                {userId === pergunta.usuario.id_usuario && (
+                {id_usuario === pergunta.usuario.id_usuario && (
                   <div className="flex gap-2">
                     <button
                       onClick={() => handleDelete(pergunta.id_pergunta)}
@@ -157,7 +156,7 @@ export function PerguntasClientPage({
                   </div>
                 )}
 
-                {userId !== pergunta.usuario.id_usuario ? (
+                {id_usuario !== pergunta.usuario.id_usuario ? (
                   <button
                     className="p-2 rounded-lg bg-purple-600 text-white text-xs lg:text-base hover:bg-purple-900 transition-colors duration-300"
                     onClick={() => handleResponder(pergunta.id_pergunta)}
@@ -181,12 +180,17 @@ export function PerguntasClientPage({
                   {respostasPergunta.map((r) => (
                     <div
                       key={r.id_resposta}
-                      className="border p-2 rounded-md mb-2 flex justify-between items-center"
+                      className="border p-2 rounded-md mb-2 flex items-center gap-2"
                     >
+                      <p className="font-bold">
+                        {r.usuario.nome_usuario +
+                          ` (${r.usuario.apelido_usuario}) `}
+                        :
+                      </p>
                       <span>{r.resposta}</span>
 
-                      {(userId === r.userId ||
-                        userId === pergunta.usuario.id_usuario) && (
+                      {(id_usuario === r.id_usuario ||
+                        id_usuario === pergunta.usuario.id_usuario) && (
                         <button
                           className="p-2 bg-white text-black rounded-md hover:bg-red-400 transition-colors duration-300 hover:text-black cursor-pointer"
                           onClick={() => handleDeleteResposta(r.id_resposta)}
@@ -216,7 +220,7 @@ export function PerguntasClientPage({
                       onClick={() =>
                         handleEnviarResposta({
                           fkId_pergunta: pergunta.id_pergunta,
-                          fkId_usuario: userId!,
+                          fkId_usuario: id_usuario!,
                           resposta,
                         })
                       }

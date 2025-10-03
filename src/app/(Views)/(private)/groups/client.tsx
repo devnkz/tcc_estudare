@@ -4,13 +4,11 @@ import React, { useState } from "react";
 import { useCreateGrupo } from "@/hooks/grupo/useCreate";
 import { CreateGrupoData, Grupo } from "@/types/grupo";
 import { User } from "@/types/user";
-import { Componente } from "@/types/componente";
 import { Input } from "@/components/ui/input";
 import { MultiSelectCombobox } from "@/components/ui/comboxFilter";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useRouter } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { useUser } from "@/context/userContext";
 import { useListGruposByUser } from "@/hooks/grupo/useListByUser";
 
 import {
@@ -25,9 +23,14 @@ import {
 interface GroupsPageProps {
   users: User[];
   grupos: Grupo[];
+  id_usuario: string;
 }
 
-const GroupsPage: React.FC<GroupsPageProps> = ({ users, grupos }) => {
+const GroupsPage: React.FC<GroupsPageProps> = ({
+  users,
+  grupos,
+  id_usuario,
+}) => {
   const [open, setOpen] = useState(false);
   const [selectedUserIds, setSelectedUserIds] = useState<string[]>([]);
   const [nome_grupo, setNome_Grupo] = useState("");
@@ -35,8 +38,6 @@ const GroupsPage: React.FC<GroupsPageProps> = ({ users, grupos }) => {
   const { data: gruposData = [] } = useListGruposByUser(grupos);
   const createGrupo = useCreateGrupo();
   const router = useRouter();
-  const { userId } = useUser();
-
   const handleCreateGroup = () => {
     if (!nome_grupo || selectedUserIds.length === 0) {
       console.warn("Preencha todos os campos!", nome_grupo, selectedUserIds);
@@ -46,7 +47,7 @@ const GroupsPage: React.FC<GroupsPageProps> = ({ users, grupos }) => {
     const data: CreateGrupoData = {
       nome_grupo,
       membrosIds: selectedUserIds,
-      createdById: userId!,
+      createdById: id_usuario!,
     };
 
     console.log("Data: ", data);

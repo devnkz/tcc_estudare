@@ -1,4 +1,4 @@
-import { UpdateUserData } from "@/types/user";
+import { UpdateUserData, User } from "@/types/user";
 import { Controller, useForm } from "react-hook-form";
 import { useUpdateUser } from "@/hooks/user/useUpdate";
 
@@ -18,7 +18,7 @@ export function UpdateUserModal({
 }: {
   openDialog: null | "usuario";
   setOpenDialog: (value: null | "usuario") => void;
-  user: any;
+  user: User;
 }) {
   const {
     handleSubmit,
@@ -32,8 +32,6 @@ export function UpdateUserModal({
       email_usuario: user.email_usuario,
     },
   });
-
-  console.log(user);
 
   const { mutate, isPending } = useUpdateUser();
 

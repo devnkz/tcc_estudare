@@ -7,6 +7,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { BotoesFormulario } from "@/components/ui/button";
+import { User } from "@/types/user";
 
 export function UpdateUserFotoModal({
   openDialog,
@@ -15,7 +16,7 @@ export function UpdateUserFotoModal({
 }: {
   openDialog: null | "foto";
   setOpenDialog: (value: null | "foto") => void;
-  user: any;
+  user: User;
 }) {
   const [file, setFile] = useState<File | null>(null);
   const { mutate, isPending } = useUpdateUserFoto();

@@ -12,11 +12,11 @@ export function useUpdateUserFoto() {
       // Atualiza a lista de usuários
       queryClient.setQueryData(["users"], (old: any) => {
         if (!old) return [data];
-        return old.map((u: any) => (u.id === data.id ? data : u));
+        return old.map((u: any) => (u.id === data.id_usuario ? data : u));
       });
 
       // Atualiza o usuário individual se você tiver outra query ["user", id]
-      queryClient.setQueryData(["user", data.id], data);
+      queryClient.setQueryData(["user", data.id_usuario], data);
     },
   });
 }

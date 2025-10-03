@@ -16,6 +16,6 @@ export function useToken() {
     setToken(cookieToken as string);
     setIsReady(true);
   }); // Sem array de dependências aqui
-
+  
   return { token, isReady };
 }

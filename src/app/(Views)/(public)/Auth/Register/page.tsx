@@ -36,7 +36,7 @@ export default function CadastroUsuario() {
       apelido_usuario: "",
       email_usuario: "",
       senha_usuario: "",
-      fkIdTipoUsuario: "61e8c572-f4cd-4008-886d-2c7ca0b11f48",
+      fkIdTipoUsuario: "dcf9817e-9d57-4f68-9b29-eb5ca87ee26c",
     },
   });
 

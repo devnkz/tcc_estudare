@@ -15,7 +15,6 @@ import { CreatePerguntaData } from "@/types/pergunta";
 import { Componente } from "@/types/componente";
 import { useCreatePergunta } from "@/hooks/pergunta/useCreate";
 import { useForm, Controller } from "react-hook-form";
-import { useUser } from "@/context/userContext";
 import { useRouter } from "next/navigation";
 import { Curso } from "@/types/curso";
 

@@ -7,6 +7,7 @@ export interface User {
   foto_perfil?: string;
   fkIdTipoUsuario: string;
   dataCriacao_usuario: string;
+  credibilidade_usuario: number;
 }
 
 export interface CreateUserData {

@@ -10,12 +10,23 @@ import { useListCursos } from "@/hooks/curso/useList";
 import { useListRespostas } from "@/hooks/resposta/useList";
 import { useDeletePergunta } from "@/hooks/pergunta/useDelete";
 import { useDeleteResposta } from "@/hooks/resposta/useDelete";
+import { BsThreeDotsVertical } from "react-icons/bs";
+
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 import { Pergunta } from "@/types/pergunta";
 import { Componente } from "@/types/componente";
 import { Curso } from "@/types/curso";
 import ModalUpdateQuestion from "./modalUpdateQuestion";
 import ModalUpdateResponse from "./modalUpdateResponse";
+import ModalCreateDenuncia from "./modalCreateReport";
 
 export function PerguntasClientPage({
   initialPerguntas,
@@ -79,6 +90,8 @@ export function PerguntasClientPage({
     );
   };
 
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
   return (
     <div className="w-full lg:p-4 flex flex-col gap-10">
       {/* PERGUNTAS */}
@@ -99,7 +112,7 @@ export function PerguntasClientPage({
           return (
             <div
               key={pergunta.id_pergunta}
-              className={`p-2 w-full shadow-md rounded-lg flex flex-col gap-2 text-black hover:-translate-y-1 transition-all duration-300
+              className={`p-2 w-full shadow-md rounded-lg flex flex-col gap-2 text-black
               ${
                 temResposta
                   ? "bg-green-100 border-green-400"
@@ -112,6 +125,29 @@ export function PerguntasClientPage({
                   {pergunta.usuario.apelido_usuario})
                 </h2>
                 <div className="flex flex-col items-end gap-2">
+                  <DropdownMenu>
+                    <DropdownMenuTrigger className="cursor-pointer">
+                      <BsThreeDotsVertical />
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent>
+                      <DropdownMenuLabel>Opções</DropdownMenuLabel>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem
+                        onClick={() => setIsModalOpen(true)}
+                        className="cursor-pointer"
+                      >
+                        Denúnciar
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+
+                  <ModalCreateDenuncia
+                    id_conteudo={pergunta.id_pergunta}
+                    id_usuario={id_usuario}
+                    isOpen={isModalOpen}
+                    onOpenChange={setIsModalOpen}
+                  />
+
                   <h3 className="text-sm text-zinc-900">
                     Realizada em:{" "}
                     {pergunta.dataCriacao_pergunta

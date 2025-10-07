@@ -11,6 +11,11 @@ import { GoPencil } from "react-icons/go";
 import { useGetUser } from "@/hooks/user/useListId";
 import { Pergunta } from "@/types/pergunta";
 import { User } from "@/types/user";
+import {
+  BsEmojiExpressionless,
+  BsEmojiGrin,
+  BsEmojiAngry,
+} from "react-icons/bs";
 
 export default function UsuarioClientPage({
   usuario: initialUser,
@@ -29,25 +34,48 @@ export default function UsuarioClientPage({
     initialUser
   );
 
+  if (!usuario_data) return null;
+
+  // Lógica de credibilidade
+  let CredibilidadeEmoji;
+  let credibilidadeMensagem;
+  let credibilidadeCor;
+
+  const cred = usuario_data.credibilidade_usuario;
+
+  if (cred < 35) {
+    CredibilidadeEmoji = BsEmojiAngry;
+    credibilidadeMensagem =
+      "Você precisa ser mais sério com suas responsabilidades!";
+    credibilidadeCor = "bg-red-100 text-red-600";
+  } else if (cred < 70) {
+    CredibilidadeEmoji = BsEmojiExpressionless;
+    credibilidadeMensagem = "Cuidado! Tome mais atenção às suas ações.";
+    credibilidadeCor = "bg-yellow-100 text-yellow-600";
+  } else {
+    CredibilidadeEmoji = BsEmojiGrin;
+    credibilidadeMensagem = "Parabéns! Continue com essa credibilidade alta.";
+    credibilidadeCor = "bg-green-100 text-green-600";
+  }
+
   return (
-    <div className="w-full flex justify-center bg-white p-2">
-      <div className="w-[600px] flex flex-col justify-center items-center py-14 space-y-2 relative">
+    <div className="w-full flex justify-center bg-gray-50 p-4">
+      <div className="w-[600px] flex flex-col justify-center items-center py-14 space-y-4 relative">
         <div className="space-y-2 w-full flex flex-col justify-center items-center">
-          {/* Foto do usuário clicável */}
           <div
-            className="relative cursor-pointer hover:opacity-70 transition-opacity duration-300"
+            className="relative cursor-pointer hover:scale-105 transition-transform duration-300"
             onClick={() => setOpenDialog("foto")}
           >
             {usuario_data.foto_perfil ? (
               <img
                 src={usuario_data.foto_perfil}
                 alt="Foto do usuário"
-                className="h-40 w-40 rounded-full object-cover border-2 border-zinc-300"
+                className="h-40 w-40 rounded-full object-cover border-4 border-purple-500 shadow-lg"
               />
             ) : (
-              <UserIcon className="h-20 w-20 p-4 bg-zinc-300 rounded-full" />
+              <UserIcon className="h-40 w-40 p-8 bg-zinc-300 rounded-full shadow-lg" />
             )}
-            <span className="absolute bottom-0 right-0 bg-purple-600 p-2 rounded-full text-white text-xl">
+            <span className="absolute bottom-0 right-0 bg-purple-600 p-2 rounded-full text-white text-xl shadow-md">
               <GoPencil />
             </span>
           </div>
@@ -61,12 +89,36 @@ export default function UsuarioClientPage({
               : "-"}
           </h2>
         </div>
-        <h1 className="font-bold text-xl">{usuario_data.nome_usuario}</h1>
-        <h2 className="text-zinc-700 text-base">
+
+        <h1 className="font-bold text-3xl text-gray-800">
+          {usuario_data.nome_usuario}
+        </h1>
+        <h2 className="text-zinc-700 text-lg">
           Seu apelido: {usuario_data.apelido_usuario}
         </h2>
 
-        <div className="p-2 rounded-xl w-full space-y-4">
+        {/* Card de Credibilidade */}
+        <div
+          className={`flex flex-col items-center justify-center gap-2 w-full p-4 rounded-xl shadow-md transition-all duration-300 ${credibilidadeCor}`}
+        >
+          <CredibilidadeEmoji className="text-5xl animate-bounce" />
+          <span className="font-semibold text-lg">
+            Sua credibilidade: {cred}
+          </span>
+          <p className="text-sm text-center">{credibilidadeMensagem}</p>
+          <div className="w-full bg-gray-300 h-2 rounded-full mt-2">
+            <div
+              className={`h-2 rounded-full transition-all duration-500`}
+              style={{
+                width: `${cred}%`,
+                backgroundColor:
+                  cred >= 70 ? "#16a34a" : cred >= 35 ? "#eab308" : "#dc2626",
+              }}
+            />
+          </div>
+        </div>
+
+        <div className="p-2 rounded-xl w-full space-y-4 bg-white shadow-md">
           <div className="flex justify-between items-center">
             <h2 className="font-bold">Informações</h2>
             <button
@@ -80,7 +132,7 @@ export default function UsuarioClientPage({
             </button>
           </div>
 
-          <div className="bg-white p-2 rounded-lg h-[400px]">
+          <div className="bg-white p-2 rounded-lg h-[400px] overflow-y-auto">
             <div className="flex justify-between px-2 py-4 border-b-2 border-zinc-300">
               <div>
                 <h2 className="text-zinc-600 text-xs">Perguntas Feitas</h2>
@@ -94,7 +146,7 @@ export default function UsuarioClientPage({
                 return (
                   <div
                     key={p.id_pergunta}
-                    className="flex gap-2 px-2 py-4 border-b-2 border-zinc-300"
+                    className="flex gap-2 px-2 py-4 border-b-2 border-zinc-300 hover:bg-gray-100 rounded-md transition-all duration-200"
                   >
                     <LuFiles
                       className={`h-10 w-10 p-2 rounded-full text-white ${cor}`}
@@ -121,8 +173,10 @@ export default function UsuarioClientPage({
 
             <button
               onClick={() => {
-                deleteToken("token"), router.push("/login");
+                deleteToken("token");
+                router.push("/login");
               }}
+              className="mt-4 bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 transition-colors"
             >
               Sair
             </button>
@@ -130,7 +184,6 @@ export default function UsuarioClientPage({
         </div>
       </div>
 
-      {/* Modais */}
       <UpdateUserModal
         openDialog={openDialog === "usuario" ? "usuario" : null}
         setOpenDialog={setOpenDialog}

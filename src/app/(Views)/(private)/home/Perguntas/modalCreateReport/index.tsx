@@ -18,13 +18,13 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useCreateDenuncia } from "@/hooks/denuncia/useCreate";
-import { useState } from "react";
 import { useForm, Controller } from "react-hook-form";
 import { CreateDenunciaData } from "@/types/denuncia";
 
 interface ModalCreateDenunciaProps {
   id_usuario: string;
   id_conteudo: string;
+  tipo_conteudo: string;
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
 }
@@ -32,6 +32,7 @@ interface ModalCreateDenunciaProps {
 export default function ModalCreateDenuncia({
   id_usuario,
   id_conteudo,
+  tipo_conteudo,
   isOpen,
   onOpenChange,
 }: ModalCreateDenunciaProps) {
@@ -49,6 +50,7 @@ export default function ModalCreateDenuncia({
       ...data,
       fkId_usuario: id_usuario,
       fkId_conteudo_denunciado: id_conteudo,
+      tipo_conteudo: tipo_conteudo,
       resultado: "...",
     };
     mutate(payload, {

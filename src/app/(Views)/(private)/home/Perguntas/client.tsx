@@ -144,6 +144,7 @@ export function PerguntasClientPage({
                   <ModalCreateDenuncia
                     id_conteudo={pergunta.id_pergunta}
                     id_usuario={id_usuario}
+                    tipo_conteudo="Pergunta"
                     isOpen={isModalOpen}
                     onOpenChange={setIsModalOpen}
                   />
@@ -236,6 +237,14 @@ export function PerguntasClientPage({
                         </p>
                         <span>{r.resposta}</span>
                       </div>
+
+                      <ModalCreateDenuncia
+                        id_conteudo={r.id_resposta}
+                        id_usuario={id_usuario}
+                        tipo_conteudo="Resposta"
+                        isOpen={isModalOpen}
+                        onOpenChange={setIsModalOpen}
+                      />
 
                       {(id_usuario === r.usuario.id_usuario ||
                         id_usuario === pergunta.usuario.id_usuario) && (

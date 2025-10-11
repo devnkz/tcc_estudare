@@ -68,10 +68,11 @@ export default function TelaHome() {
             </div>
           </div>
           {showImage && (
-            <div className="lg:block mr-45 mb-10">
+            <div className="lg:block mr-45 mb-25">
               <img
                 className="h-170 w-170"
                 src="/imagens/meeting_13543798.png"
+                alt="Imagem ilustrativa de alunos em formatura"
               ></img>
             </div>
           )}

@@ -1,6 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
-import { UserIcon, BellIcon } from "@heroicons/react/16/solid";
+import { UserIcon, BellIcon } from "@heroicons/react/24/solid";
 import { Inter } from "next/font/google";
 import { Button } from "../ui/button";
 
@@ -18,60 +18,64 @@ const interblack = Inter({ subsets: ["latin"], weight: ["900"] });
 /* ------------------ HEADER AUTENTICADO ------------------ */
 export function HeaderDesktopAutenticado() {
   return (
-    <header className="hidden w-full lg:flex justify-between items-center max-w-7xl mx-auto p-4 border-b border-zinc-200">
-      {/* Logo */}
-      <Link href="/" className="flex w-52 items-center">
-        <Image
-          src="/imagens/Logo/logoroxofundobrando.png"
-          height={100}
-          width={100}
-          alt="Logo Estudare"
-          style={{ objectFit: "contain" }}
-        />
-      </Link>
+    <header className="w-full bg-white border-b border-gray-100 shadow-sm">
+      <div className="max-w-7xl mx-auto flex justify-between items-center ">
+        {/* Logo */}
+        <Link href="/" className="flex items-center gap-3 group cursor-pointer">
+          <Image
+            src="/imagens/Transparente/7.png"
+            height={100}
+            width={280}
+            style={{ objectFit: "contain" }}
+            alt="Logo Estudare"
+            className="transition-transform duration-300 group-hover:scale-105"
+          />
+        </Link>
 
-      {/* Navegação */}
-      <nav>
-        <ul className="flex gap-6 items-center justify-center">
+        {/* Navegação principal */}
+        <nav className="flex items-center gap-8 cursor-pointer">
           {[
             { href: "/home", label: "Home" },
             { href: "/about", label: "Conheça-nos" },
             { href: "/groups", label: "Grupos" },
           ].map((item) => (
-            <li key={item.href}>
-              <Link
-                href={item.href}
-                className={`${interregular.className} cursor-pointer text-zinc-400 hover:text-purple-600 text-lg transition-colors duration-300 relative group`}
-              >
-                {item.label}
-                <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-purple-600 group-hover:w-full transition-all duration-300"></span>
-              </Link>
-            </li>
+            <Link
+              key={item.href}
+              href={item.href}
+              className={`${intermedium.className} text-gray-600 hover:text-purple-600 transition-colors duration-300 relative group text-lg`}
+            >
+              {item.label}
+              <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-purple-600 group-hover:w-full transition-all duration-300"></span>
+            </Link>
           ))}
+        </nav>
 
+        {/* Ações do usuário */}
+        <div className="flex items-center gap-1">
           {/* Notificações */}
-          <li className="flex space-x-3">
-            <Link href="/notifications">
-              <button className="rounded-full bg-zinc-200 p-2 relative hover:-translate-y-1 hover:bg-purple-600 transition-all duration-300 group">
-                <BellIcon className="h-8 w-8 text-black group-hover:text-white" />
-                <span className="hidden group-hover:block absolute left-0 top-14 bg-zinc-400 text-white p-2 text-xs rounded-lg">
-                  Notificações
-                </span>
-              </button>
-            </Link>
+          <Link href="/notifications">
+            <button
+              className={`${intersemibold.className} flex items-center gap-2 px-5 py-2.5 rounded-lg bg-purple-50 text-purple-600 cursor-pointer hover:bg-purple-100 hover:shadow-md hover:-translate-y-0.5 transition-all duration-300 border border-purple-100`}
+            >
+              <BellIcon className="h-5 w-5" />
+              <span>Notificações</span>
+            </button>
+          </Link>
 
-            {/* Usuário */}
-            <Link href="/user">
-              <button className="rounded-full bg-zinc-200 p-2 relative hover:-translate-y-1 hover:bg-purple-600 transition-all duration-300 group">
-                <UserIcon className="h-8 w-8 text-black group-hover:text-white" />
-                <span className="hidden group-hover:flex absolute left-0 top-14 bg-zinc-400 text-white p-2 text-xs rounded-lg whitespace-nowrap">
-                  Sua conta
-                </span>
-              </button>
-            </Link>
-          </li>
-        </ul>
-      </nav>
+          {/* Separador visual */}
+          <div className="h-6 w-[1px] bg-gray-200 mx-1 cursor-pointer" />
+
+          {/* Conta do usuário */}
+          <Link href="/user">
+            <button
+              className={`${intersemibold.className} flex items-center gap-2 px-5 py-2.5 rounded-lg bg-purple-600 text-white cursor-pointer hover:bg-purple-700 hover:shadow-md hover:-translate-y-0.5 transition-all duration-300  `}
+            >
+              <UserIcon className="h-5 w-5" />
+              <span>Minha Conta</span>
+            </button>
+          </Link>
+        </div>
+      </div>
     </header>
   );
 }
@@ -80,15 +84,16 @@ export function HeaderDesktopAutenticado() {
 export function HeaderDesktopNaoAutenticado() {
   return (
     <header className="w-full bg-white border-b border-gray-100 shadow-sm">
-      <div className="max-w-7xl mx-auto flex justify-between items-center px-8 py-5">
+      <div className="max-w-7xl mx-auto flex justify-between items-center">
         {/* Logo */}
         <Link href="/" className="flex items-center gap-3">
           <Image
-            src="/imagens/Logo/gatopurple500transparente.png"
+            src="/imagens/Transparente/7.png"
             height={75}
-            width={75}
+            width={170}
             style={{ objectFit: "contain" }}
             alt="Logo Estudare"
+            className="transition-transform duration-300 group-hover:scale-105"
           />
         </Link>
 
@@ -118,11 +123,12 @@ export function HeaderLoginCadastro() {
     <header className="w-full max-w-7xl flex flex-col items-center mx-auto py-6">
       <Link href="/" className="flex flex-col items-center">
         <Image
-          src="/imagens/Logo/logopurple500transparente.png"
-          height={270}
-          width={270}
+          src="/imagens/Transparente/5.png"
+          height={370}
+          width={370}
           alt="Logo Estudare"
           style={{ objectFit: "contain" }}
+          className="transition-transform duration-300 group-hover:scale-105"
         />
       </Link>
     </header>

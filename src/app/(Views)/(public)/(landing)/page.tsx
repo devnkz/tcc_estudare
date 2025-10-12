@@ -34,14 +34,14 @@ export default function TelaHome() {
     <div className="h-full w-full">
       <div className="flex flex-col scrollbar-hide">
         {/* Main */}
-        <main className="flex justify-between items-center">
-          <div className="w-full lg:w-3/5 flex flex-col items-start gap-5 pl-60 p-20 mt-44 mb-34 ">
+        <main className="flex justify-between items-center px-75 py-20">
+          <div className="w-full lg:w-3/5 flex flex-col items-start gap-5 mt-40 mb-30 ">
             <h1
-              className={`${interextrabold.className} font-extrabold text-purple-600 mr-90 text-5xl gap-1`}
+              className={`${interextrabold.className} font-extrabold text-purple-600 text-6xl gap-1`}
             >
               BEM-VINDO (A)
             </h1>
-            <h2 className={`${interbold.className} text-5xl mr-5`}>
+            <h2 className={`${interbold.className} text-6xl mr-5`}>
               Estudare: uma iniciativa dos alunos.
             </h2>
             <h3
@@ -68,9 +68,9 @@ export default function TelaHome() {
             </div>
           </div>
           {showImage && (
-            <div className="lg:block mr-45 mb-25">
+            <div className="lg:block mb-20">
               <img
-                className="h-170 w-170"
+                className="h-150 w-150"
                 src="/imagens/meeting_13543798.png"
                 alt="Imagem ilustrativa de alunos em formatura"
               ></img>

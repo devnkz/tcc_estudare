@@ -14,6 +14,7 @@ import { useForm, Controller } from "react-hook-form";
 import { useRouter } from "next/navigation";
 import { HeaderLoginCadastro } from "@/components/layout/header";
 import { motion, AnimatePresence } from "framer-motion";
+import { modal } from "@heroui/react";
 
 export default function CadastroUsuario() {
   const [mostrarSenha, setMostrarSenha] = useState(false);
@@ -269,16 +270,19 @@ export default function CadastroUsuario() {
               </div>
 
               {/* Checklist animado */}
-              <AnimatePresence mode="wait">
-                {senhaFocus && (
+              <AnimatePresence mode="sync">
+                {(senhaFocus || senha) && (
                   <motion.div
                     key="password-tips"
                     layout
-                    initial={{ opacity: 0, y: 15, scale: 0.98, height: 0 }}
+                    initial={{ opacity: 0, y: 10, scale: 0.98, height: 0 }}
                     animate={{ opacity: 1, y: 0, scale: 1, height: "auto" }}
-                    exit={{ opacity: 0, y: 0, scale: 0.97, height: 0 }}
-                    transition={{ duration: 0.4, ease: "easeInOut" }} // Duração e easing ajustados
-                    className="mt-3 p-4 bg-white border border-gray-200 rounded-xl shadow-lg overflow-hidden motion-div" // Adicionada a classe motion-div
+                    exit={{ opacity: 0, y: -10, scale: 0.97, height: 0 }}
+                    transition={{
+                      duration: 0.45,
+                      ease: [0.25, 0.1, 0.25, 1], // easing mais natural
+                    }}
+                    className="mt-3 p-4 bg-white border border-gray-200 rounded-xl shadow-lg overflow-hidden"
                   >
                     <p className="text-sm font-medium text-gray-700 mb-2">
                       Torne sua senha mais segura:

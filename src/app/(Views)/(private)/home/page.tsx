@@ -25,10 +25,9 @@ interface JWTPayload {
 }
 
 export default function HomePage() {
-  const [headerHeight, setHeaderHeight] = useState(0);
   const [userData, setUserData] = useState<any>(null);
   const [isVisible, setIsVisible] = useState(false);
-  const headerOffset = useHeaderOffset();
+  const [headerHeight, setHeaderHeight] = useState(0);
 
   // 1️⃣ Detecta altura do header
   useEffect(() => {
@@ -76,7 +75,7 @@ export default function HomePage() {
     >
       <div
         className="w-full lg:max-w-[1200px] flex flex-col items-center p-4 transition-all duration-500"
-        style={{ paddingTop: headerHeight - 5 }}
+        style={{ paddingTop: headerHeight }}
       >
         {/* Seção de boas-vindas */}
         <div id="inicialPage" className="w-full space-y-6 my-8">

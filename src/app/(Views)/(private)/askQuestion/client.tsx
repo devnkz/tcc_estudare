@@ -17,6 +17,8 @@ import { useCreatePergunta } from "@/hooks/pergunta/useCreate";
 import { useForm, Controller } from "react-hook-form";
 import { useRouter } from "next/navigation";
 import { Curso } from "@/types/curso";
+import { useEffect, useState } from "react";
+import { motion } from "framer-motion";
 
 export default function AskQuestionPage({
   componentes,
@@ -28,9 +30,9 @@ export default function AskQuestionPage({
   id_usuario: string;
 }) {
   const TipsForAsking = [
-    { text: "Seja específico e forneça contexto" },
-    { text: "Verifique se sua pergunta está clara e objetiva" },
-    { text: "Adicione detalhes relevantes que possam ajudar a responder" },
+    { text: "Seja específico e forneça contexto." },
+    { text: "Verifique se sua pergunta está clara. " },
+    { text: "Adicione detalhes relevantes." },
   ];
 
   const router = useRouter();
@@ -44,53 +46,65 @@ export default function AskQuestionPage({
 
   const { mutate, isPending } = useCreatePergunta();
 
+  const [headerHeight, setHeaderHeight] = useState(0);
+
+  useEffect(() => {
+    const header = document.querySelector("header");
+    if (header) setHeaderHeight(header.offsetHeight);
+  }, []);
+
   const onSubmit = (data: CreatePerguntaData) => {
     const payload = { ...data, fkId_usuario: id_usuario || "" };
     mutate(payload, {
-      onSuccess: () => {
-        router.push("/home");
-      },
+      onSuccess: () => router.push("/home"),
     });
   };
 
   return (
-    <div className="w-full min-h-screen flex flex-col justify-between items-center">
-      <main className="w-full flex flex-col items-center justify-center gap-4 p-4 flex-grow mt-6">
-        <div className="flex gap-8 w-full md:w-3/4 lg:w-2/3 p-8">
-          <div className="w-3/5">
-            <div className="flex items-center gap-3 mb-6">
-              <h1 className="text-6xl font-bold text-black bg-clip-text">
-                <span className="text-purple-600">FAÇA</span>
-                <br />
-                SUA PERGUNTA
-              </h1>
-            </div>
+    <div
+      className="w-full flex flex-col justify-between items-center font-[Inter] "
+      style={{ paddingTop: headerHeight }}
+    >
+      <main className="w-full flex flex-col items-center justify-center mt-10 mb-10">
+        <motion.div
+          className="flex flex-col lg:flex-row items-center justify-between gap-16 w-full max-w-4xl p-10 bg-white/80 rounded-2xl shadow-xl border border-purple-100/40 backdrop-blur-sm"
+          initial={{ opacity: 0, y: 40 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, ease: "easeOut" }}
+        >
+          {/* FORMULÁRIO */}
+          <div className="flex-1 w-full max-w-md">
+            <h1 className="text-5xl font-extrabold text-purple-700 leading-tight gap-2">
+              <span className="text-black">FAÇA SUA </span>
+              PERGUNTA
+            </h1>
 
             <form
               onSubmit={handleSubmit(onSubmit)}
               className="flex flex-col gap-6"
             >
-              <div className="mb-4">
-                <span className="block text-sm font-medium text-gray-700 mb-1">
+              {/* SELECT CURSO */}
+              <div>
+                <label className="text-sm font-semibold text-gray-700">
                   Curso
-                </span>
+                </label>
                 <Controller
                   control={control}
                   name="fkId_curso"
                   rules={{ required: "Selecione um curso" }}
                   render={({ field }) => (
                     <Select onValueChange={field.onChange} value={field.value}>
-                      <SelectTrigger className="w-full text-base cursor-pointer bg-zinc-200 rounded-xs border border-zinc-200 hover:border-purple-500 hover:shadow-md transition-all duration-300">
+                      <SelectTrigger className="w-full text-base cursor-pointer bg-zinc-100 border border-zinc-200 rounded-md hover:border-purple-400 hover:shadow-md focus:border-purple-500 transition-all duration-300">
                         <SelectValue placeholder="Selecione o curso" />
                       </SelectTrigger>
                       <SelectContent>
                         <SelectGroup>
                           <SelectLabel>Cursos</SelectLabel>
-                          {cursos?.map((curso: Curso) => (
+                          {cursos.map((curso: Curso) => (
                             <SelectItem
                               key={curso.id_curso}
                               value={String(curso.id_curso)}
-                              className="hover:bg-purple-100 hover:text-purple-700 transition-colors duration-200"
+                              className="hover:bg-purple-100 hover:text-purple-700 transition-all"
                             >
                               {curso.nome_curso}
                             </SelectItem>
@@ -107,28 +121,28 @@ export default function AskQuestionPage({
                 )}
               </div>
 
-              {/* COMPONENTE (Select) */}
-              <div className="mb-4">
-                <span className="block text-sm font-medium text-gray-700 mb-1">
+              {/* SELECT COMPONENTE */}
+              <div>
+                <label className="text-sm font-semibold text-gray-700">
                   Componente
-                </span>
+                </label>
                 <Controller
                   control={control}
                   name="fkId_componente"
                   rules={{ required: "Selecione um componente" }}
                   render={({ field }) => (
                     <Select onValueChange={field.onChange} value={field.value}>
-                      <SelectTrigger className="w-full text-base cursor-pointer bg-zinc-200 rounded-xs border border-zinc-200 hover:border-purple-500 hover:shadow-md transition-all duration-300">
+                      <SelectTrigger className="w-full text-base cursor-pointer bg-zinc-100 border border-zinc-200 rounded-md hover:border-purple-400 hover:shadow-md focus:border-purple-500 transition-all duration-300">
                         <SelectValue placeholder="Selecione o componente" />
                       </SelectTrigger>
                       <SelectContent>
                         <SelectGroup>
                           <SelectLabel>Componentes</SelectLabel>
-                          {componentes?.map((componente: Componente) => (
+                          {componentes.map((componente: Componente) => (
                             <SelectItem
                               key={componente.id_componente}
                               value={String(componente.id_componente)}
-                              className="hover:bg-purple-100 hover:text-purple-700 transition-colors duration-200"
+                              className="hover:bg-purple-100 hover:text-purple-700 transition-all"
                             >
                               {componente.nome_componente}
                             </SelectItem>
@@ -145,17 +159,17 @@ export default function AskQuestionPage({
                 )}
               </div>
 
-              {/* PERGUNTA (Textarea) */}
-              <div className="mb-4">
-                <span className="block text-sm font-medium text-gray-700 mb-1">
+              {/* TEXTAREA */}
+              <div>
+                <label className="text-sm font-semibold text-gray-700 mb-1 block">
                   Sua pergunta
-                </span>
+                </label>
                 <textarea
                   {...register("pergunta", {
                     required: "A pergunta é obrigatória",
                   })}
-                  className="w-full text-base bg-zinc-200 border border-zinc-200 rounded px-3 py-2 min-h-[150px] focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-100 resize-y transition-all duration-300 hover:border-purple-500 hover:shadow-md focus:shadow-purple-100"
-                  placeholder="Descreva sua dúvida com detalhes para obter melhores respostas"
+                  className="w-full text-base bg-zinc-100 border border-zinc-200 rounded-lg px-3 py-3 min-h-[150px] focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-100 resize-y transition-all duration-300 hover:border-purple-400 hover:shadow-md"
+                  placeholder="Descreva sua dúvida com detalhes..."
                 />
                 {errors.pergunta && (
                   <p className="text-red-600 text-sm mt-1">
@@ -165,48 +179,48 @@ export default function AskQuestionPage({
               </div>
 
               {/* BOTÃO */}
-              <div className="mt-6 flex flex-col gap-4">
-                <div className="transform transition-all duration-300">
-                  <button
-                    type="submit"
-                    disabled={isPending}
-                    className="p-4 rounded-md bg-purple-600 flex gap-2 justify-center items-center hover:bg-purple-950 hover:-translate-y-1 transition-all duration-300 cursor-pointer disabled:opacity-60"
-                  >
-                    <p className="text-white text-xs lg:text-lg">
-                      {isPending ? "Enviando..." : "Fazer pergunta"}
-                    </p>
-                  </button>
-                </div>
-              </div>
+              <button
+                type="submit"
+                disabled={isPending}
+                className="p-4 rounded-md bg-purple-600 flex gap-2 justify-center items-center hover:bg-purple-700 hover:-translate-y-1 transition-all duration-300 cursor-pointer disabled:opacity-60"
+              >
+                <p className="text-white text-lg font-semibold tracking-wide">
+                  {isPending ? "Enviando..." : "Fazer pergunta "}
+                </p>
+              </button>
             </form>
           </div>
 
-          {/* DICAS */}
-          <div className="flex flex-col items-center">
+          {/* DICAS E IMAGEM */}
+          <div className="flex flex-col items-center flex-1 justify-center ">
             <Image
-              src={"/imagens/ilustration_askQuestion.png"}
-              alt="Imagem de pergunta"
-              width={175}
-              height={175}
+              src="/imagens/video_13543815.png"
+              alt="Ilustração"
+              width={350}
+              height={350}
+              className="animate-bounce-slow p-3"
             />
-            <div className="flex flex-col h-fit gap-4 mt-2 p-4 bg-purple-50/50 rounded-lg border-l-4 border border-purple-100/50">
-              <p className="text-sm text-purple-700 font-medium hover:text-purple-900">
+
+            <div className="flex flex-col p-7 gap-2 bg-gradient-to-br from-purple-50 via-purple-100/30 to-purple-50 rounded-xl border border-purple-200/50 shadow-md hover:shadow-lg transition-all duration-300 max-w-xs">
+              <p className="text-base text-purple-800 font-semibold">
                 Dicas para uma boa pergunta:
               </p>
-              <ul className="text-sm text-gray-600 list-disc pl-5 space-y-2">
+              <ul className="text-sm text-gray-700 list-disc space-y-2 text-left cursor-pointer">
                 {TipsForAsking.map((tip, index) => (
-                  <li
+                  <motion.div
                     key={index}
-                    className="hover:text-purple-700 transition-colors duration-200"
+                    whileHover={{ scale: 1.02, x: 7 }}
+                    transition={{ type: "spring", stiffness: 100 }}
                   >
                     {tip.text}
-                  </li>
+                  </motion.div>
                 ))}
               </ul>
             </div>
           </div>
-        </div>
+        </motion.div>
       </main>
+
       <Footer />
     </div>
   );

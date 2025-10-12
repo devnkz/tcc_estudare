@@ -4,7 +4,7 @@ import Footer from "@/components/layout/footer";
 import { Accordion, AccordionItem } from "@heroui/react";
 import { PlusIcon } from "@heroicons/react/24/outline";
 import { Inter } from "next/font/google";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import React from "react";
 
 const intersemibold = Inter({ subsets: ["latin"], weight: ["600"] });
@@ -62,12 +62,22 @@ export default function Saiba_Mais() {
     },
   ];
 
+  const [headerHeight, setHeaderHeight] = useState(0);
+
+  useEffect(() => {
+    const header = document.querySelector("header");
+    if (header) setHeaderHeight(header.offsetHeight);
+  }, []);
+
   return (
     <div
       className={`${interregular.className} w-full min-h-screen flex flex-col bg-white`}
     >
-      <div className="w-full mx-auto flex-1 flex flex-col">
-        <main className="flex-1 flex items-center justify-center py-16 px-2 w-full mt-1 mb-8">
+      <div
+        className="w-full mx-auto flex-1 flex flex-col"
+        style={{ paddingTop: headerHeight - 40 }}
+      >
+        <main className="flex-1 flex items-center justify-center py-16 px-2 w-full mb-8">
           <div className="max-w-4xl w-full">
             {/* Cabeçalho */}
             <div className="text-center mb-10">

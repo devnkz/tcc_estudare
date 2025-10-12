@@ -30,9 +30,19 @@ export default function TelaHome() {
 
   const router = useRouter();
 
+  const [headerHeight, setHeaderHeight] = useState(0);
+
+  useEffect(() => {
+    const header = document.querySelector("header");
+    if (header) setHeaderHeight(header.offsetHeight);
+  }, []);
+
   return (
     <div className="h-full w-full">
-      <div className="flex flex-col scrollbar-hide">
+      <div
+        className="flex flex-col scrollbar-hide"
+        style={{ paddingTop: headerHeight }}
+      >
         {/* Main */}
         <main className="flex justify-between items-center px-75 py-20">
           <div className="w-full lg:w-3/5 flex flex-col items-start gap-5 mt-40 mb-30 ">

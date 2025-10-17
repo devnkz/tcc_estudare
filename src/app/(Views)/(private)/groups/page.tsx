@@ -6,23 +6,38 @@ import { cookies } from "next/headers";
 
 interface JWTPayload {
   id: string;
+  nome_usuario: string;
 }
 
 export default async function IndexGroups() {
-  const users = await fetchUsers();
-  const grupos = await fetchGruposByUser();
-
   const cookieStore = await cookies();
   const token = cookieStore.get("token")?.value;
 
   let userId: string | undefined = undefined;
+  let nomeUser: string | undefined = undefined;
 
   if (typeof token === "string") {
     const decoded = jwtDecode<JWTPayload>(token);
     userId = decoded.id;
+    nomeUser = decoded.nome_usuario;
   }
 
+  let users = await fetchUsers();
+  const grupos = await fetchGruposByUser();
+
+  // 🔹 Remove o usuário logado do array de usuários
+  if (userId) {
+    users = users.filter((user) => user.id_usuario !== userId);
+  }
+
+  console.log("Grupos do usuário logado:", grupos);
+
   return (
-    <GroupsPage users={users} grupos={grupos} id_usuario={userId as string} />
+    <GroupsPage
+      users={users}
+      grupos={grupos}
+      id_usuario={userId as string}
+      nome_usuario={nomeUser as string}
+    />
   );
 }

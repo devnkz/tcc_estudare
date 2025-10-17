@@ -35,12 +35,14 @@ interface GroupsPageProps {
   users: User[];
   grupos: Grupo[];
   id_usuario: string;
+  nome_usuario: string;
 }
 
 const GroupsPage: React.FC<GroupsPageProps> = ({
   users,
   grupos,
   id_usuario,
+  nome_usuario,
 }) => {
   const [open, setOpen] = useState(false);
   const [selectedUserIds, setSelectedUserIds] = useState<string[]>([]);
@@ -123,6 +125,8 @@ const GroupsPage: React.FC<GroupsPageProps> = ({
                   value={nome_grupo}
                   onChange={(e) => setNome_Grupo(e.target.value)}
                 />
+
+                <h1>Criador do grupo: {nome_usuario}</h1>
 
                 <MultiSelectCombobox
                   items={users.map((u) => ({ id: u.id_usuario, ...u }))}

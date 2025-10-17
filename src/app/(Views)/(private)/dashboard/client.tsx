@@ -5,11 +5,12 @@ import { Plus } from "lucide-react";
 import { FileWarning } from "lucide-react";
 import { LayoutDashboard, Users2, Settings } from "lucide-react";
 import Footer from "@/components/layout/footer";
-import { SignUpCursoModal } from "./Sign-up-modals/curso";
-import { SignUpComponenteModal } from "./Sign-up-modals/componente";
-import { SignUpUserModal } from "./Sign-up-modals/usuario";
+import { SignUpCursoModal } from "./Create-modals/curso";
+import { SignUpComponenteModal } from "./Create-modals/componente";
+import { SignUpUserModal } from "./Create-modals/usuario";
 import { Denuncia } from "@/types/denuncia";
 import { Curso } from "@/types/curso";
+import { PenalidadeModal } from "./Create-modals/penalidade";
 
 export default function DashboardPage({
   tipousuario,
@@ -23,6 +24,12 @@ export default function DashboardPage({
   const [openDialog, setOpenDialog] = useState<
     null | "curso" | "componente" | "usuario"
   >(null);
+
+  // estado para penalidade
+  const [openPenalidade, setOpenPenalidade] = useState(false);
+  const [selectedDenuncia, setSelectedDenuncia] = useState<Denuncia | null>(
+    null
+  );
 
   const PlusButtons = [
     {
@@ -43,30 +50,21 @@ export default function DashboardPage({
   ];
 
   const linksNavigation = [
-    {
-      name: "Dashboard",
-      icon: LayoutDashboard,
-      href: "#",
-    },
-    {
-      name: "Usuários",
-      icon: Users2,
-      href: "#",
-    },
-    {
-      name: "Denúncias",
-      icon: FileWarning,
-      href: "#",
-    },
-    {
-      name: "Configurações",
-      icon: Settings,
-      href: "#",
-    },
+    { name: "Dashboard", icon: LayoutDashboard, href: "#" },
+    { name: "Usuários", icon: Users2, href: "#" },
+    { name: "Denúncias", icon: FileWarning, href: "#" },
+    { name: "Configurações", icon: Settings, href: "#" },
   ];
 
+  // função de submissão da penalidade
+  const handleSubmitPenalidade = (data: any) => {
+    console.log("Criando penalidade:", data);
+    // aqui você pode chamar seu hook ou API
+    setOpenPenalidade(false);
+  };
+
   return (
-    <div className="min-h-screen w-full bg-white text-black flex">
+    <div className="min-h-screen w-full bg-white text-black flex mt-24">
       <aside className="w-64 bg-gray-100 border-r p-4 flex flex-col gap-12">
         <div className="text-2xl font-bold text-purple-600">Admin Panel</div>
 
@@ -95,6 +93,7 @@ export default function DashboardPage({
           ))}
         </div>
       </aside>
+
       <main className="flex-1 p-8 space-y-8">
         <h1 className="text-3xl font-bold">Dashboard</h1>
 
@@ -130,7 +129,6 @@ export default function DashboardPage({
                   key={denuncia.id_denuncia}
                   className="flex flex-col sm:flex-row sm:justify-between gap-4 p-4 bg-zinc-50 rounded-2xl shadow-md border border-zinc-200 hover:shadow-lg transition-shadow duration-200"
                 >
-                  {/* Info da denúncia */}
                   <div className="flex flex-col gap-1 text-sm sm:text-base">
                     <span className="text-zinc-500">
                       Nova denúncia de{" "}
@@ -144,6 +142,12 @@ export default function DashboardPage({
                         {denuncia.usuario.credibilidade_usuario}
                       </span>
                     </span>
+                    <span className="text-zinc-500 text-xs">
+                      Tipo de conteudo denunciado:{" "}
+                      <span className="font-semibold">
+                        {denuncia.tipo_conteudo}
+                      </span>
+                    </span>
                     <span className="text-xs text-zinc-400">
                       {new Date(denuncia.dataCriacao_denuncia).toLocaleString()}
                     </span>
@@ -152,7 +156,6 @@ export default function DashboardPage({
                     </span>
                   </div>
 
-                  {/* Status, nível e ações */}
                   <div className="flex flex-col sm:items-end gap-2">
                     <div className="flex flex-wrap gap-2">
                       <span
@@ -178,9 +181,17 @@ export default function DashboardPage({
                       <button className="px-3 py-1 text-xs rounded-lg bg-purple-200 text-purple-800 hover:bg-purple-300 transition-colors shadow-sm">
                         👁 Visualizar
                       </button>
-                      <button className="px-3 py-1 text-xs rounded-lg bg-red-200 text-red-800 hover:bg-red-300 transition-colors shadow-sm">
+
+                      <button
+                        className="px-3 py-1 text-xs rounded-lg bg-red-200 text-red-800 hover:bg-red-300 transition-colors shadow-sm"
+                        onClick={() => {
+                          setSelectedDenuncia(denuncia);
+                          setOpenPenalidade(true);
+                        }}
+                      >
                         ⚠ Penalidade
                       </button>
+
                       <button className="px-3 py-1 text-xs rounded-lg bg-green-200 text-green-800 hover:bg-green-300 transition-colors shadow-sm">
                         ✅ Concluir
                       </button>
@@ -205,6 +216,16 @@ export default function DashboardPage({
         openDialog={openDialog}
         tipousuarios={tipousuario}
       />
+
+      {/* Modal de penalidade */}
+      {selectedDenuncia && (
+        <PenalidadeModal
+          openDialog={openPenalidade}
+          setOpenDialog={setOpenPenalidade}
+          fkId_usuario={selectedDenuncia.fkId_usuario_conteudo}
+          fkId_denuncia={selectedDenuncia.id_denuncia}
+        />
+      )}
     </div>
   );
 }

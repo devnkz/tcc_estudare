@@ -58,6 +58,11 @@ export function PerguntasClientPage({
   const [responderId, setResponderId] = useState<string | null>(null);
   const [resposta, setResposta] = useState("");
 
+  // Estado do modal de denúncia separado para cada conteúdo
+  const [modalDenunciaOpen, setModalDenunciaOpen] = useState<{
+    [key: string]: boolean;
+  }>({});
+
   const handleResponder = (fkId_pergunta: string) => {
     setResponderId(fkId_pergunta);
     setResposta("");
@@ -74,27 +79,21 @@ export function PerguntasClientPage({
     deleteResposta({ id });
   };
 
-  const handleEnviarResposta = ({
-    fkId_pergunta,
-    fkId_usuario,
-    resposta,
-  }: CreateRespostaData) => {
-    createResposta.mutate(
-      { fkId_pergunta, fkId_usuario, resposta },
-      {
-        onSuccess: () => {
-          setResponderId(null);
-          setResposta("");
-        },
-      }
-    );
+  const handleEnviarResposta = (data: CreateRespostaData) => {
+    createResposta.mutate(data, {
+      onSuccess: () => {
+        setResponderId(null);
+        setResposta("");
+      },
+    });
   };
 
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  const toggleModalDenuncia = (id: string) => {
+    setModalDenunciaOpen((prev) => ({ ...prev, [id]: !prev[id] }));
+  };
 
   return (
     <div className="w-full lg:p-4 flex flex-col gap-10">
-      {/* PERGUNTAS */}
       {perguntas.length > 0 ? (
         perguntas.map((pergunta) => {
           const respostasPergunta = respostas.filter(
@@ -106,7 +105,6 @@ export function PerguntasClientPage({
           );
 
           const jaRespondida = !!minhaResposta;
-
           const temResposta = respostasPergunta.length > 0;
 
           return (
@@ -119,11 +117,13 @@ export function PerguntasClientPage({
                   : "bg-zinc-200 border-transparent"
               } border-2`}
             >
+              {/* HEADER PERGUNTA */}
               <div className="w-full flex justify-between items-center">
                 <h2 className="font-bold">
                   Aluno: {pergunta.usuario.nome_usuario} (
                   {pergunta.usuario.apelido_usuario})
                 </h2>
+
                 <div className="flex flex-col items-end gap-2">
                   <DropdownMenu>
                     <DropdownMenuTrigger className="cursor-pointer">
@@ -133,10 +133,12 @@ export function PerguntasClientPage({
                       <DropdownMenuLabel>Opções</DropdownMenuLabel>
                       <DropdownMenuSeparator />
                       <DropdownMenuItem
-                        onClick={() => setIsModalOpen(true)}
+                        onClick={() =>
+                          toggleModalDenuncia(pergunta.id_pergunta)
+                        }
                         className="cursor-pointer"
                       >
-                        Denúnciar
+                        Denunciar
                       </DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
@@ -144,9 +146,15 @@ export function PerguntasClientPage({
                   <ModalCreateDenuncia
                     id_conteudo={pergunta.id_pergunta}
                     id_usuario={id_usuario}
+                    fkId_usuario_conteudo={pergunta.usuario.id_usuario}
                     tipo_conteudo="Pergunta"
-                    isOpen={isModalOpen}
-                    onOpenChange={setIsModalOpen}
+                    isOpen={!!modalDenunciaOpen[pergunta.id_pergunta]}
+                    onOpenChange={(open) =>
+                      setModalDenunciaOpen((prev) => ({
+                        ...prev,
+                        [pergunta.id_pergunta]: open,
+                      }))
+                    }
                   />
 
                   <h3 className="text-sm text-zinc-900">
@@ -157,6 +165,7 @@ export function PerguntasClientPage({
                         ).toLocaleDateString("pt-BR")
                       : "--/--/----"}
                   </h3>
+
                   {temResposta && (
                     <span className="text-green-700 text-xs font-semibold">
                       Já respondida
@@ -165,23 +174,26 @@ export function PerguntasClientPage({
                 </div>
               </div>
 
+              {/* CURSO E COMPONENTE */}
               <p>
                 Curso:{" "}
                 <span className="text-purple-600 font-bold">
                   {pergunta.curso.nome_curso}
                 </span>
               </p>
-
               <p>
                 Componente:{" "}
                 <span className="text-purple-600 font-bold">
                   {pergunta.componente.nome_componente}
                 </span>
               </p>
+
+              {/* PERGUNTA */}
               <p className="bg-white p-2 rounded-md shadow-lg text-sm lg:text-base">
                 {pergunta.pergunta}
               </p>
 
+              {/* AÇÕES */}
               <div className="flex items-center gap-2">
                 {id_usuario === pergunta.usuario.id_usuario && (
                   <div className="flex gap-2">
@@ -192,7 +204,6 @@ export function PerguntasClientPage({
                       Excluir pergunta
                     </button>
 
-                    {/* Modal de edição individual */}
                     <ModalUpdateQuestion
                       componentes={componentes}
                       pergunta={pergunta}
@@ -209,7 +220,7 @@ export function PerguntasClientPage({
                   </button>
                 ) : id_usuario !== pergunta.usuario.id_usuario &&
                   jaRespondida ? (
-                  <p>So e possivel uma unica resposta</p>
+                  <p>Só é possível uma única resposta</p>
                 ) : (
                   <span className="text-purple-600 text-sm">
                     Não é possível responder sua própria pergunta
@@ -221,6 +232,7 @@ export function PerguntasClientPage({
                 </button>
               </div>
 
+              {/* RESPOSTAS */}
               {temResposta && (
                 <div className="mt-4">
                   <h3 className="font-bold mb-2">Respostas:</h3>
@@ -232,37 +244,55 @@ export function PerguntasClientPage({
                       <div className="flex gap-2">
                         <p className="font-bold">
                           {r.usuario.nome_usuario +
-                            ` (${r.usuario.apelido_usuario}) `}
+                            ` (${r.usuario.apelido_usuario})`}
                           :
                         </p>
                         <span>{r.resposta}</span>
                       </div>
 
-                      <ModalCreateDenuncia
-                        id_conteudo={r.id_resposta}
-                        id_usuario={id_usuario}
-                        tipo_conteudo="Resposta"
-                        isOpen={isModalOpen}
-                        onOpenChange={setIsModalOpen}
-                      />
+                      <div className="flex gap-2 items-center">
+                        <button
+                          onClick={() => toggleModalDenuncia(r.id_resposta)}
+                          className="p-1 text-xs text-red-600 hover:underline"
+                        >
+                          Denunciar
+                        </button>
 
-                      {(id_usuario === r.usuario.id_usuario ||
-                        id_usuario === pergunta.usuario.id_usuario) && (
-                        <div className="flex gap-2">
-                          <button
-                            className="p-2 bg-white text-black rounded-md hover:bg-red-400 transition-colors duration-300 hover:text-black cursor-pointer"
-                            onClick={() => handleDeleteResposta(r.id_resposta)}
-                          >
-                            Deletar resposta
-                          </button>
-                          <ModalUpdateResponse resposta={r} />
-                        </div>
-                      )}
+                        <ModalCreateDenuncia
+                          id_conteudo={r.id_resposta}
+                          id_usuario={id_usuario}
+                          fkId_usuario_conteudo={r.usuario.id_usuario}
+                          tipo_conteudo="Resposta"
+                          isOpen={!!modalDenunciaOpen[r.id_resposta]}
+                          onOpenChange={(open) =>
+                            setModalDenunciaOpen((prev) => ({
+                              ...prev,
+                              [r.id_resposta]: open,
+                            }))
+                          }
+                        />
+
+                        {(id_usuario === r.usuario.id_usuario ||
+                          id_usuario === pergunta.usuario.id_usuario) && (
+                          <>
+                            <button
+                              className="p-2 bg-white text-black rounded-md hover:bg-red-400 transition-colors duration-300 hover:text-black cursor-pointer"
+                              onClick={() =>
+                                handleDeleteResposta(r.id_resposta)
+                              }
+                            >
+                              Deletar resposta
+                            </button>
+                            <ModalUpdateResponse resposta={r} />
+                          </>
+                        )}
+                      </div>
                     </div>
                   ))}
                 </div>
               )}
 
+              {/* INPUT PARA RESPONDER */}
               {responderId === pergunta.id_pergunta && (
                 <div className="mt-2 flex flex-col gap-2">
                   <input

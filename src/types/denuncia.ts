@@ -2,6 +2,7 @@ export interface Denuncia {
     id_denuncia:string
     status:string
     resultado:string
+    fkId_conteudo_denunciado:string
     fkId_usuario_conteudo:string
     dataCriacao_denuncia: Date
     nivel_denuncia: number

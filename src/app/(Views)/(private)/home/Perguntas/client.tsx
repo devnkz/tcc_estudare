@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { CreateRespostaData, Resposta } from "@/types/resposta";
 import { useCreateResposta } from "@/hooks/resposta/useCreate";
+import { useSearchParams } from "next/navigation";
 
 import { useListPerguntas } from "@/hooks/pergunta/useList";
 import { useListComponentes } from "@/hooks/componente/useList";
@@ -41,10 +42,27 @@ export function PerguntasClientPage({
   initialRespostas: Resposta[];
   id_usuario: string;
 }) {
+  const searchParams = useSearchParams();
+  const [highlightId, setHighlightId] = useState<string | null>(null);
+  const [highlightType, setHighlightType] = useState<string | null>(null);
+  const perguntasRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
+  const respostasRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
+
+  // Detecta highlight na URL
+  useEffect(() => {
+    const id_conteudo = searchParams.get("id_conteudo");
+    const tipo_conteudo = searchParams.get("tipo_conteudo");
+
+    if (id_conteudo && tipo_conteudo) {
+      console.log("Highlight:", tipo_conteudo, id_conteudo);
+      setHighlightId(id_conteudo);
+      setHighlightType(tipo_conteudo);
+    }
+  }, [searchParams]);
+
   const createResposta = useCreateResposta();
   const respostaInputRef = useRef<HTMLInputElement>(null);
 
-  // Queries com React Query
   const perguntasQuery = useListPerguntas(initialPerguntas);
   const componentesQuery = useListComponentes(initialComponentes);
   const cursosQuery = useListCursos(initialCursos);
@@ -54,11 +72,9 @@ export function PerguntasClientPage({
   const componentes = componentesQuery.data || [];
   const respostas = respostasQuery.data || [];
 
-  // Estados para responder
   const [responderId, setResponderId] = useState<string | null>(null);
   const [resposta, setResposta] = useState("");
 
-  // Estado do modal de denúncia separado para cada conteúdo
   const [modalDenunciaOpen, setModalDenunciaOpen] = useState<{
     [key: string]: boolean;
   }>({});
@@ -92,6 +108,26 @@ export function PerguntasClientPage({
     setModalDenunciaOpen((prev) => ({ ...prev, [id]: !prev[id] }));
   };
 
+  // Scroll automático para destaque
+  useEffect(() => {
+    if (highlightId) {
+      if (highlightType === "Pergunta" && perguntasRefs.current[highlightId]) {
+        perguntasRefs.current[highlightId]?.scrollIntoView({
+          behavior: "smooth",
+          block: "center",
+        });
+      } else if (
+        highlightType === "Resposta" &&
+        respostasRefs.current[highlightId]
+      ) {
+        respostasRefs.current[highlightId]?.scrollIntoView({
+          behavior: "smooth",
+          block: "center",
+        });
+      }
+    }
+  }, [highlightId, highlightType, perguntas, respostas]);
+
   return (
     <div className="w-full lg:p-4 flex flex-col gap-10">
       {perguntas.length > 0 ? (
@@ -107,15 +143,24 @@ export function PerguntasClientPage({
           const jaRespondida = !!minhaResposta;
           const temResposta = respostasPergunta.length > 0;
 
+          const isPerguntaHighlighted =
+            highlightType === "Pergunta" &&
+            highlightId === pergunta.id_pergunta;
+
           return (
             <div
               key={pergunta.id_pergunta}
+              ref={(el) =>
+                void (perguntasRefs.current[pergunta.id_pergunta] = el)
+              }
               className={`p-2 w-full shadow-md rounded-lg flex flex-col gap-2 text-black
-              ${
-                temResposta
-                  ? "bg-green-100 border-green-400"
-                  : "bg-zinc-200 border-transparent"
-              } border-2`}
+                ${
+                  isPerguntaHighlighted
+                    ? "border-4 border-yellow-400 bg-yellow-100"
+                    : temResposta
+                    ? "bg-green-100 border-green-400"
+                    : "bg-zinc-200 border-transparent"
+                }`}
             >
               {/* HEADER PERGUNTA */}
               <div className="w-full flex justify-between items-center">
@@ -236,59 +281,73 @@ export function PerguntasClientPage({
               {temResposta && (
                 <div className="mt-4">
                   <h3 className="font-bold mb-2">Respostas:</h3>
-                  {respostasPergunta.map((r) => (
-                    <div
-                      key={r.id_resposta}
-                      className="border p-2 rounded-md mb-2 flex items-center justify-between"
-                    >
-                      <div className="flex gap-2">
-                        <p className="font-bold">
-                          {r.usuario.nome_usuario +
-                            ` (${r.usuario.apelido_usuario})`}
-                          :
-                        </p>
-                        <span>{r.resposta}</span>
+                  {respostasPergunta.map((r) => {
+                    const isRespostaHighlighted =
+                      highlightType === "Resposta" &&
+                      highlightId === r.id_resposta;
+
+                    return (
+                      <div
+                        key={r.id_resposta}
+                        ref={(el) =>
+                          void (respostasRefs.current[r.id_resposta] = el)
+                        }
+                        className={`border p-2 rounded-md mb-2 flex items-center justify-between
+                          ${
+                            isRespostaHighlighted
+                              ? "border-4 border-yellow-400 bg-yellow-100"
+                              : ""
+                          }`}
+                      >
+                        <div className="flex gap-2">
+                          <p className="font-bold">
+                            {r.usuario.nome_usuario +
+                              ` (${r.usuario.apelido_usuario})`}
+                            :{" "}
+                          </p>
+                          <span>{r.resposta}</span>
+                        </div>
+
+                        <div className="flex gap-2 items-center">
+                          <button
+                            onClick={() => toggleModalDenuncia(r.id_resposta)}
+                            className="p-1 text-xs text-red-600 hover:underline"
+                          >
+                            Denunciar
+                          </button>
+
+                          <ModalCreateDenuncia
+                            id_conteudo={r.id_resposta}
+                            id_usuario={id_usuario}
+                            fkId_usuario_conteudo={r.usuario.id_usuario}
+                            tipo_conteudo="Resposta"
+                            isOpen={!!modalDenunciaOpen[r.id_resposta]}
+                            onOpenChange={(open) =>
+                              setModalDenunciaOpen((prev) => ({
+                                ...prev,
+                                [r.id_resposta]: open,
+                              }))
+                            }
+                          />
+
+                          {(id_usuario === r.usuario.id_usuario ||
+                            id_usuario === pergunta.usuario.id_usuario) && (
+                            <>
+                              <button
+                                className="p-2 bg-white text-black rounded-md hover:bg-red-400 transition-colors duration-300 hover:text-black cursor-pointer"
+                                onClick={() =>
+                                  handleDeleteResposta(r.id_resposta)
+                                }
+                              >
+                                Deletar resposta
+                              </button>
+                              <ModalUpdateResponse resposta={r} />
+                            </>
+                          )}
+                        </div>
                       </div>
-
-                      <div className="flex gap-2 items-center">
-                        <button
-                          onClick={() => toggleModalDenuncia(r.id_resposta)}
-                          className="p-1 text-xs text-red-600 hover:underline"
-                        >
-                          Denunciar
-                        </button>
-
-                        <ModalCreateDenuncia
-                          id_conteudo={r.id_resposta}
-                          id_usuario={id_usuario}
-                          fkId_usuario_conteudo={r.usuario.id_usuario}
-                          tipo_conteudo="Resposta"
-                          isOpen={!!modalDenunciaOpen[r.id_resposta]}
-                          onOpenChange={(open) =>
-                            setModalDenunciaOpen((prev) => ({
-                              ...prev,
-                              [r.id_resposta]: open,
-                            }))
-                          }
-                        />
-
-                        {(id_usuario === r.usuario.id_usuario ||
-                          id_usuario === pergunta.usuario.id_usuario) && (
-                          <>
-                            <button
-                              className="p-2 bg-white text-black rounded-md hover:bg-red-400 transition-colors duration-300 hover:text-black cursor-pointer"
-                              onClick={() =>
-                                handleDeleteResposta(r.id_resposta)
-                              }
-                            >
-                              Deletar resposta
-                            </button>
-                            <ModalUpdateResponse resposta={r} />
-                          </>
-                        )}
-                      </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
 

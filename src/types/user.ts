@@ -8,6 +8,20 @@ export interface User {
   fkIdTipoUsuario: string;
   dataCriacao_usuario: string;
   credibilidade_usuario: number;
+
+  Penalidades: {
+    id_penalidade: string;
+    dataInicio_penalidade: string;
+    dataFim_penalidade: string;
+    descricao: string;
+    perder_credibilidade: number;
+    ativa: boolean;
+    denuncia: {
+      id_denuncia: string;
+      fkId_conteudo_denunciado: string;
+      tipo_conteudo: string;
+    };
+  }[];
 }
 
 export interface CreateUserData {

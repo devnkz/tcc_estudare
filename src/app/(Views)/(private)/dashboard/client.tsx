@@ -178,7 +178,17 @@ export default function DashboardPage({
                     </div>
 
                     <div className="flex gap-2 mt-1 flex-wrap">
-                      <button className="px-3 py-1 text-xs rounded-lg bg-purple-200 text-purple-800 hover:bg-purple-300 transition-colors shadow-sm">
+                      <button
+                        className="px-3 py-1 text-xs rounded-lg bg-purple-200 text-purple-800 hover:bg-purple-300 transition-colors shadow-sm"
+                        onClick={() => {
+                          const tipo = denuncia.tipo_conteudo; // Pergunta ou Resposta
+                          const id =
+                            denuncia.fkId_conteudo_denunciado ||
+                            denuncia.id_denuncia; // ajuste conforme sua estrutura
+                          const url = `/home?tipo_conteudo=${tipo}&id_conteudo=${id}`;
+                          window.open(url, "_blank"); // abre em nova aba
+                        }}
+                      >
                         👁 Visualizar
                       </button>
 

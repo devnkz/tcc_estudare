@@ -10,6 +10,7 @@ import {
   InformationCircleIcon,
   Bars3Icon,
 } from "@heroicons/react/24/solid";
+import { TbLayoutDashboardFilled } from "react-icons/tb";
 import { Inter } from "next/font/google";
 import { motion, AnimatePresence } from "framer-motion";
 import { useState } from "react";
@@ -19,7 +20,11 @@ const inter = Inter({
   weight: ["400", "500", "600", "700"],
 });
 
-export function HeaderDesktopAutenticado() {
+export function HeaderDesktopAutenticado({
+  tipo_usuario,
+}: {
+  tipo_usuario: string;
+}) {
   const [isOpen, setIsOpen] = useState(false);
 
   return (
@@ -119,6 +124,13 @@ export function HeaderDesktopAutenticado() {
                       href: "/groups",
                       label: "Grupos",
                       icon: <UsersIcon className="h-5 w-5 text-purple-600" />,
+                    },
+                    {
+                      href: "/dashboard",
+                      label: "Dashboard",
+                      icon: (
+                        <TbLayoutDashboardFilled className="h-5 w-5 text-purple-600" />
+                      ),
                     },
                   ].map((item) => (
                     <Link

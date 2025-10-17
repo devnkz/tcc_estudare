@@ -117,7 +117,7 @@ export default function CadastroUsuario() {
   return (
     <div className={`min-h-screen flex flex-col bg-white w-full`}>
       <div className="w-full lg:max-w-[1300px] mx-auto flex-1 flex flex-col">
-        <main className="flex-1 flex flex-col items-center justify-center px-2 mb-25">
+        <main className="flex-1 flex flex-col items-center">
           <HeaderLoginCadastro />
           <form
             onSubmit={handleSubmit(onSubmit)}
@@ -350,7 +350,6 @@ export default function CadastroUsuario() {
           </form>
         </main>
       </div>
-      <Footer />
     </div>
   );
 }

@@ -75,10 +75,12 @@ const GroupsPage: React.FC<GroupsPageProps> = ({
   return (
     <div
       className="min-h-screen w-full flex flex-col items-center text-zinc-900 font-inter "
-      style={{ paddingTop: headerHeight + 10 }}
+      style={{
+        paddingTop: headerHeight + 10,
+      }}
     >
       {/* HEADER */}
-      <div className="w-full max-w-6xl grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
+      <div className="w-full px-10 max-w-6xl grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
         {/* TEXT */}
         <motion.div
           initial={{ opacity: 0, x: -40 }}
@@ -109,7 +111,7 @@ const GroupsPage: React.FC<GroupsPageProps> = ({
 
             <DialogContent className="bg-white rounded-xl shadow-xl p-7 ">
               <DialogHeader>
-                <DialogTitle className="text-2xl font-semibold text-purple-600">
+                <DialogTitle className="text-2xl font-semibold text-purple-600 ">
                   Crie um novo grupo
                 </DialogTitle>
               </DialogHeader>
@@ -161,12 +163,12 @@ const GroupsPage: React.FC<GroupsPageProps> = ({
           initial={{ opacity: 0, x: 40 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.6 }}
-          className="flex justify-center lg:justify-end"
+          className="flex justify-center lg:justify-center"
         >
           <img
-            src="/imagens/laptop_13543834.png"
+            src="/imagens/video_13543815.png"
             alt="Ilustração"
-            className="w-6/7 max-w-sm drop-shadow-md"
+            className="max-w-md drop-shadow-md"
           />
         </motion.div>
       </div>

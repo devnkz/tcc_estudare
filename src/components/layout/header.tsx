@@ -9,6 +9,7 @@ import {
   UsersIcon,
   InformationCircleIcon,
   Bars3Icon,
+  LightBulbIcon,
 } from "@heroicons/react/24/solid";
 import { Inter } from "next/font/google";
 import { motion, AnimatePresence } from "framer-motion";
@@ -24,7 +25,7 @@ export function HeaderDesktopAutenticado() {
 
   return (
     <header className="w-full bg-white border-b border-gray-100 shadow-sm fixed top-0 left-0 z-50">
-      <div className="max-w-7xl mx-auto px-8 py-1  flex items-center justify-between">
+      <div className="max-w-7xl mx-auto px-13.5 py-1  flex items-center justify-between">
         {/* LADO ESQUERDO — LOGO + MENU */}
         <div className="flex items-center gap-4">
           {/* LOGO */}
@@ -109,16 +110,23 @@ export function HeaderDesktopAutenticado() {
                       icon: <HomeIcon className="h-5 w-5 text-purple-600" />,
                     },
                     {
+                      href: "/groups",
+                      label: "Grupos",
+                      icon: <UsersIcon className="h-5 w-5 text-purple-600" />,
+                    },
+                    {
+                      href: "/askQuestion",
+                      label: "Faça uma pergunta",
+                      icon: (
+                        <LightBulbIcon className="h-5 w-5 text-purple-600" />
+                      ),
+                    },
+                    {
                       href: "/about",
                       label: "Conheça-nos",
                       icon: (
                         <InformationCircleIcon className="h-5 w-5 text-purple-600" />
                       ),
-                    },
-                    {
-                      href: "/groups",
-                      label: "Grupos",
-                      icon: <UsersIcon className="h-5 w-5 text-purple-600" />,
                     },
                   ].map((item) => (
                     <Link
@@ -148,11 +156,11 @@ export function HeaderDesktopAutenticado() {
 export function HeaderDesktopNaoAutenticado() {
   return (
     <header className="w-full bg-white border-b border-gray-100 shadow-sm">
-      <div className="max-w-7xl mx-auto flex justify-between items-center px-6 py-3">
+      <div className="max-w-7xl mx-auto flex justify-between items-center ">
         {/* Logo */}
         <Link href="/" className="flex items-center gap-3 group cursor-pointer">
           <motion.div
-            whileHover={{ scale: 1.05 }}
+            whileHover={{ scale: 1.03 }}
             transition={{ type: "spring", stiffness: 300, damping: 15 }}
           >
             <Image
@@ -167,19 +175,19 @@ export function HeaderDesktopNaoAutenticado() {
 
         {/* Botões */}
         <div className="flex gap-4">
-          <motion.div whileHover={{ y: -2 }} transition={{ duration: 0.2 }}>
+          <motion.div whileHover={{ y: -0.5 }} transition={{ duration: 0.2 }}>
             <Link
               href="/Auth/Register"
-              className={`${inter.className} px-5 py-2 rounded-lg bg-purple-500 text-white cursor-pointer hover:bg-purple-700 transition-all duration-300 shadow-md`}
+              className={`${inter.className} px-5 py-2 rounded-lg font-bold bg-purple-500 text-white cursor-pointer hover:bg-purple-700 transition-all duration-300 shadow-md`}
             >
               Cadastrar-se
             </Link>
           </motion.div>
 
-          <motion.div whileHover={{ y: -2 }} transition={{ duration: 0.2 }}>
+          <motion.div whileHover={{ y: -0.5 }} transition={{ duration: 0.2 }}>
             <Link
               href="/Auth/Login"
-              className={`${inter.className} px-5 py-2 rounded-lg border border-purple-500 text-purple-500 cursor-pointer hover:bg-purple-50 transition-all duration-300 `}
+              className={`${inter.className} px-5 py-2 rounded-lg font-medium border border-purple-500 text-purple-500 cursor-pointer hover:bg-purple-50 transition-all duration-300 `}
             >
               Entrar
             </Link>
@@ -199,7 +207,7 @@ export function HeaderLoginCadastro() {
         className="flex flex-col items-center group cursor-pointer"
       >
         <motion.div
-          whileHover={{ scale: 1.05 }}
+          whileHover={{ scale: 1.03 }}
           transition={{ type: "spring", stiffness: 250, damping: 14 }}
         >
           <Image

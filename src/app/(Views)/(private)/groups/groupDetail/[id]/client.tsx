@@ -130,8 +130,19 @@ export default function ClientGrupoDetail({
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [mensagens]);
 
+  const [headerHeight, setHeaderHeight] = useState(0);
+  useEffect(() => {
+    const header = document.querySelector("header");
+    if (header) setHeaderHeight(header.offsetHeight);
+  }, []);
+
   return (
-    <div className="p-4">
+    <div
+      className="p-4"
+      style={{
+        paddingTop: headerHeight + 15,
+      }}
+    >
       {/* Grupo */}
       <h1 className="text-2xl font-bold">{grupoAtual.nome_grupo}</h1>
 

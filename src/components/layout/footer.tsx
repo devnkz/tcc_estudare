@@ -28,7 +28,7 @@ export default function Footer() {
           <div className="flex flex-col items-center lg:items-start space-y-5">
             <div className="flex items-center gap-3">
               <Image
-                src="/imagens/Logo/gatopretotransparente.png"
+                src="/imagens/Transparente/3.png"
                 height={50}
                 width={50}
                 alt="Logo Estudare"

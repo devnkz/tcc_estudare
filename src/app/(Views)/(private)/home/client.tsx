@@ -15,7 +15,7 @@ interface HomeProps {
   userData: User;
 }
 
-export function Teste({ userData }: HomeProps) {
+export function InitialPage({ userData }: HomeProps) {
   const [headerHeight, setHeaderHeight] = useState(0);
 
   // 1️⃣ Detecta altura do header

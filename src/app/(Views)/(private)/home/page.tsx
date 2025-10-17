@@ -4,7 +4,7 @@ import { getTokenFromCookie } from "@/lib/getTokenServer";
 
 import { Inter } from "next/font/google";
 import { jwtDecode } from "jwt-decode";
-import { Teste } from "./client";
+import { InitialPage } from "./client";
 import { fetchUsersId } from "@/services/userService";
 
 const inter = Inter({
@@ -32,7 +32,7 @@ export default async function HomePage() {
 
   return (
     <div className={inter.className}>
-      <Teste userData={user} />
+      <InitialPage userData={user} />
       <PerguntasIndex id_usuario={decoded.id} />
       <Footer />
     </div>

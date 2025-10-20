@@ -37,7 +37,7 @@ export default function CadastroUsuario() {
       apelido_usuario: "",
       email_usuario: "",
       senha_usuario: "",
-      fkIdTipoUsuario: "ea5641a9-47b0-49e7-8c24-44b6567aa905",
+      fkIdTipoUsuario: "941dd9b7-3012-4c5c-b35a-982a6e5a284e",
     },
   });
 
@@ -115,7 +115,7 @@ export default function CadastroUsuario() {
   ];
 
   return (
-    <div className={`min-h-screen flex flex-col bg-white w-full`}>
+    <div className="mix-h-screen flex flex-col bg-white w-full">
       <div className="w-full lg:max-w-[1300px] mx-auto flex-1 flex flex-col">
         <main className="flex-1 flex flex-col items-center">
           <HeaderLoginCadastro />

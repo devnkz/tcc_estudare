@@ -65,7 +65,7 @@ export default function LoginUsuario() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-white w-full">
+    <div className="max-h-screen flex flex-col bg-white w-full">
       <div className="w-full lg:max-w-[1300px] mx-auto flex-1 flex flex-col">
         <HeaderLoginCadastro />
 

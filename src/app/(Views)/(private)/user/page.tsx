@@ -23,5 +23,7 @@ export default async function IndexUser() {
   const perguntas = await fetchPerguntasByIdUser({ userId: userId! });
   const usuario = usuariosId;
 
+  console.log("Usuario", usuario);
+
   return <UsuarioClientPage usuario={usuario} perguntas={perguntas} />;
 }

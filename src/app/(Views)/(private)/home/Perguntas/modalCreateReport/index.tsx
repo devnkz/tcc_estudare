@@ -24,6 +24,7 @@ import { CreateDenunciaData } from "@/types/denuncia";
 interface ModalCreateDenunciaProps {
   id_usuario: string;
   id_conteudo: string;
+  fkId_usuario_conteudo: string;
   tipo_conteudo: string;
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
@@ -33,6 +34,7 @@ export default function ModalCreateDenuncia({
   id_usuario,
   id_conteudo,
   tipo_conteudo,
+  fkId_usuario_conteudo,
   isOpen,
   onOpenChange,
 }: ModalCreateDenunciaProps) {
@@ -50,6 +52,7 @@ export default function ModalCreateDenuncia({
       ...data,
       fkId_usuario: id_usuario,
       fkId_conteudo_denunciado: id_conteudo,
+      fkId_usuario_conteudo: fkId_usuario_conteudo,
       tipo_conteudo: tipo_conteudo,
       resultado: "...",
     };

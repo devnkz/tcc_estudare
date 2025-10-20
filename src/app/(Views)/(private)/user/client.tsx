@@ -1,27 +1,20 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { motion } from "framer-motion";
-import {
-  UserIcon,
-  PencilSquareIcon,
-  ArrowRightOnRectangleIcon,
-} from "@heroicons/react/24/solid";
-import { LuFiles } from "react-icons/lu";
+import { UserIcon, PencilIcon } from "@heroicons/react/16/solid";
+import { useRouter } from "next/navigation";
+import { UpdateUserModal } from "./updateUserModal";
+import { UpdateUserFotoModal } from "./fotoPerfilUser/index";
+import { useState } from "react";
+import { deleteToken } from "@/lib/deleteToken";
 import { GoPencil } from "react-icons/go";
+import { useGetUser } from "@/hooks/user/useListId";
 import {
   BsEmojiExpressionless,
   BsEmojiGrin,
   BsEmojiAngry,
 } from "react-icons/bs";
-import { useRouter } from "next/navigation";
-import { useGetUser } from "@/hooks/user/useListId";
-import { deleteToken } from "@/lib/deleteToken";
-import { UpdateUserModal } from "./updateUserModal";
-import { UpdateUserFotoModal } from "./fotoPerfilUser";
 import { Pergunta } from "@/types/pergunta";
 import { User } from "@/types/user";
-import Footer from "@/components/layout/footer";
 
 export default function UsuarioClientPage({
   usuario: initialUser,
@@ -31,89 +24,66 @@ export default function UsuarioClientPage({
   perguntas: Pergunta[];
 }) {
   const router = useRouter();
-  const cores = ["bg-violet-600", "bg-blue-600", "bg-green-600", "bg-pink-600"];
-
   const [openDialog, setOpenDialog] = useState<null | "usuario" | "foto">(null);
-  const [headerHeight, setHeaderHeight] = useState(0);
-
   const { data: usuario_data } = useGetUser(
     initialUser.id_usuario,
     initialUser
   );
   if (!usuario_data) return null;
 
-  useEffect(() => {
-    const header = document.querySelector("header");
-    if (header) setHeaderHeight(header.offsetHeight);
-  }, []);
-
-  // ----------------- Credibilidade -----------------
   const cred = usuario_data.credibilidade_usuario;
-  let CredibilidadeEmoji = BsEmojiGrin;
-  let credibilidadeMensagem = "";
-  let credibilidadeCor = "";
+
+  let CredibilidadeEmoji;
+  let credibilidadeMensagem;
 
   if (cred < 35) {
     CredibilidadeEmoji = BsEmojiAngry;
-    credibilidadeMensagem = "Você precisa ser mais responsável!";
-    credibilidadeCor = "bg-red-100 text-red-600";
+    credibilidadeMensagem =
+      "Você precisa ser mais sério com suas responsabilidades!";
   } else if (cred < 70) {
     CredibilidadeEmoji = BsEmojiExpressionless;
-    credibilidadeMensagem = "Atenção! Cuide mais de suas ações.";
-    credibilidadeCor = "bg-yellow-100 text-yellow-600";
+    credibilidadeMensagem = "Cuidado! Tome mais atenção às suas ações.";
   } else {
     CredibilidadeEmoji = BsEmojiGrin;
-    credibilidadeMensagem = "Excelente! Continue com essa credibilidade.";
-    credibilidadeCor = "bg-green-100 text-green-600";
+    credibilidadeMensagem = "Parabéns! Continue com essa credibilidade alta.";
   }
 
+  // Redireciona para tela de perguntas com query param do post
+  const handleVisualizarConteudo = (
+    id_conteudo: string,
+    tipo_conteudo: string
+  ) => {
+    router.push(
+      `/home?tipo_conteudo=${tipo_conteudo}&id_conteudo=${id_conteudo}`
+    );
+  };
+
   return (
-    <div className="w-full min-h-screen">
-      <div
-        className="w-full flex justify-center  min-h-screen p-4 font-[Inter]"
-        style={{ paddingTop: headerHeight + 10 }}
-      >
-        <motion.div
-          initial={{ opacity: 0, y: 30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
-          className="w-full max-w-[600px] flex flex-col items-center py-12 space-y-4"
-        >
-          {/* FOTO PERFIL */}
-          <motion.div
-            className="relative cursor-pointer group"
-            whileHover={{ scale: 1.03 }}
-            transition={{ type: "spring", stiffness: 100, damping: 15 }}
+    <div className="w-full flex justify-center bg-neutral-50 p-4">
+      <div className="w-[600px] flex flex-col justify-center items-center py-14 space-y-8 relative">
+        {/* FOTO + NOME */}
+        <div className="flex flex-col items-center space-y-3">
+          <div
+            className="relative cursor-pointer hover:scale-105 transition-transform duration-300"
             onClick={() => setOpenDialog("foto")}
           >
             {usuario_data.foto_perfil ? (
               <img
                 src={usuario_data.foto_perfil}
                 alt="Foto do usuário"
-                className="h-40 w-40 rounded-full object-cover border-4 border-violet-500 shadow-xl"
+                className="h-36 w-36 rounded-full object-cover border border-neutral-300"
               />
             ) : (
-              <div className="h-40 w-40 bg-zinc-300 rounded-full flex items-center justify-center border-4 border-violet-300 shadow-xl">
-                <UserIcon className="h-20 w-20 text-zinc-500" />
-              </div>
+              <UserIcon className="h-36 w-36 p-8 bg-neutral-200 rounded-full" />
             )}
-
-            <motion.span
-              className="absolute bottom-0 right-0 bg-violet-600 p-2 rounded-full text-white text-xl shadow-md"
-              whileHover={{ rotate: 15 }}
-            >
+            <span className="absolute bottom-0 right-0 p-2 rounded-full text-neutral-700 border border-neutral-300 bg-white shadow-sm">
               <GoPencil />
-            </motion.span>
-          </motion.div>
-
-          <h1 className="font-bold text-3xl text-gray-800">
+            </span>
+          </div>
+          <h1 className="font-semibold text-2xl text-neutral-800">
             {usuario_data.nome_usuario}
           </h1>
-          <h2 className="text-zinc-600 text-base">
-            Apelido:{" "}
-            <span className="font-medium">{usuario_data.apelido_usuario}</span>
-          </h2>
-          <p className="text-sm text-zinc-500">
+          <p className="text-neutral-600 text-sm">
             Estudante desde{" "}
             {usuario_data.dataCriacao_usuario
               ? new Date(usuario_data.dataCriacao_usuario).toLocaleDateString(
@@ -121,122 +91,108 @@ export default function UsuarioClientPage({
                 )
               : "-"}
           </p>
+          <p className="text-neutral-600 text-sm">
+            Apelido:{" "}
+            <span className="font-medium">{usuario_data.apelido_usuario}</span>
+          </p>
+        </div>
 
-          {/* CARD CREDIBILIDADE */}
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className={`flex flex-col items-center justify-center gap-2 w-full p-5 rounded-xl shadow-md ${credibilidadeCor}`}
-          >
-            <CredibilidadeEmoji className="text-5xl animate-bounce" />
-            <span className="font-semibold text-lg">
-              Sua credibilidade: {cred}
-            </span>
-            <p className="text-sm text-center text-gray-700 max-w-[400px]">
-              {credibilidadeMensagem}
-            </p>
-            <div className="w-full bg-gray-300 h-2 rounded-full mt-2">
-              <motion.div
-                className="h-2 rounded-full"
-                initial={{ width: 0 }}
-                animate={{ width: `${cred}%` }}
-                transition={{ duration: 1 }}
-                style={{
-                  backgroundColor:
-                    cred >= 70 ? "#16a34a" : cred >= 35 ? "#eab308" : "#dc2626",
-                }}
-              />
-            </div>
-          </motion.div>
-
-          {/* CARD DE INFORMAÇÕES */}
-          <div className="p-4 rounded-xl w-full bg-white shadow-md space-y-4">
-            <div className="flex justify-between items-center">
-              <h2 className="font-bold text-gray-800 text-lg">Informações</h2>
-              <motion.button
-                whileHover={{ scale: 1.1 }}
-                className="rounded-full bg-zinc-200 p-2 relative group hover:bg-violet-600 transition-all duration-300"
-                onClick={() => setOpenDialog("usuario")}
-              >
-                <PencilSquareIcon className="h-6 w-6 text-zinc-700 group-hover:text-white" />
-                <span className="hidden group-hover:block absolute left-1/2 -translate-x-1/2 top-12 bg-zinc-700 text-white p-2 text-xs rounded-lg whitespace-nowrap">
-                  Editar seu perfil
-                </span>
-              </motion.button>
-            </div>
-
-            <div className="bg-white p-2 rounded-lg h-[400px] overflow-y-auto scrollbar-thin scrollbar-thumb-zinc-300">
-              <div className="flex justify-between px-2 py-4 border-b border-zinc-200">
-                <div>
-                  <h2 className="text-zinc-500 text-xs uppercase tracking-wide">
-                    Perguntas Feitas
-                  </h2>
-                  <h1 className="font-bold text-xl text-gray-800">
-                    {perguntas.length}
-                  </h1>
-                </div>
-              </div>
-
-              {perguntas.length > 0 ? (
-                perguntas.map((p, index) => {
-                  const cor = cores[index % cores.length];
-                  return (
-                    <motion.div
-                      key={p.id_pergunta}
-                      whileHover={{ scale: 1.02 }}
-                      className="flex gap-2 px-2 py-4 border-b border-zinc-100 rounded-md transition-all duration-200"
-                    >
-                      <LuFiles
-                        className={`h-10 w-10 p-2 rounded-full text-white ${cor}`}
-                      />
-                      <div>
-                        <h1 className="font-bold text-gray-700 text-sm">
-                          {p.componente.nome_componente}
-                        </h1>
-                        <p
-                          className="max-w-[250px] truncate text-zinc-600 text-base"
-                          title={p.pergunta}
-                        >
-                          {p.pergunta}
-                        </p>
-                      </div>
-                    </motion.div>
-                  );
-                })
-              ) : (
-                <p className="text-zinc-500 text-center mt-4">
-                  Você ainda não fez nenhuma pergunta.
-                </p>
-              )}
-            </div>
-
-            <motion.button
-              whileTap={{ scale: 0.97 }}
-              onClick={() => {
-                deleteToken("token");
-                router.push("/login");
-              }}
-              className="w-full flex items-center justify-center gap-2 mt-4 bg-red-500 cursor-pointer text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors duration-400"
-            >
-              <ArrowRightOnRectangleIcon className="h-5 w-5" />
-              Sair
-            </motion.button>
+        {/* CREDIBILIDADE */}
+        <div
+          className={`flex flex-col items-center justify-center gap-2 w-full p-4 rounded-lg border border-neutral-200`}
+        >
+          <CredibilidadeEmoji className="text-4xl" />
+          <span className="font-medium text-base">Credibilidade: {cred}</span>
+          <p className="text-sm text-center">{credibilidadeMensagem}</p>
+          <div className="w-full bg-neutral-200 h-2 rounded-full mt-1">
+            <div
+              className="h-2 rounded-full bg-neutral-600 transition-all duration-500"
+              style={{ width: `${cred}%` }}
+            />
           </div>
+        </div>
 
-          {/* MODAIS */}
-          <UpdateUserModal
-            openDialog={openDialog === "usuario" ? "usuario" : null}
-            setOpenDialog={setOpenDialog}
-            user={usuario_data}
-          />
-          <UpdateUserFotoModal
-            openDialog={openDialog === "foto" ? "foto" : null}
-            setOpenDialog={setOpenDialog}
-            user={usuario_data}
-          />
-        </motion.div>
+        {/* PENALIDADES */}
+        <div className="w-full rounded-lg border border-neutral-200 bg-white p-4 space-y-3">
+          <h3 className="font-semibold text-neutral-800 text-base">
+            Penalidades
+          </h3>
+          {usuario_data.Penalidades && usuario_data.Penalidades.length > 0 ? (
+            usuario_data.Penalidades.map((penalidade) => (
+              <div
+                key={penalidade.id_penalidade}
+                className="p-3 rounded-lg border border-neutral-200"
+              >
+                <p className="text-sm text-neutral-700">
+                  <span className="font-medium">Descrição:</span>{" "}
+                  {penalidade.descricao}
+                </p>
+                <p className="text-sm text-neutral-700">
+                  <span className="font-medium">Ativa:</span>{" "}
+                  {penalidade.ativa ? "Sim" : "Não"}
+                </p>
+                <p className="text-sm text-neutral-700">
+                  <span className="font-medium">Início:</span>{" "}
+                  {new Date(
+                    penalidade.dataInicio_penalidade
+                  ).toLocaleDateString("pt-BR")}
+                </p>
+                <p className="text-sm text-neutral-700">
+                  <span className="font-medium">Fim:</span>{" "}
+                  {new Date(penalidade.dataFim_penalidade).toLocaleDateString(
+                    "pt-BR"
+                  )}
+                </p>
+                <p className="text-sm text-neutral-700">
+                  <span className="font-medium">Perda de Credibilidade:</span>{" "}
+                  {penalidade.perder_credibilidade}
+                </p>
+
+                <button
+                  className="mt-2 text-sm text-purple-600 hover:underline"
+                  onClick={() =>
+                    handleVisualizarConteudo(
+                      penalidade.denuncia.fkId_conteudo_denunciado,
+                      penalidade.denuncia.tipo_conteudo
+                    )
+                  }
+                >
+                  Visualizar conteúdo
+                </button>
+              </div>
+            ))
+          ) : (
+            <p className="text-neutral-500 text-sm italic">
+              Nenhuma penalidade registrada.
+            </p>
+          )}
+        </div>
+
+        {/* BOTÃO SAIR */}
+        <div className="pt-4 border-t border-neutral-200 w-full">
+          <button
+            onClick={() => {
+              deleteToken("token");
+              router.push("/login");
+            }}
+            className="w-full py-2 border border-neutral-400 rounded-md text-neutral-700 hover:bg-neutral-100 transition"
+          >
+            Sair
+          </button>
+        </div>
       </div>
-      <Footer />
+
+      {/* MODAIS */}
+      <UpdateUserModal
+        openDialog={openDialog === "usuario" ? "usuario" : null}
+        setOpenDialog={setOpenDialog}
+        user={usuario_data}
+      />
+      <UpdateUserFotoModal
+        openDialog={openDialog === "foto" ? "foto" : null}
+        setOpenDialog={setOpenDialog}
+        user={usuario_data}
+      />
     </div>
   );
 }

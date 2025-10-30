@@ -1,14 +1,10 @@
 "use client";
 
-import {
-  LightBulbIcon,
-  PlusIcon,
-  BellIcon,
-  UserIcon,
-} from "@heroicons/react/16/solid";
 import Link from "next/link";
+import Footer from "@/components/layout/footer";
 import { useState, useEffect } from "react";
-import { useHeaderOffset } from "@/hooks/useHeaderOffset";
+import { LightBulbIcon, PlusIcon } from "@heroicons/react/16/solid";
+import { motion } from "framer-motion";
 import { User } from "@/types/user";
 
 interface HomeProps {
@@ -17,94 +13,80 @@ interface HomeProps {
 
 export function InitialPage({ userData }: HomeProps) {
   const [headerHeight, setHeaderHeight] = useState(0);
+  const [isVisible, setIsVisible] = useState(false);
 
-  // 1️⃣ Detecta altura do header
   useEffect(() => {
     const header = document.querySelector("header");
-    if (header) {
-      setHeaderHeight(header.offsetHeight);
-    }
+    if (header) setHeaderHeight(header.offsetHeight);
+  }, []);
+
+  useEffect(() => {
+    const timer = setTimeout(() => setIsVisible(true), 100);
+    return () => clearTimeout(timer);
   }, []);
 
   return (
-    <div
-      className="w-full lg:max-w-[1200px] flex flex-col items-center p-4 transition-all duration-500"
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: isVisible ? 1 : 0, y: isVisible ? 0 : 20 }}
+      transition={{ duration: 0.6, ease: "easeOut" }}
+      className="w-full flex flex-col items-center justify-start px-4 min-h-screen"
       style={{ paddingTop: headerHeight }}
     >
-      {/* Seção de boas-vindas */}
-      <div id="inicialPage" className="w-full space-y-6 my-8">
-        <div className="text-black flex justify-between items-center">
-          <div className="space-y-1">
-            <h1 className="font-bold text-4xl text-gray-800">
-              Olá,{" "}
-              <span className="font-bold text-purple-600">
-                {userData?.nome_usuario || "usuário"}
-              </span>
-            </h1>
-            <p className="text-zinc-600 text-lg">Tem alguma dúvida hoje?</p>
-          </div>
-
-          {/* Ícones mobile */}
-          <div className="flex space-x-3 lg:hidden">
-            <Link
-              href="/notificacoes"
-              prefetch
-              className="rounded-full bg-zinc-200 p-2 relative hover:-translate-y-1 hover:bg-purple-600 hover:text-white transition-all duration-300 group"
-            >
-              <BellIcon className="h-6 w-6 text-black group-hover:text-white" />
-              <span className="hidden group-hover:block absolute left-0 top-14 bg-purple-600 text-white p-2 text-xs rounded-lg shadow-md">
-                Notificações
-              </span>
-            </Link>
-
-            <Link
-              href="/user"
-              prefetch
-              className="rounded-full bg-zinc-200 p-2 relative hover:-translate-y-1 hover:bg-purple-600 hover:text-white transition-all duration-300 group"
-            >
-              <UserIcon className="h-6 w-6 text-black group-hover:text-white" />
-              <span className="hidden group-hover:flex absolute left-0 top-14 bg-purple-600 text-white p-2 text-xs rounded-lg shadow-md whitespace-nowrap">
-                Sua conta
-              </span>
-            </Link>
-          </div>
+      <div className="w-full max-w-[1200px] flex flex-col items-center text-center">
+        {/* Saudação */}
+        <div className="space-y-1 mt-6">
+          <h1 className="font-bold text-3xl text-gray-800">
+            Olá,{" "}
+            <span className="text-purple-600">
+              {userData?.nome_usuario || "usuário"}
+            </span>
+          </h1>
+          <p className="text-zinc-600 text-base">Tem alguma dúvida hoje?</p>
         </div>
 
-        {/* Título de incentivo */}
-        <h1 className="text-black text-center text-5xl lg:text-6xl font-bold mt-10">
+        {/* Título central */}
+        <motion.h1
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.15, duration: 0.6 }}
+          className="text-4xl lg:text-5xl font-extrabold text-gray-900 leading-snug mt-8"
+        >
           <span className="text-purple-600">Responda perguntas</span>
           <br />e ajude seus colegas!
-        </h1>
+        </motion.h1>
 
-        <p className="text-gray-500 text-center max-w-xl mx-auto text-lg">
-          Compartilhe seu conhecimento e aprenda com os outros alunos.
+        <p className="text-gray-500 text-base max-w-xl mx-auto mt-2">
+          Compartilhe seu conhecimento e aprenda com outros alunos.
         </p>
-      </div>
 
-      {/* Botões principais */}
-      <div className="flex flex-wrap gap-4">
-        <Link
-          href="/askQuestion"
-          prefetch
-          className="group p-3 rounded-lg bg-purple-500 flex gap-2 justify-center items-center hover:bg-purple-700 hover: transition-all duration-600 cursor-pointer shadow-sm"
+        {/* Botões principais */}
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.3 }}
+          className="flex flex-wrap justify-center gap-3 mt-6"
         >
-          <LightBulbIcon className="h-5 w-5 text-white transition-transform group-hover:rotate-45" />
-          <p className="text-white font-medium text-lg lg:text-base">
+          <Link
+            href="/askQuestion"
+            prefetch
+            className="group flex items-center gap-2 bg-purple-600 hover:bg-purple-700 text-white px-5 py-2.5 rounded-lg font-medium text-base shadow-md transition-all duration-300"
+          >
+            <LightBulbIcon className="h-5 w-5 group-hover:rotate-12 transition-transform duration-300" />
             Faça uma pergunta
-          </p>
-        </Link>
+          </Link>
 
-        <Link
-          href="/groups"
-          prefetch
-          className="group p-3 rounded-lg bg-purple-500 flex gap-2 justify-center items-center hover:bg-purple-700 hover: transition-all duration-600 cursor-pointer shadow-sm"
-        >
-          <PlusIcon className="h-5 w-5 text-white transition-transform group-hover:rotate-45" />
-          <p className="text-white font-medium text-sm lg:text-base">
-            Criar seu grupo
-          </p>
-        </Link>
+          <Link
+            href="/groups"
+            prefetch
+            className="group flex items-center gap-2 bg-purple-600 hover:bg-purple-700 text-white px-5 py-2.5 rounded-lg font-medium text-base shadow-md transition-all duration-300"
+          >
+            <PlusIcon className="h-5 w-5 group-hover:rotate-45 transition-transform duration-300" />
+            Criar um grupo
+          </Link>
+        </motion.div>
       </div>
-    </div>
+      <Footer />
+    </motion.div>
   );
 }

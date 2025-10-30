@@ -54,9 +54,10 @@ export default async function HomePage() {
 
   return (
     <div className={inter.className}>
-      <InitialPage userData={user} />
-      <PerguntasIndex id_usuario={decoded.id} />
-      <Footer />
+      <main className="flex flex-col w-full items-center justify-start">
+        <InitialPage userData={user} />
+        <PerguntasIndex id_usuario={decoded.id} />
+      </main>
     </div>
   );
 }

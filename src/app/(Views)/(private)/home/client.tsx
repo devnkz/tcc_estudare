@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import Footer from "@/components/layout/footer";
 import { useState, useEffect } from "react";
 import { LightBulbIcon, PlusIcon } from "@heroicons/react/16/solid";
 import { motion } from "framer-motion";
@@ -30,13 +29,13 @@ export function InitialPage({ userData }: HomeProps) {
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: isVisible ? 1 : 0, y: isVisible ? 0 : 20 }}
       transition={{ duration: 0.6, ease: "easeOut" }}
-      className="w-full flex flex-col items-center justify-start px-4 min-h-screen"
-      style={{ paddingTop: headerHeight }}
+      className="w-full flex flex-col items-center justify-start px-4"
+      style={{ paddingTop: headerHeight + 10 }}
     >
       <div className="w-full max-w-[1200px] flex flex-col items-center text-center">
         {/* Saudação */}
         <div className="space-y-1 mt-6">
-          <h1 className="font-bold text-3xl text-gray-800">
+          <h1 className="font-bold text-4xl text-gray-800">
             Olá,{" "}
             <span className="text-purple-600">
               {userData?.nome_usuario || "usuário"}
@@ -86,7 +85,6 @@ export function InitialPage({ userData }: HomeProps) {
           </Link>
         </motion.div>
       </div>
-      <Footer />
     </motion.div>
   );
 }

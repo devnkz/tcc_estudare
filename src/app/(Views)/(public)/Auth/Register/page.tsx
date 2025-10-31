@@ -115,7 +115,7 @@ export default function CadastroUsuario() {
   ];
 
   return (
-    <div className="mix-h-screen flex flex-col bg-white w-full">
+    <div className="max-h-screen flex flex-col bg-white w-full">
       <div className="w-full lg:max-w-[1300px] mx-auto flex-1 flex flex-col">
         <main className="flex-1 flex flex-col items-center">
           <HeaderLoginCadastro />

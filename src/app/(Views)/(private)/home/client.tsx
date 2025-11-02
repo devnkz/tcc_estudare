@@ -49,7 +49,7 @@ export function InitialPage({ userData }: HomeProps) {
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.15, duration: 0.6 }}
-          className="text-4xl lg:text-5xl font-extrabold text-gray-900 leading-snug mt-8"
+          className="text-4xl lg:text-5xl font-extrabold text-gray-900 leading-snug"
         >
           <span className="text-purple-600">Responda perguntas</span>
           <br />e ajude seus colegas!

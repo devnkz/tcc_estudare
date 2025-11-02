@@ -32,7 +32,7 @@ export default function TelaHome() {
 
   return (
     <div className="max-h-screen w-full">
-      <div className="flex flex-col scrollbar-hide">
+      <div className="flex flex-col">
         {/* Main */}
         <main className="flex justify-between items-center pb-15 px-65">
           <div className="w-full lg:w-3/5 flex flex-col items-start gap-5 mt-40 mb-30 ">

@@ -50,7 +50,7 @@ export default async function HomePage() {
 
   return (
     <div className={`${inter.className} w-full`}>
-      <main className="flex flex-col w-full items-center justify-start min-h-screen">
+      <main className="flex flex-col w-full items-center justify-start min-h-screen py-10">
         {/* Cabeçalho e saudação */}
         <InitialPage userData={user} />
 
@@ -66,7 +66,7 @@ export default async function HomePage() {
                 <PerguntasIndex id_usuario={decoded.id} />
               </div>
               <p className="text-l text-gray-500 mb-4">
-                Que tal ser o primeiro a fazer uma?
+                Que tal fazer uma pergunta?
               </p>
               <a
                 href="/askQuestion"

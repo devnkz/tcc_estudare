@@ -18,11 +18,12 @@ import { useUpdateGrupo, UpdateGrupoData } from "@/hooks/grupo/useUpdate";
 import { useRemoveGrupoMember } from "@/hooks/grupo/useRemoveMember";
 import { useLeaveGroup } from "@/hooks/grupo/useLeave";
 import { useGrupoById } from "@/hooks/grupo/useListById";
+import { PencilIcon, PlusIcon } from "@heroicons/react/24/outline";
 
 interface ClientGrupoDetailProps {
   grupoAtual: Grupo;
   users: User[];
-  id_usuario_logado: string; // ID do usuário logado
+  id_usuario_logado: string;
 }
 
 interface Mensagem {
@@ -43,11 +44,12 @@ export default function ClientGrupoDetail({
   id_usuario_logado,
 }: ClientGrupoDetailProps) {
   const [open, setOpen] = useState(false);
+  const [editNameOpen, setEditNameOpen] = useState(false);
+  const [novoNome, setNovoNome] = useState(grupoAtual.nome_grupo);
   const [selectedUserIds, setSelectedUserIds] = useState<string[]>([]);
   const router = useRouter();
 
   const { data: grupoData } = useGrupoById(grupoAtual.id_grupo);
-
   const updateGrupoMutation = useUpdateGrupo();
   const removeMemberMutation = useRemoveGrupoMember();
   const leaveGroupMutation = useLeaveGroup();
@@ -65,9 +67,22 @@ export default function ClientGrupoDetail({
         setSelectedUserIds([]);
         setOpen(false);
       },
-      onError: (error: any) => {
-        console.error("Erro ao adicionar membros:", error);
-      },
+      onError: (error: any) =>
+        console.error("Erro ao adicionar membros:", error),
+    });
+  };
+
+  const handleEditGroup = () => {
+    if (!novoNome.trim()) return;
+
+    const data: UpdateGrupoData = {
+      id: grupoAtual.id_grupo,
+      nomeGrupo: novoNome,
+    };
+
+    updateGrupoMutation.mutate(data, {
+      onSuccess: () => setEditNameOpen(false),
+      onError: (error: any) => console.error("Erro ao renomear grupo:", error),
     });
   };
 
@@ -75,9 +90,8 @@ export default function ClientGrupoDetail({
     removeMemberMutation.mutate(
       { grupoId: grupoAtual.id_grupo, membroId },
       {
-        onError: (error: any) => {
-          console.error("Erro ao remover membro:", error);
-        },
+        onError: (error: any) =>
+          console.error("Erro ao remover membro:", error),
       }
     );
   };
@@ -94,18 +108,15 @@ export default function ClientGrupoDetail({
   const chatEndRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
-    const socket = io("http://localhost:3333"); // Backend
+    const socket: Socket = io("http://localhost:3333");
     socketRef.current = socket;
 
     socket.emit("join", grupoAtual.id_grupo);
 
-    socket.on("historico", (msgs: Mensagem[]) => {
-      setMensagens(msgs);
-    });
-
-    socket.on("mensagem_recebida", (msg: Mensagem) => {
-      setMensagens((prev) => [...prev, msg]);
-    });
+    socket.on("historico", (msgs: Mensagem[]) => setMensagens(msgs));
+    socket.on("mensagem_recebida", (msg: Mensagem) =>
+      setMensagens((prev) => [...prev, msg])
+    );
 
     return () => {
       socket.disconnect();
@@ -126,7 +137,6 @@ export default function ClientGrupoDetail({
   };
 
   useEffect(() => {
-    // Scroll automático
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [mensagens]);
 
@@ -138,135 +148,186 @@ export default function ClientGrupoDetail({
 
   return (
     <div
-      className="p-4"
-      style={{
-        paddingTop: headerHeight + 15,
-      }}
+      className="flex justify-center px-4"
+      style={{ paddingTop: headerHeight + 20 }}
     >
-      {/* Grupo */}
-      <h1 className="text-2xl font-bold">{grupoAtual.nome_grupo}</h1>
+      <div className="w-full max-w-4xl bg-white rounded-2xl shadow-md border border-zinc-200 p-6 flex flex-col gap-6">
+        {/* Topo */}
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+          <h1 className="text-3xl font-bold text-purple-700 break-words">
+            {grupoAtual.nome_grupo}
+          </h1>
 
-      <button
-        className="p-2 mt-2 rounded-lg bg-red-500 text-white hover:bg-red-700 transition-colors"
-        onClick={handleLeaveGroup}
-        disabled={leaveGroupMutation.isPending}
-      >
-        {leaveGroupMutation.isPending ? "Saindo..." : "Sair do grupo"}
-      </button>
+          <div className="flex gap-2 flex-wrap">
+            {/* Editar grupo */}
+            <Dialog open={editNameOpen} onOpenChange={setEditNameOpen}>
+              <DialogTrigger asChild>
+                <button className="flex items-center gap-2 bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-800 transition-all text-sm font-medium">
+                  <PencilIcon className="h-4 w-4" />
+                  Editar nome
+                </button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Editar nome do grupo</DialogTitle>
+                </DialogHeader>
+                <input
+                  type="text"
+                  value={novoNome}
+                  onChange={(e) => setNovoNome(e.target.value)}
+                  className="w-full border border-zinc-300 rounded-md p-2"
+                />
+                <DialogFooter>
+                  <button
+                    onClick={handleEditGroup}
+                    className="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-800 transition-all"
+                  >
+                    Salvar alterações
+                  </button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
 
-      {/* Modal adicionar membros */}
-      <Dialog open={open} onOpenChange={setOpen}>
-        <DialogTrigger asChild>
-          <button className="w-[200px] mt-2 bg-purple-600 p-3 rounded-lg text-white cursor-pointer hover:-translate-y-1 transition-all duration-300">
-            Adicionar novo membro
-          </button>
-        </DialogTrigger>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Adicione um ou mais membros</DialogTitle>
-          </DialogHeader>
+            {/* Adicionar membros */}
+            <Dialog open={open} onOpenChange={setOpen}>
+              <DialogTrigger asChild>
+                <button className="flex items-center gap-2 bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-800 transition-all text-sm font-medium">
+                  <PlusIcon className="h-4 w-4" />
+                  Adicionar membros
+                </button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Adicionar novo(s) membro(s)</DialogTitle>
+                </DialogHeader>
 
-          <div className="grid gap-4 py-4">
-            <MultiSelectCombobox
-              items={users.map((u) => ({ id: u.id_usuario, ...u }))}
-              selectedIds={selectedUserIds}
-              setSelectedIds={setSelectedUserIds}
-              placeholder="Selecionar membros"
-              getLabel={(user) => user.nome_usuario}
-            />
-          </div>
+                <MultiSelectCombobox
+                  items={users.map((u) => ({ id: u.id_usuario, ...u }))}
+                  selectedIds={selectedUserIds}
+                  setSelectedIds={setSelectedUserIds}
+                  placeholder="Selecionar membros"
+                  getLabel={(user) => user.nome_usuario}
+                />
 
-          <DialogFooter>
+                <DialogFooter>
+                  <button
+                    className="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-800 transition-all"
+                    onClick={handleAddMembers}
+                    disabled={updateGrupoMutation.isPending}
+                  >
+                    {updateGrupoMutation.isPending
+                      ? "Adicionando..."
+                      : "Adicionar"}
+                  </button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+
+            {/* Sair */}
             <button
-              className="p-2 rounded-lg bg-purple-600 text-white hover:bg-purple-900 transition-colors duration-300"
-              onClick={handleAddMembers}
-              disabled={updateGrupoMutation.isPending}
+              className="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-all text-sm font-medium"
+              onClick={handleLeaveGroup}
+              disabled={leaveGroupMutation.isPending}
             >
-              {updateGrupoMutation.isPending
-                ? "Adicionando..."
-                : "Adicionar membro(s)"}
+              {leaveGroupMutation.isPending ? "Saindo..." : "Sair do grupo"}
             </button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Criador e membros */}
-      <h1 className="mt-4">
-        Criador do grupo: {grupoAtual.usuario.nome_usuario}
-      </h1>
-
-      <h2 className="mt-4 mb-2 font-semibold">Membros:</h2>
-      <div className="flex gap-4 overflow-x-auto">
-        {grupoData?.membros?.map((membro: Membro) => (
-          <div key={membro.id_membro} className="flex flex-col items-center">
-            <img
-              src={membro.usuario.foto_perfil ?? "/imagens/default-avatar.png"}
-              alt={membro.usuario.nome_usuario}
-              className="w-14 h-14 rounded-full object-cover"
-            />
-            <span className="text-sm mt-1">
-              {membro.usuario.apelido_usuario}
-            </span>
-            {membro.usuario.id_usuario !== grupoAtual.fkId_usuario && (
-              <button
-                className="mt-1 text-red-500 text-xs hover:underline"
-                onClick={() => handleRemoveMember(membro.id_membro)}
-                disabled={removeMemberMutation.isPending}
-              >
-                {removeMemberMutation.isPending
-                  ? "Removendo..."
-                  : "Remover membro"}
-              </button>
-            )}
           </div>
-        ))}
-      </div>
-
-      {/* --- CHAT --- */}
-      <div className="mt-6">
-        <h2 className="font-bold text-lg mb-2">Chat do grupo</h2>
-        <div className="border p-2 rounded-lg h-64 overflow-y-auto mb-2 bg-gray-100 flex flex-col">
-          {mensagens.map((m) => (
-            <div
-              key={m.id_mensagem}
-              className={`mb-1 flex ${
-                m.fkId_usuario === id_usuario_logado
-                  ? "justify-end"
-                  : "justify-start"
-              }`}
-            >
-              <div
-                className={`px-3 py-1 rounded-lg max-w-xs break-words ${
-                  m.fkId_usuario === id_usuario_logado
-                    ? "bg-purple-600 text-white"
-                    : "bg-white text-black"
-                }`}
-              >
-                <span className="font-bold text-sm mr-1">
-                  {m.usuario.apelido_usuario}:
-                </span>
-                <span className="text-sm">{m.mensagem}</span>
-              </div>
-            </div>
-          ))}
-          <div ref={chatEndRef} />
         </div>
 
-        <div className="flex gap-2">
-          <input
-            type="text"
-            className="flex-1 p-2 border rounded-md"
-            placeholder="Digite sua mensagem..."
-            value={novaMensagem}
-            onChange={(e) => setNovaMensagem(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && handleEnviarMensagem()}
-          />
-          <button
-            className="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-800"
-            onClick={handleEnviarMensagem}
-          >
-            Enviar
-          </button>
+        {/* Criador */}
+        <p className="text-sm text-gray-600">
+          Criado por{" "}
+          <span className="text-purple-700 font-medium">
+            {grupoAtual.usuario.nome_usuario}
+          </span>
+        </p>
+
+        {/* Membros */}
+        <div>
+          <h2 className="text-lg font-semibold text-gray-800 mb-3">
+            Membros do grupo
+          </h2>
+          <div className="flex gap-6 flex-wrap">
+            {grupoData?.membros?.map((membro: Membro) => (
+              <div
+                key={membro.id_membro}
+                className="flex flex-col items-center"
+              >
+                <img
+                  src={
+                    membro.usuario.foto_perfil ?? "/imagens/default-avatar.png"
+                  }
+                  alt={membro.usuario.nome_usuario}
+                  className="w-14 h-14 rounded-full object-cover border border-zinc-200"
+                />
+                <span className="text-sm mt-1 font-medium">
+                  {membro.usuario.apelido_usuario}
+                </span>
+                {membro.usuario.id_usuario !== grupoAtual.fkId_usuario && (
+                  <button
+                    className="mt-1 text-red-500 text-xs hover:underline"
+                    onClick={() => handleRemoveMember(membro.id_membro)}
+                    disabled={removeMemberMutation.isPending}
+                  >
+                    {removeMemberMutation.isPending
+                      ? "Removendo..."
+                      : "Remover"}
+                  </button>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Chat */}
+        <div>
+          <h2 className="font-semibold text-lg text-gray-800 mb-3">
+            Chat do grupo
+          </h2>
+
+          <div className="border border-zinc-200 rounded-lg bg-gray-50 h-72 p-3 overflow-y-auto">
+            {mensagens.map((m) => (
+              <div
+                key={m.id_mensagem}
+                className={`mb-2 flex ${
+                  m.fkId_usuario === id_usuario_logado
+                    ? "justify-end"
+                    : "justify-start"
+                }`}
+              >
+                <div
+                  className={`px-3 py-2 rounded-lg max-w-xs break-words shadow-sm ${
+                    m.fkId_usuario === id_usuario_logado
+                      ? "bg-purple-600 text-white"
+                      : "bg-white text-gray-800"
+                  }`}
+                >
+                  <span className="font-bold text-sm mr-1">
+                    {m.usuario.apelido_usuario}:
+                  </span>
+                  <span className="text-sm">{m.mensagem}</span>
+                </div>
+              </div>
+            ))}
+            <div ref={chatEndRef} />
+          </div>
+
+          <div className="flex gap-2 mt-3">
+            <input
+              type="text"
+              className="flex-1 p-2 border border-zinc-300 rounded-md"
+              placeholder="Digite sua mensagem..."
+              value={novaMensagem}
+              onChange={(e) => setNovaMensagem(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && handleEnviarMensagem()}
+            />
+            <button
+              className="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-800 transition-all"
+              onClick={handleEnviarMensagem}
+            >
+              Enviar
+            </button>
+          </div>
         </div>
       </div>
     </div>

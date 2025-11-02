@@ -43,13 +43,14 @@ export default function ClientGrupoDetail({
   users,
   id_usuario_logado,
 }: ClientGrupoDetailProps) {
+  const [grupo, setGrupo] = useState(grupoAtual); // <--- estado local
   const [open, setOpen] = useState(false);
   const [editNameOpen, setEditNameOpen] = useState(false);
   const [novoNome, setNovoNome] = useState(grupoAtual.nome_grupo);
   const [selectedUserIds, setSelectedUserIds] = useState<string[]>([]);
   const router = useRouter();
 
-  const { data: grupoData } = useGrupoById(grupoAtual.id_grupo);
+  const { data: grupoData } = useGrupoById(grupo.id_grupo);
   const updateGrupoMutation = useUpdateGrupo();
   const removeMemberMutation = useRemoveGrupoMember();
   const leaveGroupMutation = useLeaveGroup();
@@ -58,7 +59,7 @@ export default function ClientGrupoDetail({
     if (selectedUserIds.length === 0) return;
 
     const data: UpdateGrupoData = {
-      id: grupoAtual.id_grupo,
+      id: grupo.id_grupo,
       novosMembrosIds: selectedUserIds,
     };
 
@@ -76,19 +77,22 @@ export default function ClientGrupoDetail({
     if (!novoNome.trim()) return;
 
     const data: UpdateGrupoData = {
-      id: grupoAtual.id_grupo,
-      nomeGrupo: novoNome,
+      id: grupo.id_grupo,
+      nome_grupo: novoNome,
     };
 
     updateGrupoMutation.mutate(data, {
-      onSuccess: () => setEditNameOpen(false),
+      onSuccess: () => {
+        setGrupo((prev) => ({ ...prev, nome_grupo: novoNome })); // atualiza o frontend
+        setEditNameOpen(false);
+      },
       onError: (error: any) => console.error("Erro ao renomear grupo:", error),
     });
   };
 
   const handleRemoveMember = (membroId: string) => {
     removeMemberMutation.mutate(
-      { grupoId: grupoAtual.id_grupo, membroId },
+      { grupoId: grupo.id_grupo, membroId },
       {
         onError: (error: any) =>
           console.error("Erro ao remover membro:", error),
@@ -97,7 +101,7 @@ export default function ClientGrupoDetail({
   };
 
   const handleLeaveGroup = () => {
-    leaveGroupMutation.mutate({ grupoId: grupoAtual.id_grupo });
+    leaveGroupMutation.mutate({ grupoId: grupo.id_grupo });
     router.push("/groups");
   };
 
@@ -111,7 +115,7 @@ export default function ClientGrupoDetail({
     const socket: Socket = io("http://localhost:3333");
     socketRef.current = socket;
 
-    socket.emit("join", grupoAtual.id_grupo);
+    socket.emit("join", grupo.id_grupo);
 
     socket.on("historico", (msgs: Mensagem[]) => setMensagens(msgs));
     socket.on("mensagem_recebida", (msg: Mensagem) =>
@@ -121,7 +125,7 @@ export default function ClientGrupoDetail({
     return () => {
       socket.disconnect();
     };
-  }, [grupoAtual.id_grupo]);
+  }, [grupo.id_grupo]);
 
   const handleEnviarMensagem = () => {
     if (!novaMensagem.trim()) return;
@@ -129,7 +133,7 @@ export default function ClientGrupoDetail({
     const msgPayload = {
       text: novaMensagem,
       userId: id_usuario_logado,
-      grupoId: grupoAtual.id_grupo,
+      grupoId: grupo.id_grupo,
     };
 
     socketRef.current?.emit("nova_mensagem", msgPayload);
@@ -155,7 +159,7 @@ export default function ClientGrupoDetail({
         {/* Topo */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
           <h1 className="text-3xl font-bold text-purple-700 break-words">
-            {grupoAtual.nome_grupo}
+            {grupo.nome_grupo}
           </h1>
 
           <div className="flex gap-2 flex-wrap">
@@ -238,7 +242,7 @@ export default function ClientGrupoDetail({
         <p className="text-sm text-gray-600">
           Criado por{" "}
           <span className="text-purple-700 font-medium">
-            {grupoAtual.usuario.nome_usuario}
+            {grupo.usuario.nome_usuario}
           </span>
         </p>
 
@@ -263,7 +267,7 @@ export default function ClientGrupoDetail({
                 <span className="text-sm mt-1 font-medium">
                   {membro.usuario.apelido_usuario}
                 </span>
-                {membro.usuario.id_usuario !== grupoAtual.fkId_usuario && (
+                {membro.usuario.id_usuario !== grupo.fkId_usuario && (
                   <button
                     className="mt-1 text-red-500 text-xs hover:underline"
                     onClick={() => handleRemoveMember(membro.id_membro)}

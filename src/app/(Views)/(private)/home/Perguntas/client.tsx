@@ -48,13 +48,11 @@ export function PerguntasClientPage({
   const perguntasRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
   const respostasRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
 
-  // Detecta highlight na URL
   useEffect(() => {
     const id_conteudo = searchParams.get("id_conteudo");
     const tipo_conteudo = searchParams.get("tipo_conteudo");
 
     if (id_conteudo && tipo_conteudo) {
-      console.log("Highlight:", tipo_conteudo, id_conteudo);
       setHighlightId(id_conteudo);
       setHighlightType(tipo_conteudo);
     }
@@ -86,14 +84,10 @@ export function PerguntasClientPage({
   };
 
   const { mutate: deletePergunta } = useDeletePergunta();
-  const handleDelete = (id: string) => {
-    deletePergunta({ id });
-  };
+  const handleDelete = (id: string) => deletePergunta({ id });
 
   const { mutate: deleteResposta } = useDeleteResposta();
-  const handleDeleteResposta = (id: string) => {
-    deleteResposta({ id });
-  };
+  const handleDeleteResposta = (id: string) => deleteResposta({ id });
 
   const handleEnviarResposta = (data: CreateRespostaData) => {
     createResposta.mutate(data, {
@@ -108,7 +102,6 @@ export function PerguntasClientPage({
     setModalDenunciaOpen((prev) => ({ ...prev, [id]: !prev[id] }));
   };
 
-  // Scroll automático para destaque
   useEffect(() => {
     if (highlightId) {
       if (highlightType === "Pergunta" && perguntasRefs.current[highlightId]) {
@@ -135,14 +128,11 @@ export function PerguntasClientPage({
           const respostasPergunta = respostas.filter(
             (r) => r.fkId_pergunta === pergunta.id_pergunta
           );
-
           const minhaResposta = respostasPergunta.find(
             (r) => r.usuario.id_usuario === id_usuario
           );
-
           const jaRespondida = !!minhaResposta;
           const temResposta = respostasPergunta.length > 0;
-
           const isPerguntaHighlighted =
             highlightType === "Pergunta" &&
             highlightId === pergunta.id_pergunta;
@@ -170,23 +160,25 @@ export function PerguntasClientPage({
                 </h2>
 
                 <div className="flex flex-col items-end gap-2">
-                  <DropdownMenu>
-                    <DropdownMenuTrigger className="cursor-pointer">
-                      <BsThreeDotsVertical />
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent>
-                      <DropdownMenuLabel>Opções</DropdownMenuLabel>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem
-                        onClick={() =>
-                          toggleModalDenuncia(pergunta.id_pergunta)
-                        }
-                        className="cursor-pointer"
-                      >
-                        Denunciar
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
+                  {id_usuario !== pergunta.usuario.id_usuario && (
+                    <DropdownMenu>
+                      <DropdownMenuTrigger className="cursor-pointer">
+                        <BsThreeDotsVertical />
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent>
+                        <DropdownMenuLabel>Opções</DropdownMenuLabel>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem
+                          onClick={() =>
+                            toggleModalDenuncia(pergunta.id_pergunta)
+                          }
+                          className="cursor-pointer"
+                        >
+                          Denunciar
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  )}
 
                   <ModalCreateDenuncia
                     id_conteudo={pergunta.id_pergunta}
@@ -271,10 +263,6 @@ export function PerguntasClientPage({
                     Não é possível responder sua própria pergunta
                   </span>
                 )}
-
-                <button className="p-2 rounded-lg bg-white text-black text-xs lg:text-base">
-                  Notificar respostas
-                </button>
               </div>
 
               {/* RESPOSTAS */}
@@ -292,57 +280,64 @@ export function PerguntasClientPage({
                         ref={(el) =>
                           void (respostasRefs.current[r.id_resposta] = el)
                         }
-                        className={`border p-2 rounded-md mb-2 flex items-center justify-between
-                          ${
-                            isRespostaHighlighted
-                              ? "border-4 border-yellow-400 bg-yellow-100"
-                              : ""
-                          }`}
+                        className={`border p-2 rounded-md mb-2 flex items-center justify-between ${
+                          isRespostaHighlighted
+                            ? "border-4 border-yellow-400 bg-yellow-100"
+                            : ""
+                        }`}
                       >
                         <div className="flex gap-2">
                           <p className="font-bold">
-                            {r.usuario.nome_usuario +
-                              ` (${r.usuario.apelido_usuario})`}
-                            :{" "}
+                            {r.usuario.nome_usuario} (
+                            {r.usuario.apelido_usuario}):{" "}
                           </p>
                           <span>{r.resposta}</span>
                         </div>
 
                         <div className="flex gap-2 items-center">
-                          <button
-                            onClick={() => toggleModalDenuncia(r.id_resposta)}
-                            className="p-1 text-xs text-red-600 hover:underline"
-                          >
-                            Denunciar
-                          </button>
-
-                          <ModalCreateDenuncia
-                            id_conteudo={r.id_resposta}
-                            id_usuario={id_usuario}
-                            fkId_usuario_conteudo={r.usuario.id_usuario}
-                            tipo_conteudo="Resposta"
-                            isOpen={!!modalDenunciaOpen[r.id_resposta]}
-                            onOpenChange={(open) =>
-                              setModalDenunciaOpen((prev) => ({
-                                ...prev,
-                                [r.id_resposta]: open,
-                              }))
-                            }
-                          />
-
-                          {(id_usuario === r.usuario.id_usuario ||
-                            id_usuario === pergunta.usuario.id_usuario) && (
+                          {/* Denunciar apenas se não for dono da resposta */}
+                          {id_usuario !== r.usuario.id_usuario && (
                             <>
                               <button
-                                className="p-2 bg-white text-black rounded-md hover:bg-red-400 transition-colors duration-300 hover:text-black cursor-pointer"
                                 onClick={() =>
-                                  handleDeleteResposta(r.id_resposta)
+                                  toggleModalDenuncia(r.id_resposta)
                                 }
+                                className="p-1 text-xs text-red-600 hover:underline"
                               >
-                                Deletar resposta
+                                Denunciar
                               </button>
-                              <ModalUpdateResponse resposta={r} />
+                              <ModalCreateDenuncia
+                                id_conteudo={r.id_resposta}
+                                id_usuario={id_usuario}
+                                fkId_usuario_conteudo={r.usuario.id_usuario}
+                                tipo_conteudo="Resposta"
+                                isOpen={!!modalDenunciaOpen[r.id_resposta]}
+                                onOpenChange={(open) =>
+                                  setModalDenunciaOpen((prev) => ({
+                                    ...prev,
+                                    [r.id_resposta]: open,
+                                  }))
+                                }
+                              />
                             </>
+                          )}
+
+                          {/* Deletar resposta se for dono da resposta ou dono da pergunta */}
+                          {(id_usuario === r.usuario.id_usuario ||
+                            id_usuario === pergunta.usuario.id_usuario) && (
+                            <button
+                              className="p-2 bg-white text-black rounded-md hover:bg-red-400 transition-colors duration-300 cursor-pointer"
+                              onClick={() =>
+                                handleDeleteResposta(r.id_resposta)
+                              }
+                            >
+                              Deletar resposta
+                            </button>
+                          )}
+
+                          {/* Editar apenas se for dono da resposta */}
+                          {id_usuario === r.usuario.id_usuario && (
+                            <ModalUpdateResponse resposta={r} />
                           )}
                         </div>
                       </div>

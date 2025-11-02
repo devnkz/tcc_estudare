@@ -5,7 +5,7 @@ import { useToken } from "@/lib/getTokenClient";
 
 export interface UpdateGrupoData {
   id: string;
-  nomeGrupo?: string;
+  nome_grupo?: string;
   fkIdComponente?: string;
   novosMembrosIds?: string[];
 }
@@ -14,13 +14,17 @@ export function useUpdateGrupo() {
   const { token } = useToken();
   const queryClient = useQueryClient();
 
-  return useMutation<Grupo, Error, UpdateGrupoData>({
-    mutationFn: (data: UpdateGrupoData) => {
+  return useMutation<Grupo, any, UpdateGrupoData>({
+    mutationFn: async (data: UpdateGrupoData) => {
       if (!token) throw new Error("Token não disponível ainda");
       return updateGrupo(data, token);
     },
-    onSuccess: () => {
+    onSuccess: (updatedGrupo) => {
       queryClient.invalidateQueries({ queryKey: ["grupos"] });
+      console.log("Grupo atualizado com sucesso:", updatedGrupo);
+    },
+    onError: (error: any) => {
+      console.error("Erro ao atualizar grupo via mutation:", error);
     },
   });
 }

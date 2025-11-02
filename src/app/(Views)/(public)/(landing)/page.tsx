@@ -25,26 +25,16 @@ export default function TelaHome() {
   }, []);
 
   useEffect(() => {
-    setShowImage(width > 1024);
+    setShowImage(width > 1084);
   }, [width]);
 
   const router = useRouter();
 
-  const [headerHeight, setHeaderHeight] = useState(0);
-
-  useEffect(() => {
-    const header = document.querySelector("header");
-    if (header) setHeaderHeight(header.offsetHeight);
-  }, []);
-
   return (
-    <div className="h-full w-full">
-      <div
-        className="flex flex-col scrollbar-hide"
-        style={{ paddingTop: headerHeight }}
-      >
+    <div className="max-h-screen w-full">
+      <div className="flex flex-col">
         {/* Main */}
-        <main className="flex justify-between items-center px-75 py-20">
+        <main className="flex justify-between items-center pb-15 px-65">
           <div className="w-full lg:w-3/5 flex flex-col items-start gap-5 mt-40 mb-30 ">
             <h1
               className={`${interextrabold.className} font-extrabold text-purple-600 text-6xl gap-1`}
@@ -64,14 +54,14 @@ export default function TelaHome() {
             <div className={`${interregular.className} flex gap-3 mt-0.5`}>
               <button
                 onClick={() => router.push("/home")}
-                className="bg-purple-600 p-4 rounded-md text-white font-extrabold flex gap-2 justify-center items-center hover:bg-purple-800 transition-all duration-500 cursor-pointer"
+                className="bg-purple-600 p-4 rounded-md text-white font-extrabold flex gap-2 justify-center items-center hover:bg-purple-700 transition-all duration-300 cursor-pointer"
               >
                 <p className="text-center">Começar agora</p>
                 <ArrowRightIcon className="h-4 w-4 text-white" />
               </button>
               <button
                 onClick={() => router.push("/about")}
-                className="bg-zinc-200 p-4 text-black rounded-lg hover:bg-zinc-300 transition-all duration-500 cursor-pointer"
+                className="bg-zinc-200 p-4 font-medium animate-in text-black rounded-lg hover:bg-zinc-300 transition-all duration-300 cursor-pointer"
               >
                 Saiba mais
               </button>
@@ -80,7 +70,7 @@ export default function TelaHome() {
           {showImage && (
             <div className="lg:block mb-20">
               <img
-                className="h-150 w-150"
+                className="h-180 w-200"
                 src="/imagens/meeting_13543798.png"
                 alt="Imagem ilustrativa de alunos em formatura"
               ></img>

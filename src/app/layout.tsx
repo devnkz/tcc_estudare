@@ -1,8 +1,7 @@
-// app/layout.tsx
-
 import React from "react";
 import { Inter } from "next/font/google";
-import { verify } from "jsonwebtoken";
+import { verify, JwtPayload } from "jsonwebtoken";
+import { redirect } from "next/navigation";
 import { getTokenFromCookie } from "@/lib/getTokenServer";
 
 import { QueryProvider } from "../providers/QueryProvider";
@@ -10,36 +9,49 @@ import { RouteChangeLoader } from "@/components/shared/RouteChangeLoader";
 
 import "./globals.css";
 
-// Definimos a interface do payload para garantir que ele tenha a propriedade 'id'
-interface DecodedTokenPayload {
-  id: string;
-}
-
 const inter = Inter({ subsets: ["latin"], weight: ["400"] });
+
+// Interface opcional para o payload do token
+interface DecodedTokenPayload extends JwtPayload {
+  id?: string;
+}
 
 export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  // Await é crucial para que a promessa seja resolvida.
-  // get token from a server action.
   const token = await getTokenFromCookie();
-
-  let id: string | null = null;
+  let userId: string | null = null;
 
   if (token) {
-    // Usamos a tipagem genérica para garantir que o resultado decodificado
-    // tenha a estrutura que esperamos.
-    const decoded = verify(
-      token,
-      process.env.JWT_SECRET!
-    ) as DecodedTokenPayload;
+    try {
+      const decoded = verify(
+        token,
+        process.env.JWT_SECRET!
+      ) as DecodedTokenPayload;
 
-    // Verificamos se 'id' existe no objeto decodificado antes de atribuir
-    if (decoded.id) {
-      id = decoded.id;
+      if (decoded?.id) {
+        userId = decoded.id;
+      }
+    } catch (err: any) {
+      // Caso o token esteja expirado ou inválido
+      console.error("Erro ao verificar JWT:", err.message);
+
+      // Evita travar o servidor
+      if (
+        err.name === "TokenExpiredError" ||
+        err.name === "JsonWebTokenError"
+      ) {
+        // Redireciona de volta ao login
+        userId = null;
+      } else {
+        throw err;
+      }
     }
+  } else {
+    // Nenhum token — força login
+    userId = null;
   }
 
   return (

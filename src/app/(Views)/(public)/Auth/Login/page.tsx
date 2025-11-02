@@ -65,11 +65,11 @@ export default function LoginUsuario() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-white w-full">
+    <div className="max-h-screen flex flex-col bg-white w-full">
       <div className="w-full lg:max-w-[1300px] mx-auto flex-1 flex flex-col">
         <HeaderLoginCadastro />
 
-        <main className="flex-1 flex flex-col items-center justify-center px-2 mb-25">
+        <main className="flex-1 flex flex-col items-center">
           <form
             onSubmit={login}
             className="bg-white shadow-lg rounded-2xl p-8 w-full max-w-md border border-gray-100 flex flex-col gap-5"
@@ -176,8 +176,6 @@ export default function LoginUsuario() {
           </form>
         </main>
       </div>
-
-      <Footer />
     </div>
   );
 }

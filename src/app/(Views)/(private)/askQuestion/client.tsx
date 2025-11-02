@@ -62,10 +62,13 @@ export default function AskQuestionPage({
 
   return (
     <div
-      className="w-full flex flex-col justify-between items-center font-[Inter] "
-      style={{ paddingTop: headerHeight }}
+      className="w-full min-h-screen flex flex-col justify-between items-center font-[Inter]"
+      style={{ paddingTop: headerHeight + 80 }}
     >
-      <main className="w-full flex flex-col items-center justify-center mt-10 mb-10">
+      <main
+        className="w-2/3 flex flex-col items-center "
+        style={{ paddingBottom: headerHeight - 10 }}
+      >
         <motion.div
           className="flex flex-col lg:flex-row items-center justify-between gap-16 w-full max-w-4xl p-10 bg-white/80 rounded-2xl shadow-xl border border-purple-100/40 backdrop-blur-sm"
           initial={{ opacity: 0, y: 40 }}
@@ -194,7 +197,7 @@ export default function AskQuestionPage({
           {/* DICAS E IMAGEM */}
           <div className="flex flex-col items-center flex-1 justify-center ">
             <Image
-              src="/imagens/video_13543815.png"
+              src="/imagens/search_13543825.png"
               alt="Ilustração"
               width={350}
               height={350}

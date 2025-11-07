@@ -9,7 +9,8 @@ import {
   EyeIcon,
   EyeSlashIcon,
 } from "@heroicons/react/24/solid";
-import { useState } from "react";
+import { CheckCircleIcon, XCircleIcon } from "@heroicons/react/24/outline";
+import { useState, useEffect, useRef } from "react";
 import { useForm, Controller } from "react-hook-form";
 import { useRouter } from "next/navigation";
 import { HeaderLoginCadastro } from "@/components/layout/header";
@@ -42,9 +43,31 @@ export default function CadastroUsuario() {
   });
 
   const senha = watch("senha_usuario");
+  const emailValue = watch("email_usuario");
+  const nomeValue = watch("nome_usuario");
+  const apelidoValue = watch("apelido_usuario");
+
+  // email availability state
+  const [emailStatus, setEmailStatus] = useState<
+    "idle" | "checking" | "available" | "taken"
+  >("idle");
+  const emailTimer = useRef<number | null>(null);
+  const nomeTimer = useRef<number | null>(null);
+  const apelidoTimer = useRef<number | null>(null);
+
+  const [nomeStatus, setNomeStatus] = useState<
+    "idle" | "checking" | "clean" | "bad"
+  >("idle");
+  const [apelidoStatus, setApelidoStatus] = useState<
+    "idle" | "checking" | "clean" | "bad"
+  >("idle");
 
   const onSubmit = async (data: any) => {
     setMensagem({ tipo: null, texto: "" });
+    if (emailStatus === "taken") {
+      setMensagem({ tipo: "erro", texto: "Este email já está em uso." });
+      return;
+    }
 
     try {
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/user`, {
@@ -114,13 +137,124 @@ export default function CadastroUsuario() {
     { label: "Adicione caractere especial", valid: /[^A-Za-z0-9]/.test(senha) },
   ];
 
+  // Debounced email availability check
+  useEffect(() => {
+    // only run availability check when there's an email and it contains '@'
+    if (!emailValue || errors.email_usuario || !emailValue.includes("@")) {
+      setEmailStatus("idle");
+      return;
+    }
+
+    setEmailStatus("checking");
+    if (emailTimer.current) window.clearTimeout(emailTimer.current);
+    emailTimer.current = window.setTimeout(async () => {
+      try {
+        const url = `${
+          process.env.NEXT_PUBLIC_API_URL
+        }/user/check-email?email=${encodeURIComponent(emailValue)}`;
+        const res = await fetch(url, { method: "GET" });
+        if (res.ok) {
+          const body = await res.json();
+          // expect { exists: boolean } from backend; fallback to truthy
+          if (body && body.exists) setEmailStatus("taken");
+          else setEmailStatus("available");
+        } else if (res.status === 404) {
+          // not found -> available
+          setEmailStatus("available");
+        } else {
+          setEmailStatus("idle");
+        }
+      } catch (e) {
+        // network or server error -> don't block user
+        setEmailStatus("idle");
+      }
+    }, 600);
+
+    return () => {
+      if (emailTimer.current) window.clearTimeout(emailTimer.current);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [emailValue]);
+
+  // Debounced name check (avoid offensive words)
+  useEffect(() => {
+    if (!nomeValue) {
+      setNomeStatus("idle");
+      return;
+    }
+    setNomeStatus("checking");
+    if (nomeTimer.current) window.clearTimeout(nomeTimer.current);
+    nomeTimer.current = window.setTimeout(async () => {
+      try {
+        const res = await fetch(
+          `${process.env.NEXT_PUBLIC_API_URL}/user/validate-text`,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ text: nomeValue }),
+          }
+        );
+        if (res.ok) {
+          const body = await res.json();
+          setNomeStatus(body.containsOffensive ? "bad" : "clean");
+        } else {
+          setNomeStatus("idle");
+        }
+      } catch (e) {
+        setNomeStatus("idle");
+      }
+    }, 600);
+
+    return () => {
+      if (nomeTimer.current) window.clearTimeout(nomeTimer.current);
+    };
+  }, [nomeValue]);
+
+  // Debounced apelido check
+  useEffect(() => {
+    if (!apelidoValue) {
+      setApelidoStatus("idle");
+      return;
+    }
+    setApelidoStatus("checking");
+    if (apelidoTimer.current) window.clearTimeout(apelidoTimer.current);
+    apelidoTimer.current = window.setTimeout(async () => {
+      try {
+        const res = await fetch(
+          `${process.env.NEXT_PUBLIC_API_URL}/user/validate-text`,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ text: apelidoValue }),
+          }
+        );
+        if (res.ok) {
+          const body = await res.json();
+          setApelidoStatus(body.containsOffensive ? "bad" : "clean");
+        } else {
+          setApelidoStatus("idle");
+        }
+      } catch (e) {
+        setApelidoStatus("idle");
+      }
+    }, 600);
+
+    return () => {
+      if (apelidoTimer.current) window.clearTimeout(apelidoTimer.current);
+    };
+  }, [apelidoValue]);
+
   return (
-    <div className="max-h-screen flex flex-col bg-white w-full">
+    <div className="min-h-screen flex flex-col bg-white w-full">
       <div className="w-full lg:max-w-[1300px] mx-auto flex-1 flex flex-col">
-        <main className="flex-1 flex flex-col items-center">
+        <main className="flex-1 flex flex-col items-center mt-18">
           <HeaderLoginCadastro />
-          <form
+
+          <motion.form
             onSubmit={handleSubmit(onSubmit)}
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.45, ease: [0.22, 0.8, 0.12, 1] }}
             className="bg-white shadow-lg rounded-2xl p-8 w-full max-w-md border border-gray-100 flex flex-col gap-5 relative"
           >
             {/* Nome */}
@@ -143,10 +277,45 @@ export default function CadastroUsuario() {
                     />
                   )}
                 />
+                <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                  {nomeStatus === "checking" && (
+                    <svg
+                      className="animate-spin h-4 w-4 text-gray-500"
+                      xmlns="http://www.w3.org/2000/svg"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                    >
+                      <circle
+                        className="opacity-25"
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                      ></circle>
+                      <path
+                        className="opacity-75"
+                        fill="currentColor"
+                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                      ></path>
+                    </svg>
+                  )}
+                  {nomeStatus === "bad" && (
+                    <XCircleIcon className="h-4 w-4 text-red-500" />
+                  )}
+                  {nomeStatus === "clean" && (
+                    <CheckCircleIcon className="h-4 w-4 text-green-500" />
+                  )}
+                </div>
               </div>
               {errors.nome_usuario && (
                 <p className="text-red-500 text-xs mt-1">
                   {errors.nome_usuario.message}
+                </p>
+              )}
+              {nomeStatus === "bad" && (
+                <p className="text-red-500 text-xs mt-1">
+                  Nome contém palavras impróprias.
                 </p>
               )}
             </div>
@@ -171,10 +340,45 @@ export default function CadastroUsuario() {
                     />
                   )}
                 />
+                <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                  {apelidoStatus === "checking" && (
+                    <svg
+                      className="animate-spin h-4 w-4 text-gray-500"
+                      xmlns="http://www.w3.org/2000/svg"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                    >
+                      <circle
+                        className="opacity-25"
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                      ></circle>
+                      <path
+                        className="opacity-75"
+                        fill="currentColor"
+                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                      ></path>
+                    </svg>
+                  )}
+                  {apelidoStatus === "bad" && (
+                    <XCircleIcon className="h-4 w-4 text-red-500" />
+                  )}
+                  {apelidoStatus === "clean" && (
+                    <CheckCircleIcon className="h-4 w-4 text-green-500" />
+                  )}
+                </div>
               </div>
               {errors.apelido_usuario && (
                 <p className="text-red-500 text-xs mt-1">
                   {errors.apelido_usuario.message}
+                </p>
+              )}
+              {apelidoStatus === "bad" && (
+                <p className="text-red-500 text-xs mt-1">
+                  Apelido contém palavras impróprias.
                 </p>
               )}
             </div>
@@ -186,6 +390,46 @@ export default function CadastroUsuario() {
               </label>
               <div className="relative">
                 <EnvelopeIcon className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                <AnimatePresence>
+                  {emailStatus !== "idle" && (
+                    <motion.div
+                      className="absolute right-3 top-1/2 -translate-y-1/2"
+                      initial={{ opacity: 0, scale: 0.8 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      exit={{ opacity: 0, scale: 0.8 }}
+                      transition={{ duration: 0.2 }}
+                    >
+                      {emailStatus === "checking" && (
+                        <svg
+                          className="animate-spin h-5 w-5 text-purple-400"
+                          xmlns="http://www.w3.org/2000/svg"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                        >
+                          <circle
+                            className="opacity-25"
+                            cx="12"
+                            cy="12"
+                            r="10"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                          ></circle>
+                          <path
+                            className="opacity-75"
+                            fill="currentColor"
+                            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                          ></path>
+                        </svg>
+                      )}
+                      {emailStatus === "available" && (
+                        <CheckCircleIcon className="h-5 w-5 text-green-500 stroke-[2.5]" />
+                      )}
+                      {emailStatus === "taken" && (
+                        <XCircleIcon className="h-5 w-5 text-red-500 stroke-[2.5]" />
+                      )}
+                    </motion.div>
+                  )}
+                </AnimatePresence>
                 <Controller
                   name="email_usuario"
                   control={control}
@@ -199,9 +443,9 @@ export default function CadastroUsuario() {
                   render={({ field }) => (
                     <input
                       {...field}
-                      type="email_usuario"
+                      type="email"
                       placeholder="Digite seu email"
-                      className="w-full pl-10 pr-4 py-2 border rounded-lg border-gray-300 focus:border-purple-500 focus:ring focus:ring-purple-200 outline-none"
+                      className="w-full pl-10 pr-10 py-2 border rounded-lg border-gray-300 focus:border-purple-500 focus:ring focus:ring-purple-200 outline-none"
                     />
                   )}
                 />
@@ -329,13 +573,49 @@ export default function CadastroUsuario() {
             )}
 
             {/* Botão principal */}
-            <button
+            {/* Botão principal */}
+            <motion.button
               type="submit"
-              disabled={isSubmitting}
-              className="w-full bg-purple-600 hover:bg-purple-700 transition-all text-white font-semibold py-3 rounded-lg shadow-md cursor-pointer disabled:opacity-50"
+              disabled={
+                isSubmitting ||
+                emailStatus === "taken" ||
+                nomeStatus === "bad" ||
+                apelidoStatus === "bad"
+              }
+              whileTap={{ scale: 0.98 }}
+              whileHover={isSubmitting ? undefined : { scale: 1.01 }}
+              className={`w-full bg-purple-600 text-white font-semibold py-3 rounded-lg shadow-md cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed transition-all`}
             >
-              {isSubmitting ? "Cadastrando..." : "Cadastrar-se"}
-            </button>
+              {isSubmitting
+                ? "Cadastrando..."
+                : emailStatus === "checking"
+                ? "Verificando email..."
+                : "Cadastrar-se"}
+            </motion.button>
+
+            {/* email status feedback */}
+            <AnimatePresence>
+              {emailStatus === "taken" && (
+                <motion.div
+                  initial={{ opacity: 0, y: 6 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: 6 }}
+                  className="text-sm text-red-600 bg-red-50 p-2 rounded"
+                >
+                  Este email já está em uso.
+                </motion.div>
+              )}
+              {emailStatus === "available" && (
+                <motion.div
+                  initial={{ opacity: 0, y: 6 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: 6 }}
+                  className="text-sm text-green-700 bg-green-50 p-2 rounded"
+                >
+                  Email disponível ✅
+                </motion.div>
+              )}
+            </AnimatePresence>
 
             {/* Mensagem de redirecionamento */}
             <p className="text-center text-sm text-gray-600">
@@ -347,7 +627,7 @@ export default function CadastroUsuario() {
                 Entrar agora
               </a>
             </p>
-          </form>
+          </motion.form>
         </main>
       </div>
     </div>

@@ -1,6 +1,5 @@
 "use client";
 
-import Footer from "@/components/layout/footer";
 import {
   EnvelopeIcon,
   LockClosedIcon,
@@ -9,6 +8,7 @@ import {
 } from "@heroicons/react/24/solid";
 import { HeaderLoginCadastro } from "../../../../../components/layout/header";
 import { useState } from "react";
+import { motion } from "framer-motion";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Inter } from "next/font/google";
@@ -33,6 +33,10 @@ export default function LoginUsuario() {
   const [isChecked, setIsChecked] = useState(false);
 
   const [mostrarSenha, setMostrarSenha] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
+  const [emailError, setEmailError] = useState("");
+  const [senhaError, setSenhaError] = useState("");
 
   const handleChange = (field: string, value: string) => {
     setForm((prev) => ({
@@ -43,6 +47,21 @@ export default function LoginUsuario() {
 
   const login = async (event?: React.FormEvent) => {
     event?.preventDefault();
+    // reset errors
+    setErrorMessage("");
+    setEmailError("");
+    setSenhaError("");
+
+    // basic client-side validation
+    if (!form.email_usuario.trim()) {
+      setEmailError("Preencha o email.");
+    }
+    if (!form.senha_usuario.trim()) {
+      setSenhaError("Preencha a senha.");
+    }
+    if (!form.email_usuario.trim() || !form.senha_usuario.trim()) return;
+
+    setIsLoading(true);
     try {
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/login`, {
         method: "POST",
@@ -52,21 +71,38 @@ export default function LoginUsuario() {
 
       if (res.ok) {
         const data = await res.json();
-
-        document.cookie = `token=${data.token}; path=/; max-age=${
-          60 * 60 * 24 * 7
-        }; SameSite=Strict`;
-
+        // set cookie and redirect
+        const maxAge = isChecked ? 60 * 60 * 24 * 30 : 60 * 60 * 24 * 7; // 30 days if remember me
+        document.cookie = `token=${data.token}; path=/; max-age=${maxAge}; SameSite=Strict`;
         router.push("/home");
+        return;
+      }
+
+      // handle common error statuses
+      if (res.status === 401) {
+        // generic message near password input
+        setSenhaError("Credenciais inválidas — verifique e tente novamente");
+      } else if (res.status === 404) {
+        // email not registered
+        setEmailError("Email não cadastrado.");
+      } else if (res.status === 400) {
+        const body = await res.json();
+        setErrorMessage(body?.message || "Requisição inválida.");
+      } else {
+        const body = await res.json().catch(() => null);
+        setErrorMessage(body?.message || "Erro ao conectar ao servidor.");
       }
     } catch (error) {
       console.error("Erro ao logar usuário:", error);
+      setErrorMessage("Erro ao conectar ao servidor.");
+    } finally {
+      setIsLoading(false);
     }
   };
 
   return (
-    <div className="max-h-screen flex flex-col bg-white w-full">
-      <div className="w-full lg:max-w-[1300px] mx-auto flex-1 flex flex-col">
+    <div className="min-h-screen flex flex-col bg-white w-full">
+      <div className="w-full lg:max-w-[1300px] mx-auto flex-1 flex flex-col mt-18">
         <HeaderLoginCadastro />
 
         <main className="flex-1 flex flex-col items-center">
@@ -80,7 +116,7 @@ export default function LoginUsuario() {
                 Email
               </label>
               <div className="relative">
-                <EnvelopeIcon className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                <EnvelopeIcon className="w-4 h-4 text-gray-400 absolute left-3 top-3.5" />
                 <input
                   type="email"
                   placeholder="Digite seu email"
@@ -90,6 +126,9 @@ export default function LoginUsuario() {
                   }
                   className="w-full pl-10 pr-4 py-2 border rounded-lg border-gray-300 focus:border-purple-500 focus:ring focus:ring-purple-200 outline-none"
                 />
+                {emailError && (
+                  <p className="text-red-500 text-xs mt-1">{emailError}</p>
+                )}
               </div>
             </div>
 
@@ -99,7 +138,7 @@ export default function LoginUsuario() {
                 Senha
               </label>
               <div className="relative">
-                <LockClosedIcon className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                <LockClosedIcon className="w-4 h-4 text-gray-400 absolute left-3 top-3" />
                 <input
                   type={mostrarSenha ? "text" : "password"}
                   placeholder="Digite sua senha"
@@ -112,7 +151,7 @@ export default function LoginUsuario() {
                 <button
                   type="button"
                   onClick={() => setMostrarSenha(!mostrarSenha)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 cursor-pointer"
+                  className="absolute right-3 top-3 text-gray-400 hover:text-gray-600 cursor-pointer"
                 >
                   {mostrarSenha ? (
                     <EyeSlashIcon className="w-4.5 h-4.5 transition-colors" />
@@ -121,6 +160,9 @@ export default function LoginUsuario() {
                   )}
                 </button>
               </div>
+              {senhaError && (
+                <p className="text-red-500 text-xs mt-1">{senhaError}</p>
+              )}
             </div>
 
             {/* Lembrar de mim / Esqueci senha */}
@@ -155,11 +197,26 @@ export default function LoginUsuario() {
             </div>
 
             {/* Botão principal */}
+            {errorMessage && (
+              <motion.div
+                initial={{ opacity: 0, y: 6 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="text-center text-sm text-red-600 bg-red-50 p-2 rounded mb-2"
+              >
+                {errorMessage}
+              </motion.div>
+            )}
+
             <button
               type="submit"
-              className="w-full bg-purple-600 hover:bg-purple-700 transition-all text-white font-semibold py-3 rounded-lg shadow-md cursor-pointer"
+              disabled={isLoading}
+              className={`w-full ${
+                isLoading
+                  ? "bg-purple-400"
+                  : "bg-purple-600 hover:bg-purple-700"
+              } transition-all text-white font-semibold py-3 rounded-lg shadow-md cursor-pointer disabled:opacity-60`}
             >
-              Entrar
+              {isLoading ? "Entrando..." : "Entrar"}
             </button>
 
             {/* Mensagem de redirecionamento */}

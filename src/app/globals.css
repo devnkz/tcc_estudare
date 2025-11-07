@@ -187,3 +187,171 @@
     @apply bg-background text-foreground;
   }
 }
+
+
+/* --------------------------------------------------------------------------
+   Animated neon border utility (.animated-border)
+
+   - Reusable class that creates a rotating 'snake' / neon border using
+     a conic / repeating-conic gradient and an inner mask so the center
+     remains visually untouched.
+   - Works with a fallback (inner cover) when advanced mask-composite is
+     not supported. Uses @property to animate the rotation angle smoothly.
+
+   Usage:
+     Add the class `animated-border` to any container. Optionally tweak
+     variables via inline style or CSS:
+       --angle      (animated by @keyframes spin)
+       --radius     (border radius, defaults to root --radius)
+       --thickness  (border thickness, default 6px)
+       --animated-border-bg (center background color, default transparent)
+
+   Notes for Tailwind users:
+   - This lives in global CSS because it uses @property, masks and
+     keyframes. Tailwind classes are still usable within the container.
+   - We provide a graceful fallback that simply places an inner cover
+     (pseudo-element) to hide the center if `mask-composite` isn't
+     supported by the browser.
+----------------------------------------------------------------------------*/
+
+/* animate a numeric --angle property; browsers that support @property
+   will smoothly interpolate this value and allow hardware-accelerated
+   animation of the conic gradient rotation. */
+@property --angle {
+  syntax: '<number>';
+  inherits: true;
+  initial-value: 0;
+}
+
+
+@keyframes spin {
+  to {
+    --angle: 360deg;
+  }
+}
+
+
+/* Default variables and base rules */
+.animated-border {
+  --angle: 0; /* controlled by animation */
+  --radius: var(--radius, 0.625rem);
+  --thickness: 6px; /* thickness of visible border */
+  --animated-border-bg: transparent; /* center background (fallback)
+    set this to your container background (ex: #fff) for a clean interior */
+
+  position: relative;
+  isolation: isolate; /* keep pseudo elements visually isolated */
+}
+
+/* The visual gradient layer. We place it behind content (z-index:0)
+   and use a mask or a covering pseudo-element to keep only the ring. */
+.animated-border::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  border-radius: var(--radius);
+
+  /* Estudare brand purples (subtle neon) — stops use rgba so we can
+     control intensity. We multiply --angle by 1turn to get a full
+     rotation from 0..1. */
+  background: conic-gradient(from calc(var(--angle) * 1turn),
+    rgba(59,20,89,0.95) 0deg 18deg,
+    rgba(168,85,247,0.75) 18deg 36deg,
+    rgba(107,33,168,0.7) 36deg 54deg,
+    transparent 54deg 72deg);
+
+  /* softer glow */
+  filter: blur(6px);
+  opacity: 0.95;
+
+  /* start animation (slower, smooth) */
+  animation: spin 8s linear infinite;
+
+  /* ensure pointer events don't interfere */
+  pointer-events: none;
+}
+
+/* Inner cover (fallback for mask-composite): covers the center so only
+   a thin border remains visible. Users should set --animated-border-bg
+   to match the container background (eg: #fff) to hide the center. */
+.animated-border::after {
+  content: '';
+  position: absolute;
+  inset: var(--thickness);
+  z-index: 1;
+  border-radius: calc(var(--radius) - var(--thickness));
+  background: var(--animated-border-bg);
+  pointer-events: none;
+}
+
+/* Make sure container content is above the pseudo elements */
+.animated-border > * {
+  position: relative;
+  z-index: 2;
+}
+
+/* If the browser supports mask-composite (more precise, no blur bleed)
+   use a radial mask to cut out the center — this produces a crisp ring. */
+@supports (mask-composite: exclude) or (-webkit-mask-composite: xor) {
+  .animated-border::before {
+    /* remove blur for sharp neon line */
+    filter: none;
+    opacity: 1;
+
+    /* create a radial mask that keeps outer area and removes inner
+       area (the thickness defines the hole size) */
+    -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - var(--thickness)), #000 calc(100% - var(--thickness)));
+    -webkit-mask-composite: xor; /* webkit composite */
+
+    mask: radial-gradient(farthest-side, transparent calc(100% - var(--thickness)), #000 calc(100% - var(--thickness)));
+    mask-composite: exclude;
+  }
+
+  /* hide the simpler fallback cover because mask handles it */
+  .animated-border::after {
+    display: none;
+  }
+}
+
+/* Hover: pause animation smoothly and reduce glow */
+.animated-border:hover::before {
+  animation-play-state: paused;
+  transition: opacity 220ms ease, filter 220ms ease;
+  filter: blur(4px) brightness(0.9);
+  opacity: 0.95;
+}
+
+/* Expose a utility to reduce intensity (useful for small elements) */
+.animated-border--subtle::before {
+  filter: blur(4px);
+  opacity: 0.8;
+  animation-duration: 10s;
+}
+
+/* Allow customizing rotation speed using CSS custom property on the
+   element, e.g. style="--spin-duration: 6s" */
+.animated-border {
+  --spin-duration: 8s;
+}
+.animated-border::before {
+  animation: spin var(--spin-duration, 8s) linear infinite;
+}
+
+/* Fallback: if @property is not supported, the animation still runs by
+   animating transform as a degraded effect. */
+@supports not ((--angle: 0)) {
+  .animated-border::before {
+    /* use a repeating-conic as an approximation and shift via rotate */
+    background: repeating-conic-gradient(from 0deg, rgba(107,33,168,0.95) 0deg 12deg, rgba(168,85,247,0.55) 12deg 18deg, transparent 18deg 30deg);
+    animation: spin-deg var(--spin-duration, 8s) linear infinite;
+    transform-origin: center;
+  }
+  @keyframes spin-deg { to { transform: rotate(1turn); } }
+  .animated-border::after { /* keep fallback cover */ }
+}
+
+/* Small note: set --animated-border-bg on the element to match the
+   page background (or the container's background) so the center looks
+   untouched: e.g. style="--animated-border-bg: #ffffff" */
+

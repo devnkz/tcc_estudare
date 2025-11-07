@@ -8,6 +8,7 @@ export interface Pergunta {
     id_usuario: string;
     nome_usuario: string;
     apelido_usuario: string;
+    foto_perfil: string;
   }
   componente: {
     nome_componente: string;

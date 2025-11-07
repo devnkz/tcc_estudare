@@ -35,7 +35,7 @@ export default function ModalUpdateResponse({
         fkId_pergunta: resposta.fkId_pergunta,
         fkId_usuario: resposta.fkId_usuario,
         resposta: conteudoUpdate,
-      },    
+      },
       {
         onSuccess: () => {
           setIsOpen(false);
@@ -47,8 +47,8 @@ export default function ModalUpdateResponse({
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
-        <button className="w-[200px] bg-purple-600 p-3 rounded-lg text-white cursor-pointer hover:-translate-y-1 transition-all duration-300">
-          Editar sua resposta
+        <button className="px-4 py-2 bg-purple-600 rounded-md text-white cursor-pointer hover:bg-purple-700 transition-transform duration-200">
+          Editar
         </button>
       </DialogTrigger>
       <DialogContent>
@@ -70,9 +70,9 @@ export default function ModalUpdateResponse({
           <button
             onClick={handleUpdate}
             disabled={isPending}
-            className="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-800 transition-colors"
+            className="bg-purple-600 text-white px-4 py-2 rounded-md hover:bg-purple-700 transition-colors"
           >
-            {isPending ? "Salvando..." : "Salvar alterações"}
+            {isPending ? "Salvando..." : "Salvar"}
           </button>
         </DialogFooter>
       </DialogContent>

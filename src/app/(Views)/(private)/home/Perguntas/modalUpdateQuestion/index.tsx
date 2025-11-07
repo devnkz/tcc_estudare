@@ -15,12 +15,14 @@ import { useUpdatePergunta } from "@/hooks/pergunta/useUpdate";
 import { useState } from "react";
 
 interface ModalUpdateQuestionProps {
-  componentes: Componente[];
+  componentes?: Componente[];
   pergunta: Pergunta;
+  triggerId?: string;
 }
 
 export default function ModalUpdateQuestion({
   pergunta,
+  triggerId,
 }: ModalUpdateQuestionProps) {
   const [conteudoUpdate, setConteudoUpdate] = useState(pergunta.pergunta);
 
@@ -47,8 +49,11 @@ export default function ModalUpdateQuestion({
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
-        <button className="w-[200px] bg-purple-600 p-3 rounded-lg text-white cursor-pointer hover:-translate-y-1 transition-all duration-300">
-          Editar sua pergunta
+        <button
+          id={triggerId}
+          className="px-4 py-2 bg-purple-600 rounded-md text-white cursor-pointer hover:bg-purple-700 transition-transform duration-200"
+        >
+          Editar
         </button>
       </DialogTrigger>
       <DialogContent>
@@ -70,9 +75,9 @@ export default function ModalUpdateQuestion({
           <button
             onClick={handleUpdate}
             disabled={isPending}
-            className="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-800 transition-colors"
+            className="bg-purple-600 text-white px-4 py-2 rounded-md hover:bg-purple-700 transition-colors"
           >
-            {isPending ? "Salvando..." : "Salvar alterações"}
+            {isPending ? "Salvando..." : "Salvar"}
           </button>
         </DialogFooter>
       </DialogContent>

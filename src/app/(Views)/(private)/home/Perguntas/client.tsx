@@ -12,6 +12,20 @@ import { useListRespostas } from "@/hooks/resposta/useList";
 import { useDeletePergunta } from "@/hooks/pergunta/useDelete";
 import { useDeleteResposta } from "@/hooks/resposta/useDelete";
 import { BsThreeDotsVertical } from "react-icons/bs";
+import Image from "next/image";
+import {
+  BsPerson,
+  BsClock,
+  BsCheckCircle,
+  BsTrash,
+  BsPencil,
+  BsReply,
+} from "react-icons/bs";
+
+import { motion } from "framer-motion";
+import { Inter } from "next/font/google";
+
+const inter = Inter({ subsets: ["latin"] });
 
 import {
   DropdownMenu,
@@ -83,19 +97,38 @@ export function PerguntasClientPage({
     setTimeout(() => respostaInputRef.current?.focus(), 100);
   };
 
-  const { mutate: deletePergunta } = useDeletePergunta();
-  const handleDelete = (id: string) => deletePergunta({ id });
+  const deletePerguntaHook = useDeletePergunta();
+  const deleteRespostaHook = useDeleteResposta();
 
-  const { mutate: deleteResposta } = useDeleteResposta();
-  const handleDeleteResposta = (id: string) => deleteResposta({ id });
+  const handleDelete = (id: string) =>
+    deletePerguntaHook.mutate(
+      { id },
+      {
+        onSuccess: () => showToast("Pergunta excluída com sucesso 🎉"),
+      }
+    );
+
+  const handleDeleteResposta = (id: string) =>
+    deleteRespostaHook.mutate(
+      { id },
+      { onSuccess: () => showToast("Resposta excluída ✅") }
+    );
 
   const handleEnviarResposta = (data: CreateRespostaData) => {
     createResposta.mutate(data, {
       onSuccess: () => {
         setResponderId(null);
         setResposta("");
+        showToast("Resposta enviada! ✨");
       },
     });
+  };
+
+  // ephemeral ludic toast
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const showToast = (msg: string) => {
+    setToastMessage(msg);
+    window.setTimeout(() => setToastMessage(null), 2500);
   };
 
   const toggleModalDenuncia = (id: string) => {
@@ -122,7 +155,19 @@ export function PerguntasClientPage({
   }, [highlightId, highlightType, perguntas, respostas]);
 
   return (
-    <div className="w-full lg:p-4 flex flex-col gap-10">
+    <div
+      className={`${inter.className} w-full lg:p-4 grid grid-cols-1 md:grid-cols-2 gap-6`}
+    >
+      {toastMessage && (
+        <motion.div
+          initial={{ opacity: 0, y: -8 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -8 }}
+          className="fixed top-6 right-6 z-50 bg-purple-600 text-white px-4 py-2 rounded-lg shadow-lg"
+        >
+          {toastMessage}
+        </motion.div>
+      )}
       {perguntas.length > 0 ? (
         perguntas.map((pergunta) => {
           const respostasPergunta = respostas.filter(
@@ -138,76 +183,155 @@ export function PerguntasClientPage({
             highlightId === pergunta.id_pergunta;
 
           return (
-            <div
+            <motion.div
               key={pergunta.id_pergunta}
               ref={(el) =>
                 void (perguntasRefs.current[pergunta.id_pergunta] = el)
               }
-              className={`p-2 w-full shadow-md rounded-lg flex flex-col gap-2 text-black
-                ${
-                  isPerguntaHighlighted
-                    ? "border-4 border-yellow-400 bg-yellow-100"
-                    : temResposta
-                    ? "bg-green-100 border-green-400"
-                    : "bg-zinc-200 border-transparent"
-                }`}
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              whileHover={{ translateY: -4 }}
+              transition={{ duration: 0.25 }}
+              className={`p-4 group relative overflow-hidden shadow-md rounded-lg flex flex-col gap-3 text-black bg-white border hover:border-purple-500 transition-colors
+              ${
+                isPerguntaHighlighted
+                  ? "border-4 border-yellow-400 bg-yellow-50"
+                  : temResposta
+                  ? "border-green-200"
+                  : "border-zinc-200"
+              }`}
             >
+              {/* Snake-like rotating border (subtle purple segments, thinner & slower) */}
+              <div className="absolute -inset-0.5 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none">
+                {/* rotating dashed gradient (slower) */}
+                <div
+                  className="absolute inset-0 rounded-lg animate-[spin_10s_linear_infinite] opacity-90"
+                  style={{
+                    background:
+                      "repeating-conic-gradient(from 0deg, rgba(124,58,237,0.95) 0deg 12deg, rgba(167,139,250,0.55) 12deg 18deg, transparent 18deg 30deg)",
+                    boxShadow: "0 8px 30px rgba(124,58,237,0.12)",
+                    mixBlendMode: "normal",
+                  }}
+                />
+
+                {/* inner mask to leave only a thin border — use a small inset so ring is thin */}
+                <div
+                  className={`absolute rounded-lg pointer-events-none ${
+                    isPerguntaHighlighted ? "bg-yellow-50" : "bg-white"
+                  }`}
+                  style={{ inset: "4px" }}
+                />
+              </div>
               {/* HEADER PERGUNTA */}
               <div className="w-full flex justify-between items-center">
-                <h2 className="font-bold">
-                  Aluno: {pergunta.usuario.nome_usuario} (
-                  {pergunta.usuario.apelido_usuario})
-                </h2>
+                <div className="flex items-center gap-3">
+                  {/* avatar circle with initial (fallback when no image) */}
+                  <div>
+                    {pergunta.usuario?.foto_perfil ? (
+                      <Image
+                        src={pergunta.usuario.foto_perfil}
+                        width={36}
+                        height={36}
+                        alt={pergunta.usuario.nome_usuario || "avatar"}
+                        className="rounded-full object-cover"
+                      />
+                    ) : (
+                      <div className="w-9 h-9 rounded-full bg-purple-50 flex items-center justify-center text-purple-600 font-semibold">
+                        {pergunta.usuario?.nome_usuario
+                          ? pergunta.usuario.nome_usuario
+                              .charAt(0)
+                              .toUpperCase()
+                          : "U"}
+                      </div>
+                    )}
+                  </div>
 
-                <div className="flex flex-col items-end gap-2">
-                  {id_usuario !== pergunta.usuario.id_usuario && (
-                    <DropdownMenu>
-                      <DropdownMenuTrigger className="cursor-pointer">
-                        <BsThreeDotsVertical />
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent>
-                        <DropdownMenuLabel>Opções</DropdownMenuLabel>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem
-                          onClick={() =>
-                            toggleModalDenuncia(pergunta.id_pergunta)
-                          }
-                          className="cursor-pointer"
-                        >
-                          Denunciar
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  )}
+                  <div>
+                    <div className="text-xs text-zinc-500">Perguntado por:</div>
+                    <h2 className="font-semibold text-sm text-gray-900">
+                      {pergunta.usuario.nome_usuario}{" "}
+                      <span className="text-zinc-500">
+                        ({pergunta.usuario.apelido_usuario})
+                      </span>
+                    </h2>
+                  </div>
+                </div>
 
-                  <ModalCreateDenuncia
-                    id_conteudo={pergunta.id_pergunta}
-                    id_usuario={id_usuario}
-                    fkId_usuario_conteudo={pergunta.usuario.id_usuario}
-                    tipo_conteudo="Pergunta"
-                    isOpen={!!modalDenunciaOpen[pergunta.id_pergunta]}
-                    onOpenChange={(open) =>
-                      setModalDenunciaOpen((prev) => ({
-                        ...prev,
-                        [pergunta.id_pergunta]: open,
-                      }))
-                    }
-                  />
-
-                  <h3 className="text-sm text-zinc-900">
-                    Realizada em:{" "}
-                    {pergunta.dataCriacao_pergunta
-                      ? new Date(
-                          pergunta.dataCriacao_pergunta
-                        ).toLocaleDateString("pt-BR")
-                      : "--/--/----"}
-                  </h3>
-
-                  {temResposta && (
-                    <span className="text-green-700 text-xs font-semibold">
-                      Já respondida
+                <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-zinc-500 hidden sm:inline-flex">
+                      {pergunta.dataCriacao_pergunta
+                        ? new Date(
+                            pergunta.dataCriacao_pergunta
+                          ).toLocaleDateString("pt-BR")
+                        : "--/--/----"}
                     </span>
-                  )}
+                    <span className="text-xs px-2 py-1 rounded-full bg-zinc-100 text-purple-600 font-medium">
+                      {pergunta.componente.nome_componente}
+                    </span>
+                  </div>
+
+                  {/* three-dot menu: Delete / Edit / Respond */}
+                  <DropdownMenu>
+                    <DropdownMenuTrigger
+                      className={`cursor-pointer p-2 rounded-full hover:bg-purple-50 transition-colors`}
+                    >
+                      <BsThreeDotsVertical className="w-5 h-5 text-zinc-600" />
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent>
+                      <DropdownMenuLabel>Opções</DropdownMenuLabel>
+                      <DropdownMenuSeparator />
+                      {/* Delete: only enabled for owner */}
+                      <DropdownMenuItem
+                        onClick={() => {
+                          if (id_usuario === pergunta.usuario.id_usuario)
+                            handleDelete(pergunta.id_pergunta);
+                        }}
+                        className={
+                          id_usuario === pergunta.usuario.id_usuario
+                            ? "cursor-pointer text-red-600"
+                            : "opacity-50 cursor-not-allowed text-zinc-400"
+                        }
+                      >
+                        Excluir
+                      </DropdownMenuItem>
+
+                      {/* Edit: only enabled for owner -> trigger existing modal trigger button if present */}
+                      <DropdownMenuItem
+                        onClick={() => {
+                          // if owner, find and click the Edit button inside this question card (if present)
+                          if (id_usuario === pergunta.usuario.id_usuario) {
+                            const btn = document.querySelector(
+                              `#edit-btn-${pergunta.id_pergunta}`
+                            ) as HTMLButtonElement | null;
+                            if (btn) btn.click();
+                          }
+                        }}
+                        className={
+                          id_usuario === pergunta.usuario.id_usuario
+                            ? "cursor-pointer"
+                            : "opacity-50 cursor-not-allowed text-zinc-400"
+                        }
+                      >
+                        Editar
+                      </DropdownMenuItem>
+
+                      {/* Respond: enabled only for non-owner */}
+                      <DropdownMenuItem
+                        onClick={() => {
+                          if (id_usuario !== pergunta.usuario.id_usuario)
+                            handleResponder(pergunta.id_pergunta);
+                        }}
+                        className={
+                          id_usuario !== pergunta.usuario.id_usuario
+                            ? "cursor-pointer"
+                            : "opacity-50 cursor-not-allowed text-zinc-400"
+                        }
+                      >
+                        Responder
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 </div>
               </div>
 
@@ -226,7 +350,7 @@ export function PerguntasClientPage({
               </p>
 
               {/* PERGUNTA */}
-              <p className="bg-white p-2 rounded-md shadow-lg text-sm lg:text-base">
+              <p className="p-3 rounded-md shadow-sm text-sm lg:text-base bg-zinc-50">
                 {pergunta.pergunta}
               </p>
 
@@ -236,24 +360,27 @@ export function PerguntasClientPage({
                   <div className="flex gap-2">
                     <button
                       onClick={() => handleDelete(pergunta.id_pergunta)}
-                      className="p-2 rounded-lg bg-red-500 text-white text-xs lg:text-base cursor-pointer"
+                      className="flex items-center gap-2 px-3 py-1.5 rounded-md bg-red-500 text-white text-sm cursor-pointer hover:bg-red-600 transition-colors"
                     >
-                      Excluir pergunta
+                      <BsTrash className="w-4 h-4" />{" "}
+                      <span className="text-sm">Excluir</span>
                     </button>
 
                     <ModalUpdateQuestion
                       componentes={componentes}
                       pergunta={pergunta}
+                      triggerId={`edit-btn-${pergunta.id_pergunta}`}
                     />
                   </div>
                 )}
 
                 {id_usuario !== pergunta.usuario.id_usuario && !jaRespondida ? (
                   <button
-                    className="p-2 rounded-lg bg-purple-600 text-white text-xs lg:text-base hover:bg-purple-900 transition-colors duration-300"
+                    className="flex items-center gap-2 px-3 py-1.5 rounded-md bg-purple-600 text-white text-sm hover:bg-purple-700 transition-colors duration-300"
                     onClick={() => handleResponder(pergunta.id_pergunta)}
                   >
-                    Responder
+                    <BsReply className="w-4 h-4" />{" "}
+                    <span className="text-sm">Responder</span>
                   </button>
                 ) : id_usuario !== pergunta.usuario.id_usuario &&
                   jaRespondida ? (
@@ -282,16 +409,19 @@ export function PerguntasClientPage({
                         }
                         className={`border p-2 rounded-md mb-2 flex items-center justify-between ${
                           isRespostaHighlighted
-                            ? "border-4 border-yellow-400 bg-yellow-100"
-                            : ""
+                            ? "border-4 border-yellow-400 bg-yellow-50"
+                            : "bg-white"
                         }`}
                       >
-                        <div className="flex gap-2">
-                          <p className="font-bold">
-                            {r.usuario.nome_usuario} (
-                            {r.usuario.apelido_usuario}):{" "}
-                          </p>
-                          <span>{r.resposta}</span>
+                        <div className="flex gap-3 items-start">
+                          <BsPerson className="w-5 h-5 text-purple-600 mt-1" />
+                          <div>
+                            <p className="font-bold text-sm">
+                              {r.usuario.nome_usuario} (
+                              {r.usuario.apelido_usuario})
+                            </p>
+                            <p className="text-sm">{r.resposta}</p>
+                          </div>
                         </div>
 
                         <div className="flex gap-2 items-center">
@@ -306,6 +436,7 @@ export function PerguntasClientPage({
                               >
                                 Denunciar
                               </button>
+
                               <ModalCreateDenuncia
                                 id_conteudo={r.id_resposta}
                                 id_usuario={id_usuario}
@@ -326,12 +457,13 @@ export function PerguntasClientPage({
                           {(id_usuario === r.usuario.id_usuario ||
                             id_usuario === pergunta.usuario.id_usuario) && (
                             <button
-                              className="p-2 bg-white text-black rounded-md hover:bg-red-400 transition-colors duration-300 cursor-pointer"
+                              className="flex items-center gap-2 p-2 bg-white text-black rounded-md hover:bg-red-400 transition-colors duration-300 cursor-pointer"
                               onClick={() =>
                                 handleDeleteResposta(r.id_resposta)
                               }
                             >
-                              Deletar resposta
+                              <BsTrash />{" "}
+                              <span className="text-sm">Deletar</span>
                             </button>
                           )}
 
@@ -390,7 +522,7 @@ export function PerguntasClientPage({
                   )}
                 </div>
               )}
-            </div>
+            </motion.div>
           );
         })
       ) : (

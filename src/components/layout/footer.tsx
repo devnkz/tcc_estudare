@@ -22,7 +22,15 @@ export default function Footer() {
       className="bg-gradient-to-b from-white via-violet-50 to-purple-100
     00 w-full mt-auto"
     >
-      <div className="max-w-7xl mx-auto px-8 py-14">
+      <div className="relative inline-flex items-center justify-center  w-full">
+        <hr className="w-128 h-px my-8 bg-gray-400 border-0" />
+        <span
+          className={`${interbold.className} absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 px-3 font-medium text-gray-400 bg-white text-center whitespace-nowrap`}
+        >
+          Continue estudando com a gente!
+        </span>
+      </div>
+      <div className="max-w-7xl mx-auto px-8 py-7">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-10 items-start">
           {/* Logo e Descrição */}
           <div className="flex flex-col items-center lg:items-start space-y-5">

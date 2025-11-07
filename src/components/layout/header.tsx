@@ -10,6 +10,7 @@ import {
   InformationCircleIcon,
   Bars3Icon,
   LightBulbIcon,
+  XMarkIcon,
 } from "@heroicons/react/24/solid";
 import { TbLayoutDashboardFilled } from "react-icons/tb";
 import { Inter } from "next/font/google";
@@ -57,12 +58,8 @@ export function HeaderDesktopAutenticado({
 
         {/* LADO DIREITO — AÇÕES DO USUÁRIO */}
         <div className="flex items-center gap-3">
-          {/* Notificações — visível apenas em telas médias+ */}
-          <motion.div
-            whileHover={{ y: -0.5 }}
-            transition={{ duration: 0.3 }}
-            className="hidden md:block"
-          >
+          {/* Notificações — visível apenas em telas médias+ (apenas logo/pequena animação desejada) */}
+          <div className="hidden md:block">
             <Link href="/notifications">
               <button
                 className={`${inter.className} flex items-center gap-2 px-4 py-2.5 rounded-lg bg-purple-50 text-purple-600 border border-purple-100 cursor-pointer hover:bg-purple-100 hover:shadow-md transition-all duration-300`}
@@ -71,14 +68,10 @@ export function HeaderDesktopAutenticado({
                 <span>Notificações</span>
               </button>
             </Link>
-          </motion.div>
+          </div>
 
           {/* Conta do usuário — visível apenas em telas médias+ */}
-          <motion.div
-            whileHover={{ y: -0.5 }}
-            transition={{ duration: 0.3 }}
-            className="hidden md:block"
-          >
+          <div className="hidden md:block">
             <Link href="/user">
               <button
                 className={`${inter.className} flex items-center gap-2 px-4 py-2.5 rounded-lg bg-purple-600 text-white cursor-pointer hover:bg-purple-700 hover:shadow-lg transition-all duration-300`}
@@ -87,23 +80,27 @@ export function HeaderDesktopAutenticado({
                 <span>Minha Conta</span>
               </button>
             </Link>
-          </motion.div>
+          </div>
 
           {/* Botão do menu dropdown */}
           <div className="relative">
             <motion.button
-              whileTap={{ scale: 0.9 }}
+              whileTap={{ scale: 0.95 }}
               onClick={() => setIsOpen((prev) => !prev)}
               className="flex items-center justify-center w-11 h-11 rounded-lg border border-gray-200 text-purple-600 hover:bg-purple-50 transition-all duration-300 cursor-pointer"
             >
               <motion.div
                 animate={{
                   rotate: isOpen ? 90 : 0,
-                  scale: isOpen ? 1.1 : 1,
+                  scale: isOpen ? 1.05 : 1,
                 }}
                 transition={{ type: "spring", stiffness: 250, damping: 14 }}
               >
-                <Bars3Icon className="h-6 w-6" />
+                {isOpen ? (
+                  <XMarkIcon className="h-6 w-6" />
+                ) : (
+                  <Bars3Icon className="h-6 w-6" />
+                )}
               </motion.div>
             </motion.button>
 
@@ -194,14 +191,16 @@ export function HeaderDesktopAutenticado({
 
 /* ------------------ HEADER NÃO AUTENTICADO ------------------ */
 export function HeaderDesktopNaoAutenticado() {
+  const [isOpen, setIsOpen] = useState(false);
+
   return (
     <header className="w-full bg-white border-b border-gray-100 shadow-sm fixed top-0 left-0 z-50">
       <div className="max-w-7xl mx-auto px-4 md:px-10 py-2 flex items-center justify-between">
-        {/* Logo */}
+        {/* LOGO */}
         <Link href="/" className="flex items-center gap-3 group cursor-pointer">
           <motion.div
-            whileHover={{ scale: 1.03 }}
-            transition={{ type: "spring", stiffness: 300, damping: 15 }}
+            whileHover={{ scale: 1.1 }}
+            transition={{ type: "spring", stiffness: 10, damping: 1 }}
           >
             <Image
               src="/imagens/Transparente/7.png"
@@ -209,31 +208,89 @@ export function HeaderDesktopNaoAutenticado() {
               width={170}
               alt="Logo Estudare"
               style={{ objectFit: "contain" }}
+              priority
             />
           </motion.div>
         </Link>
 
-        {/* Botões */}
-        <div className="flex gap-3">
-          <motion.div whileHover={{ y: -0.5 }} transition={{ duration: 0.2 }}>
+        {/* BOTÕES (DESKTOP) */}
+        <div className="hidden sm:flex gap-3">
+          <div>
             <Link
               href="/Auth/Register"
               className={`${inter.className} px-5 py-2 rounded-lg font-bold bg-purple-500 text-white cursor-pointer hover:bg-purple-700 transition-all duration-300 shadow-md`}
             >
               Cadastrar-se
             </Link>
-          </motion.div>
+          </div>
 
-          <motion.div whileHover={{ y: -0.5 }} transition={{ duration: 0.2 }}>
+          <div>
             <Link
               href="/Auth/Login"
-              className={`${inter.className} px-5 py-2 rounded-lg font-medium border border-purple-500 text-purple-500 cursor-pointer hover:bg-purple-50 transition-all duration-300 `}
+              className={`${inter.className} px-5 py-2 rounded-lg font-medium border border-purple-500 text-purple-500 cursor-pointer hover:bg-purple-50 transition-all duration-300`}
             >
               Entrar
             </Link>
-          </motion.div>
+          </div>
+        </div>
+
+        {/* MENU MOBILE */}
+        <div className="sm:hidden flex items-center">
+          <motion.button
+            whileTap={{ scale: 0.9 }}
+            onClick={() => setIsOpen((prev) => !prev)}
+            className="p-2 rounded-md border border-gray-200 text-purple-600 hover:bg-purple-50 transition-all duration-300"
+          >
+            <motion.div
+              animate={{
+                rotate: isOpen ? 90 : 0,
+                scale: isOpen ? 1.05 : 1,
+              }}
+              transition={{ type: "spring", stiffness: 250, damping: 14 }}
+            >
+              {isOpen ? (
+                <XMarkIcon className="h-6 w-6" />
+              ) : (
+                <Bars3Icon className="h-6 w-6" />
+              )}
+            </motion.div>
+          </motion.button>
         </div>
       </div>
+
+      {/* MENU DROPDOWN (MOBILE) */}
+      <AnimatePresence>
+        {isOpen && (
+          <motion.div
+            initial={{ opacity: 0, y: -8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            transition={{ duration: 0.25 }}
+            className="sm:hidden bg-white border-t border-gray-100 shadow-md"
+          >
+            <div className="flex flex-col px-6 py-4 gap-3">
+              <Link
+                href="/Auth/Register"
+                onClick={() => setIsOpen(false)}
+                className={`${inter.className} w-full text-center px-5 py-3 rounded-lg font-bold bg-purple-500 text-white cursor-pointer hover:bg-purple-700 transition-all duration-300`}
+              >
+                Cadastrar-se
+              </Link>
+
+              <Link
+                href="/Auth/Login"
+                onClick={() => setIsOpen(false)}
+                className={`${inter.className} w-full text-center px-5 py-3 rounded-lg font-medium border border-purple-500 text-purple-500 cursor-pointer hover:bg-purple-50 transition-all duration-300`}
+              >
+                Entrar
+              </Link>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Linha decorativa inferior */}
+      <div className="w-full h-[1px] bg-gradient-to-r from-purple-500 via-purple-400 to-purple-500 opacity-10"></div>
     </header>
   );
 }

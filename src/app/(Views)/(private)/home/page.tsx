@@ -28,29 +28,9 @@ export default async function HomePage() {
 
   const user = await fetchUsersId(decoded.id);
 
-  // Lógica de credibilidade
-  const cred = user?.credibilidade_usuario ?? 0;
-  let CredEmoji = BsEmojiGrin;
-  let credMsg = "";
-  let credCor = "";
-
-  if (cred < 35) {
-    CredEmoji = BsEmojiAngry;
-    credMsg = "Você precisa ser mais responsável!";
-    credCor = "bg-red-100 text-red-600";
-  } else if (cred < 70) {
-    CredEmoji = BsEmojiExpressionless;
-    credMsg = "Atenção! Cuide mais de suas ações.";
-    credCor = "bg-yellow-100 text-yellow-600";
-  } else {
-    CredEmoji = BsEmojiGrin;
-    credMsg = "Excelente! Continue com essa credibilidade.";
-    credCor = "bg-green-100 text-green-600";
-  }
-
   return (
     <div className={`${inter.className} w-full`}>
-      <main className="flex flex-col w-full items-center justify-start min-h-screen py-10">
+      <main className="flex flex-col w-full items-center justify-start min-h-screen pb-10">
         {/* Cabeçalho e saudação */}
         <InitialPage userData={user} />
 

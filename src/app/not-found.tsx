@@ -49,10 +49,10 @@ export default function NotFoundPage() {
         {/* Imagem */}
         <div>
           <Image
-            src="/imagens/404-astronauta.png"
+            src="/imagens/paper_13543798.png"
             height={400}
             width={400}
-            alt="Astronauta perdido no espaço"
+            alt="Ilustração de página não encontrada"
             style={{ objectFit: "contain" }}
           />
         </div>

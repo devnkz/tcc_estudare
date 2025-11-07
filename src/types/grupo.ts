@@ -16,6 +16,7 @@ export interface Grupo {
     nome_usuario: string;
   }
   fkId_usuario: string;
+  dataCriacao_grupo?: string; // opcional 
 }
 
 export interface CreateGrupoData {

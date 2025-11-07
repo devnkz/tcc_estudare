@@ -223,6 +223,12 @@
   initial-value: 0;
 }
 
+@keyframes trail {
+  to {
+    offset-distance: 100%;
+  }
+}
+
 
 @keyframes spin {
   to {
@@ -288,7 +294,7 @@
 /* Make sure container content is above the pseudo elements */
 .animated-border > * {
   position: relative;
-  z-index: 2;
+  z-index: 1;
 }
 
 /* If the browser supports mask-composite (more precise, no blur bleed)
@@ -354,4 +360,116 @@
 /* Small note: set --animated-border-bg on the element to match the
    page background (or the container's background) so the center looks
    untouched: e.g. style="--animated-border-bg: #ffffff" */
+
+/* --------------------------------------------------------------------------
+   SVG stroke-based snake border (precise around rounded rect)
+   Usage markup:
+     <div class="snake-border-svg rounded-2xl">
+       <svg class="snake-svg" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
+         <rect x="1" y="1" width="98" height="98" rx="12" ry="12" fill="none" />
+       </svg>
+       ...card...
+     </div>
+---------------------------------------------------------------------------- */
+
+.snake-border-svg {
+  --snake-color: #a855f7; /* purple */
+  --snake-width: 2px; /* keep stroke thin */
+  --snake-speed: 12s; /* slower, smoother pulse */
+  --snake-glow-1: rgba(168, 85, 247, 0.75); /* stronger inner glow */
+  --snake-glow-2: rgba(168, 85, 247, 0.45); /* soft outer halo */
+  position: relative;
+  border-radius: 16px; /* match card exactly */
+}
+
+.snake-border-svg > *:not(svg) {
+  position: relative;
+  z-index: 1;
+}
+
+.snake-svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 0; /* behind card content */
+  pointer-events: none;
+  overflow: visible;
+}
+
+.snake-svg path {
+  stroke: var(--snake-color);
+  stroke-width: var(--snake-width);
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  fill: none;
+  /* more visible glow without thickening the stroke */
+  filter: drop-shadow(0 0 12px var(--snake-glow-1)) drop-shadow(0 0 28px var(--snake-glow-2));
+  opacity: 1;
+  animation: snake-pulse var(--snake-speed) ease-in-out infinite;
+}
+
+
+@keyframes snake-pulse {
+  0% { filter: drop-shadow(0 0 10px var(--snake-glow-1)) drop-shadow(0 0 24px var(--snake-glow-2)); }
+  50% { filter: drop-shadow(0 0 18px var(--snake-glow-1)) drop-shadow(0 0 40px var(--snake-glow-2)); }
+  100% { filter: drop-shadow(0 0 10px var(--snake-glow-1)) drop-shadow(0 0 24px var(--snake-glow-2)); }
+}
+
+/* Pause animation on hover and keep a subtle stronger glow */
+.snake-border-svg:hover .snake-svg path {
+  animation-play-state: paused;
+  filter: drop-shadow(0 0 14px var(--snake-glow-1)) drop-shadow(0 0 30px var(--snake-glow-2));
+}
+
+/* --------------------------------------------------------------------------
+   Thin rotating stroke ring (.ring-border)
+   A minimal conic-gradient segment forming a "snake" around the border.
+--------------------------------------------------------------------------- */
+
+@keyframes ring-rotate { to { transform: rotate(1turn); } }
+
+.ring-border {
+  --ring-radius: 16px;
+  --ring-color: rgba(147, 51, 234, 0.9); /* purple tone */
+  --ring-speed: 10s;
+  --ring-size: 2px; /* visible stroke thickness */
+  position: relative;
+  border-radius: var(--ring-radius);
+}
+
+/* Only paint animated stroke via pseudo-element; DO NOT rotate container */
+.ring-border::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: var(--ring-size);
+  /* length of the visible arc is configurable */
+  --ring-arc: 20deg;
+  background:
+    conic-gradient(from 0deg,
+      var(--ring-color) 0deg var(--ring-arc),
+      transparent var(--ring-arc) 360deg);
+  /* create hollow center */
+  -webkit-mask:
+    radial-gradient(farthest-side, transparent calc(100% - var(--ring-size)*2), #000 calc(100% - var(--ring-size)*2));
+  mask:
+    radial-gradient(farthest-side, transparent calc(100% - var(--ring-size)*2), #000 calc(100% - var(--ring-size)*2));
+  filter: drop-shadow(0 0 6px rgba(147,51,234,0.45));
+  animation: ring-rotate var(--ring-speed) linear infinite;
+  transform-origin: center;
+  pointer-events: none;
+}
+
+/* Pause and slightly enhance glow on hover */
+.ring-border:hover::before {
+  animation-play-state: paused;
+  filter: drop-shadow(0 0 8px rgba(147,51,234,0.55));
+}
+
+@keyframes ring-rotate { to { transform: rotate(1turn); } }
+
+/* Card content sits above */
+.ring-border > * { position: relative; z-index: 1; }
 

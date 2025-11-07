@@ -28,6 +28,12 @@ export async function createFotoUser(formData: FormData, id: string): Promise<Us
   return res.data;
 }
 
+// Remove a foto do usuário (define null no backend) - assumindo rota DELETE
+export async function removeFotoUser(id: string): Promise<User> {
+  const res = await axios.delete(`${process.env.NEXT_PUBLIC_API_URL}/user/${id}/foto`);
+  return res.data;
+}
+
 // Atualiza um usuário existente
 export async function updateUser(data: UpdateUserData): Promise<User> {
   const res = await axios.put(`${process.env.NEXT_PUBLIC_API_URL}/user/${data.id_usuario}`, data);

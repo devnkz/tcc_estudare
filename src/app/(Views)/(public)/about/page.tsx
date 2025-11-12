@@ -32,7 +32,7 @@ export default function Saiba_Mais() {
   const perguntas = [
     {
       key: "1",
-      title: "O que é o 'ESTUDARE'?",
+      title: 'O que é o "ESTUDARE"?',
       content:
         "Estudare é uma iniciativa da ETEC de Santa Fé do Sul, e agora também plataforma colaborativa onde alunos podem fazer perguntas e receber respostas de outros estudantes e professores. Um espaço para compartilhar conhecimento e aprenderem juntos.",
     },

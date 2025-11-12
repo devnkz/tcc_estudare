@@ -5,6 +5,7 @@ import { useState, useEffect } from "react";
 import { LightBulbIcon, PlusIcon } from "@heroicons/react/16/solid";
 import { motion } from "framer-motion";
 import { User } from "@/types/user";
+import { ShinyButton } from "@/components/ui/shinyButton";
 
 interface HomeProps {
   userData: User;
@@ -66,22 +67,18 @@ export function InitialPage({ userData }: HomeProps) {
           transition={{ delay: 0.3 }}
           className="flex flex-wrap justify-center gap-3 mt-6"
         >
-          <Link
-            href="/askQuestion"
-            prefetch
-            className="group flex items-center gap-2 bg-purple-600 hover:bg-purple-700 text-white px-5 py-2.5 rounded-lg font-medium text-base shadow-md transition-all duration-300"
-          >
-            <LightBulbIcon className="h-5 w-5 group-hover:rotate-12 transition-transform duration-300" />
-            Faça uma pergunta
+          <Link href="/askQuestion" prefetch>
+            <ShinyButton className="px-6 py-3">
+              <LightBulbIcon className="h-5 w-5" />
+              Fazer pergunta
+            </ShinyButton>
           </Link>
 
-          <Link
-            href="/groups"
-            prefetch
-            className="group flex items-center gap-2 bg-purple-600 hover:bg-purple-700 text-white px-5 py-2.5 rounded-lg font-medium text-base shadow-md transition-all duration-300"
-          >
-            <PlusIcon className="h-5 w-5 group-hover:rotate-45 transition-transform duration-300" />
-            Criar um grupo
+          <Link href="/groups" prefetch>
+            <ShinyButton className="px-6 py-3">
+              <PlusIcon className="h-5 w-5" />
+              Criar grupo
+            </ShinyButton>
           </Link>
         </motion.div>
       </div>

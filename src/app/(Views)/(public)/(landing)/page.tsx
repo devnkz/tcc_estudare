@@ -6,6 +6,8 @@ import { useRouter } from "next/navigation";
 import { Inter } from "next/font/google";
 import Footer from "@/components/layout/footer";
 import { motion } from "framer-motion";
+import { InteractiveHoverButton } from "@/components/ui/interactive-hover-button";
+import { InteractiveHoverButtonSecondary } from "@/components/ui/interactive-hover-button-secondary";
 
 const interregular = Inter({ subsets: ["latin"], weight: ["400"] });
 const interbold = Inter({ subsets: ["latin"], weight: ["700"] });
@@ -58,7 +60,7 @@ export default function TelaHome() {
           <h2
             className={`${interbold.className} text-3xl sm:text-4xl lg:text-5xl text-gray-900 leading-snug`}
           >
-            Estudare: uma iniciativa dos alunos.
+            Estudare: uma iniciativa <br /> dos alunos.
           </h2>
           <p
             className={`${interregular.className} text-zinc-600 text-lg sm:text-xl max-w-lg leading-relaxed`}
@@ -71,20 +73,17 @@ export default function TelaHome() {
           <div
             className={`${interregular.className} flex flex-col sm:flex-row gap-3 mt-4 w-full sm:w-auto justify-center lg:justify-start`}
           >
-            <button
+            <InteractiveHoverButton
               onClick={() => router.push("/home")}
-              className="bg-purple-600 px-7 py-4 rounded-md text-white font-extrabold flex gap-2 justify-center cursor-pointer items-center hover:bg-purple-700 transition-all duration-300 w-full sm:w-auto"
-            >
-              <p>Começar agora</p>
-              <ArrowRightIcon className="h-4 w-4 text-white" />
-            </button>
+              text="Começar agora"
+              className="bg-purple-600 text-white border-purple-600 w-full sm:w-auto px-7 py-4"
+            />
 
-            <button
+            <InteractiveHoverButtonSecondary
               onClick={() => router.push("/about")}
-              className="bg-zinc-200 px-7 py-4 font-medium text-black rounded-lg hover:bg-zinc-300 cursor-pointer transition-all duration-300 w-full sm:w-auto"
-            >
-              Saiba mais
-            </button>
+              text="Saiba mais"
+              className="w-full sm:w-auto"
+            />
           </div>
         </motion.div>
       </main>

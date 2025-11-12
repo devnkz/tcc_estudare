@@ -17,7 +17,7 @@ export default function RootLayoutViews({
   const [decodedToken, setDecodedToken] = useState<any>(null);
   const pathname = usePathname();
 
-  const isDashboard = pathname.startsWith("/Dashboard");
+  const isDashboard = pathname.startsWith("/dashboard");
 
   const getCookie = (name: string) => {
     const match = document.cookie.match(
@@ -73,11 +73,8 @@ export default function RootLayoutViews({
       {!isDashboard &&
         (token ? (
           <HeaderDesktopAutenticado
-            tipo_usuario={JSON.stringify(
-              decodedToken?.payload.tipo_usuario,
-              null,
-              2
-            )}
+            tipo_usuario={decodedToken?.payload?.tipo_usuario || ""}
+            email_usuario={decodedToken?.payload?.email_usuario || ""}
           />
         ) : (
           <HeaderDesktopNaoAutenticado />

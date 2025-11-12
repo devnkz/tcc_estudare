@@ -1,5 +1,6 @@
 import { CreateGrupoData, Grupo } from "../../types/grupo";
 import axios from "axios";
+import { getCookie } from "cookies-next";
 
 // Busca todos os grupos
 export async function fetchGrupos(): Promise<Grupo[]> {
@@ -30,5 +31,8 @@ export async function RemoveMemberAndGroup(grupoId: string, membroId: string, to
 
 // Deleta um grupo pelo id
 export async function deleteGrupo(id: string): Promise<void> {
-  await axios.delete(`${process.env.NEXT_PUBLIC_API_URL}/grupo/${id}`);
+  const token = getCookie("token");
+  await axios.delete(`${process.env.NEXT_PUBLIC_API_URL}/grupo/${id}`, {
+    headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+  });
 }

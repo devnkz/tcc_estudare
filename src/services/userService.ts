@@ -1,5 +1,6 @@
 import { User, CreateUserData, UpdateUserData } from "../types/user";
 import axios from "axios";
+import { getCookie } from "cookies-next";
 
 // Busca todos os usuários
 export async function fetchUsers(): Promise<User[]> {
@@ -16,6 +17,7 @@ export async function fetchUsersId(id : string | undefined): Promise<User> {
 
 // Cria um novo usuário
 export async function createUser(data: CreateUserData): Promise<User> {
+  // Backend já usa mesmos nomes (nome_usuario, apelido_usuario, etc.)
   const res = await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/user`, data);
   return res.data;
 }
@@ -36,11 +38,31 @@ export async function removeFotoUser(id: string): Promise<User> {
 
 // Atualiza um usuário existente
 export async function updateUser(data: UpdateUserData): Promise<User> {
-  const res = await axios.put(`${process.env.NEXT_PUBLIC_API_URL}/user/${data.id_usuario}`, data);
+  const token = getCookie("token");
+  const res = await axios.put(
+    `${process.env.NEXT_PUBLIC_API_URL}/user/${data.id_usuario}`,
+    data,
+    {
+      headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+    }
+  );
   return res.data;
 }
 
 // Deleta um usuário pelo id
 export async function deleteUser(id: string): Promise<void> {
-  await axios.delete(`${process.env.NEXT_PUBLIC_API_URL}/user/${id}`);
+  const token = getCookie("token");
+  await axios.delete(`${process.env.NEXT_PUBLIC_API_URL}/user`, {
+    params: { id },
+    headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+  });
+}
+
+// Verifica se email já está em uso
+export async function checkEmail(email: string): Promise<{ exists: boolean }> {
+  const res = await axios.get(
+    `${process.env.NEXT_PUBLIC_API_URL}/user/check-email`,
+    { params: { email } }
+  );
+  return res.data;
 }

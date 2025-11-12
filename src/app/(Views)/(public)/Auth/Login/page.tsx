@@ -9,6 +9,7 @@ import {
 import { HeaderLoginCadastro } from "../../../../../components/layout/header";
 import { useState } from "react";
 import { motion } from "framer-motion";
+import { ActionButton } from "@/components/ui/actionButton";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Inter } from "next/font/google";
@@ -34,6 +35,7 @@ export default function LoginUsuario() {
 
   const [mostrarSenha, setMostrarSenha] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [success, setSuccess] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const [emailError, setEmailError] = useState("");
   const [senhaError, setSenhaError] = useState("");
@@ -74,7 +76,8 @@ export default function LoginUsuario() {
         // set cookie and redirect
         const maxAge = isChecked ? 60 * 60 * 24 * 30 : 60 * 60 * 24 * 7; // 30 days if remember me
         document.cookie = `token=${data.token}; path=/; max-age=${maxAge}; SameSite=Strict`;
-        router.push("/home");
+        setSuccess(true);
+        setTimeout(() => router.push("/home"), 600);
         return;
       }
 
@@ -207,17 +210,15 @@ export default function LoginUsuario() {
               </motion.div>
             )}
 
-            <button
+            <ActionButton
               type="submit"
+              textIdle={isLoading ? "Entrando..." : "Entrar"}
+              isLoading={isLoading}
+              isSuccess={success}
               disabled={isLoading}
-              className={`w-full ${
-                isLoading
-                  ? "bg-purple-400"
-                  : "bg-purple-600 hover:bg-purple-700"
-              } transition-all text-white font-semibold py-3 rounded-lg shadow-md cursor-pointer disabled:opacity-60`}
-            >
-              {isLoading ? "Entrando..." : "Entrar"}
-            </button>
+              enableRipplePulse
+              className="w-full"
+            />
 
             {/* Mensagem de redirecionamento */}
             <p className="text-center text-sm text-gray-600">

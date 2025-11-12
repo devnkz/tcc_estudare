@@ -9,13 +9,16 @@ export async function fetchCursos(): Promise<Curso[]> {
 
 // Cria um novo curso
 export async function createCurso(data: CreateCursoData): Promise<Curso> {
-  const res = await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/curso`, data);
+  // Backend espera campo nome_curso; converte aqui mantendo tipagem de front
+  const payload = { nome_curso: data.nome };
+  const res = await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/curso`, payload);
   return res.data;
 }
 
 // Atualiza um curso existente
 export async function updateCurso(data: UpdateCursoData): Promise<Curso> {
-  const res = await axios.put(`${process.env.NEXT_PUBLIC_API_URL}/curso/${data.id}`, data);
+  const payload = { nome_curso: data.nome };
+  const res = await axios.put(`${process.env.NEXT_PUBLIC_API_URL}/curso/${data.id}`, payload);
   return res.data;
 }
 

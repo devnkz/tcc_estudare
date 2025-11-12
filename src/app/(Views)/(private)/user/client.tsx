@@ -4,7 +4,7 @@ import { UserIcon, PencilIcon } from "@heroicons/react/16/solid";
 import { useRouter } from "next/navigation";
 import { UpdateUserModal } from "./updateUserModal";
 import { UpdateUserFotoModal } from "./fotoPerfilUser/index";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { deleteToken } from "@/lib/deleteToken";
 import { GoPencil } from "react-icons/go";
 import { useGetUser } from "@/hooks/user/useListId";
@@ -15,6 +15,15 @@ import {
 } from "react-icons/bs";
 import { Pergunta } from "@/types/pergunta";
 import { User } from "@/types/user";
+import { motion } from "framer-motion";
+import { LogOut } from "lucide-react";
+import { ActionButton } from "@/components/ui/actionButton";
+import {
+  Dialog as ConfirmDialog,
+  DialogContent as ConfirmContent,
+  DialogHeader as ConfirmHeader,
+  DialogTitle as ConfirmTitle,
+} from "@/components/ui/dialog";
 
 export default function UsuarioClientPage({
   usuario: initialUser,
@@ -25,6 +34,9 @@ export default function UsuarioClientPage({
 }) {
   const router = useRouter();
   const [openDialog, setOpenDialog] = useState<null | "usuario" | "foto">(null);
+  const [logoutOpen, setLogoutOpen] = useState(false);
+  const [leaving, setLeaving] = useState(false);
+  const [headerHeight, setHeaderHeight] = useState(0);
   const { data: usuario_data } = useGetUser(
     initialUser.id_usuario,
     initialUser
@@ -58,11 +70,36 @@ export default function UsuarioClientPage({
     );
   };
 
+  // Corrige sobreposição do header (Android): mede altura do header fixo
+  useEffect(() => {
+    const header = document.querySelector("header");
+    if (header) {
+      setHeaderHeight(header.getBoundingClientRect().height);
+    }
+  }, []);
+
   return (
-    <div className="w-full flex justify-center bg-neutral-50 p-4">
-      <div className="w-[600px] flex flex-col justify-center items-center py-14 space-y-8 relative">
+    <div
+      className="min-h-screen w-full flex justify-center bg-white px-4 md:px-6"
+      style={{ paddingTop: headerHeight ? headerHeight + 2 : undefined }}
+    >
+      <div className="w-full max-w-3xl flex flex-col justify-start items-stretch py-7 md:py-7 space-y-8 relative">
+        {/* TÍTULO */}
+        <motion.h1
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4 }}
+          className="text-3xl md:text-5xl font-extrabold bg-gradient-to-r from-purple-600 to-fuchsia-500 bg-clip-text text-transparent"
+        >
+          Meu perfil
+        </motion.h1>
         {/* FOTO + NOME */}
-        <div className="flex flex-col items-center space-y-3">
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+          className="flex flex-col items-center space-y-3"
+        >
           <div
             className="relative cursor-pointer hover:scale-105 transition-transform duration-300"
             onClick={() => setOpenDialog("foto")}
@@ -76,52 +113,72 @@ export default function UsuarioClientPage({
             ) : (
               <UserIcon className="h-36 w-36 p-8 bg-neutral-200 rounded-full" />
             )}
-            <span className="absolute bottom-0 right-0 p-2 rounded-full text-neutral-700 border border-neutral-300 bg-white shadow-sm">
+            <span className="absolute bottom-0 right-0 p-2 rounded-full text-neutral-700 border border-neutral-300 bg-white shadow-sm cursor-pointer">
               <GoPencil />
             </span>
           </div>
-          <h1 className="font-semibold text-2xl text-neutral-800">
-            {usuario_data.nome_usuario}
-          </h1>
-          <p className="text-neutral-600 text-sm">
-            Estudante desde{" "}
+          <div className="flex flex-col items-center gap-3">
+            <h2 className="font-semibold text-2xl md:text-3xl text-neutral-800">
+              {usuario_data.nome_usuario}
+            </h2>
+            <p className="text-neutral-600 text-md">
+              Mais conhecido como:{" "}
+              <span className="font-bold">{usuario_data.apelido_usuario}</span>
+            </p>
+            {/* Botão pill colocado ABAIXO das infos (acima de credibilidade) */}
+          </div>
+          <p className="text-neutral-600 text-md">
+            Desde{" "}
             {usuario_data.dataCriacao_usuario
               ? new Date(usuario_data.dataCriacao_usuario).toLocaleDateString(
                   "pt-BR"
                 )
               : "-"}
           </p>
-          <p className="text-neutral-600 text-sm">
-            Apelido:{" "}
-            <span className="font-medium">{usuario_data.apelido_usuario}</span>
-          </p>
-        </div>
+          <button
+            onClick={() => setOpenDialog("usuario")}
+            className="inline-flex items-center gap-2 rounded-full border border-purple-400/60 text-purple-700 px-6 py-2 bg-white hover:bg-purple-50 shadow-sm transition cursor-pointer"
+            title="Editar dados"
+            aria-label="Editar dados"
+          >
+            <GoPencil className="text-purple-700" />
+            <span className="text-sm font-medium">Editar dados</span>
+          </button>
+        </motion.div>
 
         {/* CREDIBILIDADE */}
-        <div
-          className={`flex flex-col items-center justify-center gap-2 w-full p-4 rounded-lg border border-neutral-200`}
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, amount: 0.2 }}
+          transition={{ duration: 0.5 }}
+          className={`flex flex-col items-center justify-center gap-2 w-full p-4 rounded-xl border border-zinc-200 bg-white shadow-sm`}
         >
           <CredibilidadeEmoji className="text-4xl" />
           <span className="font-medium text-base">Credibilidade: {cred}</span>
           <p className="text-sm text-center">{credibilidadeMensagem}</p>
-          <div className="w-full bg-neutral-200 h-2 rounded-full mt-1">
+          <div className="w-full bg-zinc-200 h-2 rounded-full mt-1">
             <div
-              className="h-2 rounded-full bg-neutral-600 transition-all duration-500"
+              className="h-2 rounded-full bg-purple-600 transition-all duration-500"
               style={{ width: `${cred}%` }}
             />
           </div>
-        </div>
+        </motion.div>
 
         {/* PENALIDADES */}
-        <div className="w-full rounded-lg border border-neutral-200 bg-white p-4 space-y-3">
-          <h3 className="font-semibold text-neutral-800 text-base">
-            Penalidades
-          </h3>
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, amount: 0.2 }}
+          transition={{ duration: 0.5 }}
+          className="w-full rounded-xl border border-zinc-200 bg-white p-4 shadow-sm space-y-3"
+        >
+          <h3 className="font-semibold text-zinc-800 text-base">Penalidades</h3>
           {usuario_data.Penalidades && usuario_data.Penalidades.length > 0 ? (
             usuario_data.Penalidades.map((penalidade) => (
               <div
                 key={penalidade.id_penalidade}
-                className="p-3 rounded-lg border border-neutral-200"
+                className="p-3 rounded-lg border border-zinc-200"
               >
                 <p className="text-sm text-neutral-700">
                   <span className="font-medium">Descrição:</span>{" "}
@@ -149,7 +206,7 @@ export default function UsuarioClientPage({
                 </p>
 
                 <button
-                  className="mt-2 text-sm text-purple-600 hover:underline"
+                  className="mt-2 text-sm text-purple-600 hover:underline cursor-pointer"
                   onClick={() =>
                     handleVisualizarConteudo(
                       penalidade.denuncia.fkId_conteudo_denunciado,
@@ -166,17 +223,15 @@ export default function UsuarioClientPage({
               Nenhuma penalidade registrada.
             </p>
           )}
-        </div>
+        </motion.div>
 
         {/* BOTÃO SAIR */}
-        <div className="pt-4 border-t border-neutral-200 w-full">
+        <div className="pt-4 border-t border-zinc-200 w-full">
           <button
-            onClick={() => {
-              deleteToken("token");
-              router.push("/login");
-            }}
-            className="w-full py-2 border border-neutral-400 rounded-md text-neutral-700 hover:bg-neutral-100 transition"
+            onClick={() => setLogoutOpen(true)}
+            className="w-full inline-flex items-center cursor-pointer justify-center gap-2 py-2 rounded-md border border-red-300 bg-red-50 text-red-700 hover:bg-red-100 hover:border-red-400 transition"
           >
+            <LogOut className="h-4 w-4" />
             Sair
           </button>
         </div>
@@ -193,6 +248,48 @@ export default function UsuarioClientPage({
         setOpenDialog={setOpenDialog}
         user={usuario_data}
       />
+
+      {/* CONFIRM SAIR */}
+      <ConfirmDialog
+        open={logoutOpen}
+        onOpenChange={(v) => {
+          setLogoutOpen(v);
+          if (!v) setLeaving(false);
+        }}
+      >
+        <ConfirmContent className="bg-white">
+          <ConfirmHeader>
+            <ConfirmTitle className="text-zinc-900">Sair da conta</ConfirmTitle>
+          </ConfirmHeader>
+          <div className="text-sm text-zinc-600">
+            Tem certeza que deseja sair da sua conta?
+          </div>
+          <div className="mt-4 flex justify-end gap-2">
+            <button
+              className="px-4 py-2 rounded-md border cursor-pointer border-zinc-300 text-zinc-700 hover:bg-zinc-50"
+              onClick={() => setLogoutOpen(false)}
+              type="button"
+            >
+              Cancelar
+            </button>
+            <ActionButton
+              type="button"
+              textIdle="Sair"
+              isLoading={leaving}
+              onClick={() => {
+                if (leaving) return;
+                setLeaving(true);
+                setTimeout(() => {
+                  deleteToken("token");
+                  router.push("/login");
+                }, 450);
+              }}
+              className="bg-red-600 cursor-pointer hover:bg-red-700"
+              enableRipplePulse
+            />
+          </div>
+        </ConfirmContent>
+      </ConfirmDialog>
     </div>
   );
 }

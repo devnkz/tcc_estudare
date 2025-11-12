@@ -18,11 +18,15 @@ interface ModalUpdateQuestionProps {
   componentes?: Componente[];
   pergunta: Pergunta;
   triggerId?: string;
+  triggerClassName?: string;
+  onSuccess?: (msg?: string) => void;
 }
 
 export default function ModalUpdateQuestion({
   pergunta,
   triggerId,
+  triggerClassName,
+  onSuccess,
 }: ModalUpdateQuestionProps) {
   const [conteudoUpdate, setConteudoUpdate] = useState(pergunta.pergunta);
 
@@ -41,6 +45,7 @@ export default function ModalUpdateQuestion({
       {
         onSuccess: () => {
           setIsOpen(false);
+          onSuccess?.("Pergunta atualizada");
         },
       }
     );
@@ -51,7 +56,10 @@ export default function ModalUpdateQuestion({
       <DialogTrigger asChild>
         <button
           id={triggerId}
-          className="px-4 py-2 bg-purple-600 rounded-md text-white cursor-pointer hover:bg-purple-700 transition-transform duration-200"
+          className={
+            triggerClassName ??
+            "px-4 py-2 bg-purple-600 rounded-md text-white cursor-pointer hover:bg-purple-700 transition-transform duration-200"
+          }
         >
           Editar
         </button>

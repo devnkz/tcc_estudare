@@ -1,5 +1,5 @@
 import { EyeIcon, EyeSlashIcon } from "@heroicons/react/16/solid";
-import { FC, useState } from "react";
+import React, { FC, useState } from "react";
 
 interface InputProps {
   label: string;
@@ -9,6 +9,8 @@ interface InputProps {
   podeMostrarSenha?: boolean;
   value?: string;
   onChange?: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  rightSlot?: React.ReactNode; // ícone/loader à direita dentro do input
+  error?: boolean; // sinaliza erro visual
 }
 
 export function Input({
@@ -19,6 +21,8 @@ export function Input({
   podeMostrarSenha = false,
   value,
   onChange,
+  rightSlot,
+  error = false,
 }: InputProps) {
   const [mostrarSenha, setMostrarSenha] = useState(false);
 
@@ -32,8 +36,12 @@ export function Input({
     <label className="flex flex-col gap-1">
       <span className="text-sm font-medium">{label}</span>
       <div
-        className={`flex items-center rounded px-3 py-2 ${
+        className={`flex items-center rounded px-3 py-2 transition ${
           Icon || podeMostrarSenha ? "gap-2 bg-zinc-200" : "bg-zinc-200"
+        } ${
+          error
+            ? "ring-2 ring-red-500"
+            : "focus-within:ring-2 focus-within:ring-purple-500"
         }`}
       >
         {Icon && <Icon className="text-zinc-400 h-6 w-6" />}
@@ -47,6 +55,8 @@ export function Input({
           onChange={onChange}
           required
         />
+        {/* Adorno do lado direito (ex.: loader/check/erro) */}
+        {rightSlot && <div className="ml-2 flex items-center">{rightSlot}</div>}
         {podeMostrarSenha && (
           <button
             type="button"

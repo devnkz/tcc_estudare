@@ -1,6 +1,14 @@
 import axios from "axios";
 import { Denuncia, CreateDenunciaData } from "../types/denuncia";
 
+type UpdateDenunciaPayload = {
+  fkId_usuario?: string;
+  fkId_conteudo_denunciado?: string;
+  nivel_denuncia?: number;
+  status?: string;
+  resultado?: string;
+};
+
 // Busca todas as denúncias
 export async function fetchDenuncias(): Promise<Denuncia[]> {
   const res = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/denuncia`);
@@ -21,4 +29,13 @@ export async function deleteDenuncia(id: string, token: string): Promise<void> {
       Authorization: `Bearer ${token}`,
     },
   });
+}
+
+// Atualiza denúncia (status/resultado, etc.)
+export async function updateDenuncia(
+  id: string,
+  data: Partial<UpdateDenunciaPayload>
+): Promise<Denuncia> {
+  const res = await axios.put(`${process.env.NEXT_PUBLIC_API_URL}/denuncia/${id}`, data);
+  return res.data;
 }

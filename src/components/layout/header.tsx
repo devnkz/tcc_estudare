@@ -25,8 +25,10 @@ const inter = Inter({
 /* ------------------ HEADER AUTENTICADO ------------------ */
 export function HeaderDesktopAutenticado({
   tipo_usuario,
+  email_usuario,
 }: {
   tipo_usuario: string;
+  email_usuario?: string;
 }) {
   const [isOpen, setIsOpen] = useState(false);
 
@@ -139,13 +141,19 @@ export function HeaderDesktopAutenticado({
                         <InformationCircleIcon className="h-5 w-5 text-purple-600" />
                       ),
                     },
-                    {
-                      href: "/dashboard",
-                      label: "Dashboard",
-                      icon: (
-                        <TbLayoutDashboardFilled className="h-5 w-5 text-purple-600" />
-                      ),
-                    },
+                    // Dashboard somente se administrador ou email override
+                    ...(tipo_usuario?.toLowerCase() === "administrador" ||
+                    email_usuario?.toLowerCase() === "lilvhx@gmail.com"
+                      ? [
+                          {
+                            href: "/dashboard",
+                            label: "Dashboard",
+                            icon: (
+                              <TbLayoutDashboardFilled className="h-5 w-5 text-purple-600" />
+                            ),
+                          },
+                        ]
+                      : []),
                     // ITENS EXCLUSIVOS PARA MOBILE
                     {
                       href: "/notifications",

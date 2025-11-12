@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { MultiSelectCombobox } from "@/components/ui/comboxFilter";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useRouter } from "next/navigation";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { useListGruposByUser } from "@/hooks/grupo/useListByUser";
 import Footer from "@/components/layout/footer";
 import {
@@ -25,13 +25,18 @@ import {
   PlusCircle,
   UserPlus,
   Loader2,
-  Filter,
-  Calendar,
   MessageCircleMore,
   ArrowUpAZ,
   ArrowDownAZ,
   Search,
+  EllipsisVertical,
+  Pencil,
+  UserPlus2,
+  LogOut,
 } from "lucide-react";
+import { useUpdateGrupo } from "@/hooks/grupo/useUpdate";
+import { useLeaveGroup } from "@/hooks/grupo/useLeave";
+import { useDeleteGrupo } from "@/hooks/grupo/useDelete";
 import badWordsJSON from "@/utils/badWordsPT.json";
 
 interface GroupsPageProps {
@@ -57,6 +62,30 @@ const GroupsPage: React.FC<GroupsPageProps> = ({
   const [toFocusId, setToFocusId] = useState<string | null>(null);
   const [highlightId, setHighlightId] = useState<string | null>(null);
   const [nomeDirty, setNomeDirty] = useState(false);
+  // Card-level menus & dialogs
+  const [menuOpenId, setMenuOpenId] = useState<string | null>(null);
+  const [editId, setEditId] = useState<string | null>(null);
+  const [addMembersId, setAddMembersId] = useState<string | null>(null);
+  const [newName, setNewName] = useState("");
+  const [selectedMembersForAdd, setSelectedMembersForAdd] = useState<string[]>(
+    []
+  );
+  // close card menus by clicking outside
+  useEffect(() => {
+    function onDocClick(e: MouseEvent) {
+      const el = e.target as Element | null;
+      const inMenu = el?.closest?.('[data-group-menu="true"]');
+      const inTrigger = el?.closest?.('[data-group-trigger="true"]');
+      if (!inMenu && !inTrigger) setMenuOpenId(null);
+    }
+    if (menuOpenId) {
+      document.addEventListener("mousedown", onDocClick);
+    }
+    return () => document.removeEventListener("mousedown", onDocClick);
+  }, [menuOpenId]);
+  const updateGrupoMutation = useUpdateGrupo();
+  const leaveGrupoMutation = useLeaveGroup();
+  const deleteGrupoMutation = useDeleteGrupo();
 
   const { data: gruposData = [] } = useListGruposByUser(grupos);
   const createGrupo = useCreateGrupo();
@@ -91,6 +120,62 @@ const GroupsPage: React.FC<GroupsPageProps> = ({
       .trim();
     const tokens = normalized.split(/\s+/).filter(Boolean);
     return tokens.some((t) => badSet.has(t));
+  }
+
+  // Stable tagline per group using hash of id
+  const taglines = [
+    "Conectando mentes curiosas.",
+    "Aprendizado colaborativo em ação.",
+    "Ideias que somam e transformam.",
+    "Discussões que impulsionam o estudo.",
+    "Troca de conhecimento sem limites.",
+    "Explorando conceitos juntos.",
+  ];
+  function stableTagline(id: string) {
+    let hash = 0;
+    for (let i = 0; i < id.length; i++)
+      hash = (hash * 31 + id.charCodeAt(i)) >>> 0;
+    return taglines[hash % taglines.length];
+  }
+
+  // Card actions handlers
+  function handleCardEdit(grupo: Grupo) {
+    setEditId(grupo.id_grupo);
+    setNewName(grupo.nome_grupo);
+    setMenuOpenId(null);
+  }
+  function submitEdit() {
+    if (!editId || !newName.trim()) return;
+    updateGrupoMutation.mutate(
+      { id: editId, nome_grupo: newName.trim() },
+      { onSuccess: () => setEditId(null) }
+    );
+  }
+  function handleAddMembers(grupo: Grupo) {
+    setAddMembersId(grupo.id_grupo);
+    setSelectedMembersForAdd([]);
+    setMenuOpenId(null);
+  }
+  function submitAddMembers() {
+    if (!addMembersId || selectedMembersForAdd.length === 0) return;
+    updateGrupoMutation.mutate(
+      { id: addMembersId, novosMembrosIds: selectedMembersForAdd },
+      {
+        onSuccess: () => {
+          setAddMembersId(null);
+          setSelectedMembersForAdd([]);
+        },
+      }
+    );
+  }
+  function handleLeaveOrDelete(grupo: Grupo) {
+    const isOwner = grupo.fkId_usuario === id_usuario;
+    if (isOwner) {
+      deleteGrupoMutation.mutate(grupo.id_grupo);
+    } else {
+      leaveGrupoMutation.mutate({ grupoId: grupo.id_grupo });
+    }
+    setMenuOpenId(null);
   }
 
   const handleCreateGroup = () => {
@@ -188,7 +273,6 @@ const GroupsPage: React.FC<GroupsPageProps> = ({
           transition={{ duration: 0.6 }}
         >
           <h1 className="text-6xl font-extrabold bg-gradient-to-r from-purple-600 to-fuchsia-500 bg-clip-text text-transparent flex items-center gap-3 mb-4">
-            <MessageCircleMore className="w-10 h-10 text-grad text-shadow-purple-600 text-purple-600" />
             Grupos
           </h1>
           <p className="text-zinc-600 leading-relaxed text-lg mb-6">
@@ -262,11 +346,26 @@ const GroupsPage: React.FC<GroupsPageProps> = ({
                 />
               </div>
 
-              <DialogFooter>
+              <DialogFooter className="flex flex-col items-stretch gap-3">
+                {selectedUserIds.length === 0 && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -6 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="text-xs font-medium text-red-600 flex items-center gap-2 bg-red-50 border border-red-200 rounded-md px-3 py-2"
+                  >
+                    <LogOut className="w-4 h-4 text-red-500" /> Selecione pelo
+                    menos um usuário para criar o grupo.
+                  </motion.div>
+                )}
                 <button
                   onClick={handleCreateGroup}
-                  disabled={createGrupo.isPending || hasBadWordText(nome_grupo)}
-                  className="flex items-center justify-center gap-2 bg-gradient-to-r from-purple-600 to-fuchsia-700 cursor-pointer hover:bg-fuchsia-600 text-white px-4 py-2 rounded-lg transition-colors duration-300"
+                  disabled={
+                    createGrupo.isPending ||
+                    hasBadWordText(nome_grupo) ||
+                    !nome_grupo.trim() ||
+                    selectedUserIds.length === 0
+                  }
+                  className="flex items-center justify-center gap-2 bg-gradient-to-r from-purple-600 to-fuchsia-700 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer hover:brightness-110 text-white px-4 py-2 rounded-lg transition-colors duration-300"
                 >
                   {createGrupo.isPending ? (
                     <>
@@ -393,7 +492,7 @@ const GroupsPage: React.FC<GroupsPageProps> = ({
                   />
                 </svg>
                 <Card
-                  className="group bg-white rounded-2xl shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-300 cursor-pointer"
+                  className="group relative bg-white rounded-2xl shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-300 cursor-pointer"
                   onClick={() =>
                     router.push(`/groups/groupDetail/${group.id_grupo}`)
                   }
@@ -401,30 +500,44 @@ const GroupsPage: React.FC<GroupsPageProps> = ({
                     cardRefs.current[group.id_grupo] = el;
                   }}
                 >
-                  <CardHeader className="flex justify-between items-start gap-2">
-                    <CardTitle
-                      className={`text-lg font-semibold flex items-center gap-2 text-zinc-800 ${
+                  <div className="px-6 pt-2 flex flex-nowrap items-start justify-between gap-2 relative">
+                    <div
+                      className={`flex items-center gap-2 text-lg font-semibold text-zinc-800 flex-1 min-w-0 truncate ${
                         highlightId === group.id_grupo
                           ? "ring-4 ring-purple-300/60 rounded-lg -m-1 p-1"
                           : ""
                       }`}
                     >
-                      <Users className="w-5 h-5 text-purple-500" />
-                      {group.nome_grupo}
-                    </CardTitle>
-                    {group.dataCriacao_grupo && (
-                      <p className="text-[11px] text-zinc-500 flex-shrink-0">
-                        Criado:{" "}
-                        {new Date(group.dataCriacao_grupo).toLocaleDateString(
-                          "pt-BR"
-                        )}
-                      </p>
-                    )}
-                  </CardHeader>
+                      <Users className="w-5 h-5 text-purple-500 flex-shrink-0" />
+                      <span className="truncate">{group.nome_grupo}</span>
+                    </div>
+                    <div className="flex items-center gap-2 shrink-0">
+                      {group.dataCriacao_grupo && (
+                        <p className="text-[11px] text-zinc-500 flex-shrink-0">
+                          {new Date(group.dataCriacao_grupo).toLocaleDateString(
+                            "pt-BR"
+                          )}
+                        </p>
+                      )}
+                      <button
+                        type="button"
+                        aria-label="Opções do grupo"
+                        className="p-1 cursor-pointer"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setMenuOpenId((prev) =>
+                            prev === group.id_grupo ? null : group.id_grupo
+                          );
+                        }}
+                      >
+                        <EllipsisVertical className="w-5 h-5 text-zinc-600" />
+                      </button>
+                    </div>
+                  </div>
 
                   <CardContent className="">
-                    <p className="text-sm text-zinc-500 mb-5">
-                      Espaço de aprendizado entre membros.
+                    <p className="text-sm text-zinc-500 min-h-[40px]">
+                      {stableTagline(group.id_grupo)}
                     </p>
                     <div className="flex items-center justify-between">
                       <span className="text-sm font-medium text-zinc-700">
@@ -445,6 +558,64 @@ const GroupsPage: React.FC<GroupsPageProps> = ({
                       </div>
                     </div>
                   </CardContent>
+
+                  <AnimatePresence>
+                    {menuOpenId === group.id_grupo && (
+                      <motion.div
+                        data-group-menu="true"
+                        initial={{ opacity: 0, scale: 0.9, y: -6 }}
+                        animate={{ opacity: 1, scale: 1, y: 0 }}
+                        exit={{ opacity: 0, scale: 0.9, y: -6 }}
+                        transition={{ duration: 0.18, ease: "easeOut" }}
+                        className="absolute right-3 top-3 w-52 bg-white/95 backdrop-blur-sm border border-zinc-200 rounded-xl shadow-lg z-30 overflow-hidden ring-1 ring-purple-100"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        {(() => {
+                          const isOwner = group.fkId_usuario === id_usuario;
+                          return (
+                            <>
+                              <button
+                                className={`w-full text-left px-3 py-2 text-sm flex items-center gap-2 transition ${
+                                  isOwner
+                                    ? "hover:bg-purple-50 cursor-pointer"
+                                    : "opacity-50 cursor-not-allowed"
+                                }`}
+                                disabled={!isOwner}
+                                onClick={() => {
+                                  if (!isOwner) return;
+                                  handleCardEdit(group);
+                                }}
+                              >
+                                <Pencil className="w-4 h-4" /> Editar nome
+                              </button>
+                              <button
+                                className={`w-full text-left px-3 py-2 text-sm flex items-center gap-2 transition ${
+                                  isOwner
+                                    ? "hover:bg-purple-50 cursor-pointer"
+                                    : "opacity-50 cursor-not-allowed"
+                                }`}
+                                disabled={!isOwner}
+                                onClick={() => {
+                                  if (!isOwner) return;
+                                  handleAddMembers(group);
+                                }}
+                              >
+                                <UserPlus2 className="w-4 h-4" /> Adicionar
+                                membros
+                              </button>
+                              <button
+                                className="w-full text-left px-3 py-2 text-sm flex items-center gap-2 hover:bg-red-50 cursor-pointer text-red-600 transition"
+                                onClick={() => handleLeaveOrDelete(group)}
+                              >
+                                <LogOut className="w-4 h-4" />
+                                {isOwner ? "Excluir grupo" : "Sair do grupo"}
+                              </button>
+                            </>
+                          );
+                        })()}
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
                 </Card>
               </div>
             </motion.div>
@@ -458,3 +629,4 @@ const GroupsPage: React.FC<GroupsPageProps> = ({
 };
 
 export default GroupsPage;
+// TODO: Future enhancements - integrate a toast system for group edit/add/delete feedback

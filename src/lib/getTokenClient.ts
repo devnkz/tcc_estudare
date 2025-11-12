@@ -11,11 +11,11 @@ export function useToken() {
   const [isReady, setIsReady] = useState(false);
 
   useEffect(() => {
-    // Esta função será executada após CADA renderização
+    // Executa apenas uma vez após montagem
     const cookieToken = getCookie("token");
-    setToken(cookieToken as string);
+    setToken((cookieToken as string) ?? null);
     setIsReady(true);
-  }); // Sem array de dependências aqui
+  }, []);
   
   return { token, isReady };
 }

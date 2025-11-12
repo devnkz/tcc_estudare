@@ -18,13 +18,18 @@ import {
 import { ChevronDownIcon } from "lucide-react";
 import { Button } from "@/components/ui/buttonCalendar";
 import { useCreatePenalidade } from "@/hooks/penalidade/useCreate";
+import { useToast } from "@/components/ui/animatedToast";
 import { CreatePenalidadeData } from "@/types/penalidade";
+import { isBefore, startOfDay, startOfToday } from "date-fns";
 
 type Props = {
   openDialog: boolean;
   setOpenDialog: (value: boolean) => void;
   fkId_usuario: string;
   fkId_denuncia: string;
+  usuarioNome?: string;
+  denunciaNivel?: number;
+  onFeedback?: (type: "success" | "error" | "info", message: string) => void;
 };
 
 export function PenalidadeModal({
@@ -32,13 +37,18 @@ export function PenalidadeModal({
   setOpenDialog,
   fkId_usuario,
   fkId_denuncia,
+  usuarioNome,
+  denunciaNivel,
+  onFeedback,
 }: Props) {
   const { mutate, isPending } = useCreatePenalidade();
+  const { push } = useToast();
 
   const {
     handleSubmit,
     control,
     reset,
+    watch,
     formState: { errors },
   } = useForm<CreatePenalidadeData>({
     defaultValues: {
@@ -66,10 +76,16 @@ export function PenalidadeModal({
 
     mutate(payload, {
       onSuccess: () => {
+        push({ kind: "success", message: "Penalidade aplicada." });
+        onFeedback?.("success", "Penalidade aplicada.");
         reset();
         setOpenDialog(false);
       },
-      onError: (err) => {
+      onError: (err: any) => {
+        const msg =
+          err?.response?.data?.message || "Erro ao aplicar penalidade.";
+        push({ kind: "error", message: msg });
+        onFeedback?.("error", msg);
         console.error("Erro ao criar penalidade:", err);
       },
     });
@@ -85,6 +101,8 @@ export function PenalidadeModal({
       rules={{ required: `${label} é obrigatório` }}
       render={({ field }) => {
         const [open, setOpen] = React.useState(false);
+        const inicio = watch("dataInicio_penalidade");
+        const today = startOfToday();
         return (
           <div>
             <Label>{label}</Label>
@@ -105,6 +123,17 @@ export function PenalidadeModal({
                     field.onChange(date);
                     setOpen(false);
                   }}
+                  disabled={(date) => {
+                    const d = startOfDay(date);
+                    if (fieldName === "dataInicio_penalidade") {
+                      return isBefore(d, today);
+                    }
+                    // dataFim não pode ser antes de hoje nem antes do início selecionado
+                    const minEnd = inicio
+                      ? startOfDay(new Date(inicio))
+                      : today;
+                    return isBefore(d, minEnd);
+                  }}
                 />
               </PopoverContent>
             </Popover>
@@ -121,14 +150,38 @@ export function PenalidadeModal({
 
   return (
     <Dialog open={openDialog} onOpenChange={() => setOpenDialog(false)}>
-      <DialogContent className="max-w-md">
+      <DialogContent className="max-w-lg rounded-2xl border border-red-200 bg-white shadow-xl">
         <DialogHeader>
-          <DialogTitle>Aplicar Penalidade</DialogTitle>
+          <DialogTitle className="text-2xl font-extrabold bg-gradient-to-r from-red-600 to-rose-600 bg-clip-text text-transparent flex flex-col gap-1">
+            Aplicar Penalidade
+            <span className="text-xs font-medium text-red-500/70">
+              Ação moderadora permanente no histórico
+            </span>
+          </DialogTitle>
         </DialogHeader>
 
-        <form className="space-y-4" onSubmit={handleSubmit(onSubmit)}>
-          {renderCalendarField("dataInicio_penalidade", "Data de Início")}
-          {renderCalendarField("dataFim_penalidade", "Data de Fim")}
+        <div className="mb-4 grid grid-cols-2 gap-3 text-xs">
+          <div className="rounded-lg border border-red-100 bg-red-50/60 p-3 flex flex-col gap-1">
+            <span className="font-semibold text-red-700 text-sm truncate">
+              Usuário
+            </span>
+            <span className="text-red-600/80 truncate">
+              {usuarioNome || fkId_usuario}
+            </span>
+          </div>
+          <div className="rounded-lg border border-rose-100 bg-rose-50/60 p-3 flex flex-col gap-1">
+            <span className="font-semibold text-rose-700 text-sm truncate">
+              Denúncia Nível
+            </span>
+            <span className="text-rose-600/80">{denunciaNivel ?? "—"}</span>
+          </div>
+        </div>
+
+        <form className="space-y-5" onSubmit={handleSubmit(onSubmit)}>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {renderCalendarField("dataInicio_penalidade", "Data de Início")}
+            {renderCalendarField("dataFim_penalidade", "Data de Fim")}
+          </div>
 
           <Controller
             name="perder_credibilidade"
@@ -140,14 +193,16 @@ export function PenalidadeModal({
             }}
             render={({ field }) => (
               <div>
-                <Label>Perda de Credibilidade (%)</Label>
+                <Label className="text-sm font-semibold text-red-700">
+                  Perda de Credibilidade (%)
+                </Label>
                 <input
                   type="number"
                   {...field}
-                  className="w-full p-2 border rounded"
+                  className="w-full mt-1 rounded-lg border border-red-200 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-500"
                 />
                 {errors.perder_credibilidade && (
-                  <p className="text-xs text-red-600 mt-1">
+                  <p className="text-[11px] text-red-600 mt-1">
                     {errors.perder_credibilidade.message}
                   </p>
                 )}
@@ -161,14 +216,17 @@ export function PenalidadeModal({
             rules={{ required: "Descrição obrigatória" }}
             render={({ field }) => (
               <div>
-                <Label>Descrição</Label>
+                <Label className="text-sm font-semibold text-red-700">
+                  Descrição
+                </Label>
                 <textarea
                   {...field}
-                  className="w-full p-2 border rounded"
-                  placeholder="Motivo da penalidade"
+                  rows={4}
+                  className="w-full mt-1 rounded-lg border border-red-200 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-500 resize-y"
+                  placeholder="Explique o motivo, impacto e evidências breves."
                 />
                 {errors.descricao && (
-                  <p className="text-xs text-red-600 mt-1">
+                  <p className="text-[11px] text-red-600 mt-1">
                     {errors.descricao.message}
                   </p>
                 )}
@@ -176,13 +234,29 @@ export function PenalidadeModal({
             )}
           />
 
-          <button
-            type="submit"
-            disabled={isPending}
-            className="p-3 w-full bg-red-600 text-white rounded hover:bg-red-700 transition-colors disabled:opacity-50"
-          >
-            {isPending ? "Aplicando..." : "Aplicar Penalidade"}
-          </button>
+          <div className="flex items-center justify-end gap-3 pt-2">
+            <button
+              type="button"
+              onClick={() => setOpenDialog(false)}
+              className="text-sm font-medium text-zinc-600 hover:text-zinc-800 transition cursor-pointer"
+            >
+              Cancelar
+            </button>
+            <button
+              type="submit"
+              disabled={isPending}
+              className="relative inline-flex items-center justify-center rounded-lg bg-gradient-to-r from-red-600 to-rose-600 px-5 py-2.5 text-sm font-semibold text-white shadow disabled:opacity-50 disabled:cursor-not-allowed hover:from-red-500 hover:to-rose-500 transition cursor-pointer"
+            >
+              {isPending ? (
+                <span className="flex items-center gap-2">
+                  <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" />{" "}
+                  Aplicando...
+                </span>
+              ) : (
+                "Aplicar Penalidade"
+              )}
+            </button>
+          </div>
         </form>
       </DialogContent>
     </Dialog>

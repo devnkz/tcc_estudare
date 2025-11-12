@@ -11,6 +11,7 @@ import {
 import { User } from "@/types/user";
 import { motion } from "framer-motion";
 import { CheckCircle, Info, AlertCircle, Trash } from "lucide-react";
+import { ActionButton } from "@/components/ui/actionButton";
 
 export function UpdateUserFotoModal({
   openDialog,
@@ -162,14 +163,14 @@ export function UpdateUserFotoModal({
                 <button
                   type="button"
                   onClick={() => setConfirmRemove(true)}
-                  className="inline-flex items-center gap-1.5 text-sm font-medium text-red-600 hover:text-red-700 disabled:opacity-60 disabled:cursor-not-allowed"
+                  className="inline-flex items-center cursor-pointer gap-1.5 text-sm font-medium text-red-600 hover:text-red-700 disabled:opacity-60 disabled:cursor-not-allowed"
                   disabled={removeFoto.isPending}
                 >
                   <Trash className="w-4 h-4" />
                   Remover foto
                 </button>
               ) : (
-                <div className="w-full sm:w-auto flex flex-col items-center sm:items-start gap-1">
+                <div className="w-full sm:w-auto cursor-pointer flex flex-col items-center sm:items-start gap-1">
                   <button
                     type="button"
                     disabled={removeFoto.isPending}
@@ -186,14 +187,14 @@ export function UpdateUserFotoModal({
                         },
                       });
                     }}
-                    className="w-full sm:w-auto rounded-md px-4 py-2 text-sm font-semibold bg-red-600 hover:bg-red-700 text-white shadow-sm transition disabled:opacity-60 disabled:cursor-not-allowed"
+                    className="w-full sm:w-auto rounded-md cursor-pointer px-4 py-2 text-sm font-semibold bg-red-600 hover:bg-red-700 text-white shadow-sm transition disabled:opacity-60 disabled:cursor-not-allowed"
                   >
                     {removeFoto.isPending ? "Removendo..." : "Confirme remover"}
                   </button>
                   <button
                     type="button"
                     onClick={() => setConfirmRemove(false)}
-                    className="text-xs text-zinc-600 hover:text-zinc-800 transition self-center sm:self-auto"
+                    className="text-xs cursor-pointer text-zinc-600 hover:text-zinc-800 transition self-center sm:self-auto"
                   >
                     Cancelar
                   </button>
@@ -203,12 +204,14 @@ export function UpdateUserFotoModal({
 
             {/* Botão Salvar (direita no desktop) */}
             <div className="flex justify-end sm:ml-auto w-full sm:w-auto">
-              <button
+              <ActionButton
                 type="submit"
-                className="inline-flex items-center justify-center rounded-md bg-purple-700 hover:bg-purple-800 active:scale-[0.97] text-white px-5 py-2.5 font-semibold shadow-sm transition disabled:opacity-60 disabled:cursor-not-allowed w-full sm:w-auto"
-              >
-                {isPending ? "Enviando..." : "Salvar"}
-              </button>
+                textIdle="Salvar"
+                isLoading={isPending}
+                isSuccess={success}
+                className="w-full sm:w-auto"
+                enableRipplePulse
+              />
             </div>
           </div>
         </form>

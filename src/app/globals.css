@@ -145,6 +145,27 @@
   --sidebar-ring: oklch(0.705 0.015 286.067);
 }
 
+  /* Smooth scrolling global */
+  html {
+    scroll-behavior: smooth;
+  }
+
+  /* Optional: custom scrollbar styling (already referenced by audit modal) */
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 10px;
+  }
+  .custom-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    background: linear-gradient(180deg, #7e22ce 0%, #db2777 100%);
+    border-radius: 999px;
+    border: 2px solid #ffffff40;
+  }
+  .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: linear-gradient(180deg, #6b21a8 0%, #be185d 100%);
+  }
+
 .dark {
   --background: oklch(0.141 0.005 285.823);
   --foreground: oklch(0.985 0 0);

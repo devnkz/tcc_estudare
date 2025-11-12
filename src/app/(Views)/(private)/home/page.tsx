@@ -41,11 +41,11 @@ export default async function HomePage() {
           {/* Lista de perguntas (ou estado vazio) */}
           <div className="w-full text-center ">
             {/* Estado vazio */}
-            <div className="flex flex-col items-center justify-center text-center border-2 border-dashed border-purple-200 rounded-xl py-9 px-6">
+            <div className="flex flex-col items-center justify-center text-center border-2 border-dashed border-purple-200 rounded-xl py-6 px-6">
               <div className="text-3xl font-semibold text-gray-700 justify-center">
                 <PerguntasIndex id_usuario={decoded.id} />
               </div>
-              <p className="text-l text-gray-500 mb-4">
+              <p className="text-l text-gray-500 mt-6 mb-4">
                 Que tal fazer uma pergunta?
               </p>
               <a

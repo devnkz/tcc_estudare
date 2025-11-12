@@ -1,5 +1,6 @@
 import { MiddlewareConfig, NextRequest, NextResponse } from "next/server";
 import { jwtDecode } from "jwt-decode";
+import { ADMIN_EMAILS } from "@/lib/roles";
 
 const publicRoutes = [
     { path: "/Auth/Login", whenAuthenticated: "redirect" },
@@ -45,7 +46,7 @@ export function middleware(request: NextRequest) {
         return NextResponse.redirect(redirectUrl);
     }
 
-    if (authToken && !publicRoute) {
+        if (authToken && !publicRoute) {
     function isTokenExpired(token: string): boolean {
         try {
             const decoded = jwtDecode<JWTPayload>(token);
@@ -64,7 +65,21 @@ export function middleware(request: NextRequest) {
         return response;
     }
 
-    return NextResponse.next();
+        // Admin-only guard for dashboard paths
+            if (path.startsWith("/dashboard")) {
+            try {
+                const payload: any = jwtDecode(authToken.value);
+                const role = (payload?.tipo_usuario || "").toLowerCase();
+                    const email = (payload?.email_usuario || "").toLowerCase();
+                    if (role !== "administrador" && !ADMIN_EMAILS.includes(email)) {
+                    const redirectUrl = request.nextUrl.clone();
+                    redirectUrl.pathname = "/home";
+                    return NextResponse.redirect(redirectUrl);
+                }
+            } catch {}
+        }
+
+        return NextResponse.next();
 }
 
 }

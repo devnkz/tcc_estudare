@@ -15,10 +15,16 @@ import { useState } from "react";
 
 interface ModalUpdateResponseProps {
   resposta: Resposta;
+  triggerId?: string;
+  triggerClassName?: string;
+  onSuccess?: (msg?: string) => void;
 }
 
 export default function ModalUpdateResponse({
   resposta,
+  triggerId,
+  triggerClassName,
+  onSuccess,
 }: ModalUpdateResponseProps) {
   const [conteudoUpdate, setConteudoUpdate] = useState(resposta.resposta);
 
@@ -39,6 +45,7 @@ export default function ModalUpdateResponse({
       {
         onSuccess: () => {
           setIsOpen(false);
+          onSuccess?.("Resposta atualizada");
         },
       }
     );
@@ -47,7 +54,13 @@ export default function ModalUpdateResponse({
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
-        <button className="px-4 py-2 bg-purple-600 rounded-md text-white cursor-pointer hover:bg-purple-700 transition-transform duration-200">
+        <button
+          id={triggerId}
+          className={
+            triggerClassName ??
+            "px-4 py-2 bg-purple-600 rounded-md text-white cursor-pointer hover:bg-purple-700 transition-transform duration-200"
+          }
+        >
           Editar
         </button>
       </DialogTrigger>

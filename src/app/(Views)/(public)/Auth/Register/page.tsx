@@ -12,9 +12,10 @@ import {
 import { CheckCircleIcon, XCircleIcon } from "@heroicons/react/24/outline";
 import { useState, useEffect, useRef } from "react";
 import { useForm, Controller } from "react-hook-form";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { HeaderLoginCadastro } from "@/components/layout/header";
 import { motion, AnimatePresence } from "framer-motion";
+import { ActionButton } from "@/components/ui/actionButton";
 import { modal } from "@heroui/react";
 
 export default function CadastroUsuario() {
@@ -26,6 +27,8 @@ export default function CadastroUsuario() {
   }>({ tipo: null, texto: "" });
 
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const redirectTimer = useRef<number | null>(null);
 
   const {
     handleSubmit,
@@ -62,6 +65,8 @@ export default function CadastroUsuario() {
     "idle" | "checking" | "clean" | "bad"
   >("idle");
 
+  const [success, setSuccess] = useState(false);
+
   const onSubmit = async (data: any) => {
     setMensagem({ tipo: null, texto: "" });
     if (emailStatus === "taken") {
@@ -81,9 +86,20 @@ export default function CadastroUsuario() {
           tipo: "sucesso",
           texto: "Você foi cadastrado com sucesso! Redirecionando...",
         });
-        setTimeout(() => {
-          router.push("/Auth/Login");
-        }, 1500);
+        setSuccess(true);
+        // Preserve redirect context (?next, ?redirect, ?from, ?returnUrl) and add a short delay before redirect
+        const nextParam =
+          searchParams.get("next") ||
+          searchParams.get("redirect") ||
+          searchParams.get("from") ||
+          searchParams.get("returnUrl");
+        const loginTarget = nextParam
+          ? `/Auth/Login?next=${encodeURIComponent(nextParam)}`
+          : "/Auth/Login";
+
+        redirectTimer.current = window.setTimeout(() => {
+          router.replace(loginTarget);
+        }, 1200);
 
         console.log("Usuário cadastrado com sucesso", data);
       } else if (res.status === 409) {
@@ -108,6 +124,13 @@ export default function CadastroUsuario() {
       });
     }
   };
+
+  // Cleanup pending redirect timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (redirectTimer.current) window.clearTimeout(redirectTimer.current);
+    };
+  }, []);
 
   // Funções para força de senha
   const getPasswordStrength = (password: string) => {
@@ -137,18 +160,17 @@ export default function CadastroUsuario() {
     { label: "Adicione caractere especial", valid: /[^A-Za-z0-9]/.test(senha) },
   ];
 
-  // Debounced email availability check
+  // Debounced email availability check (~1s after user stops typing)
   useEffect(() => {
     // only run availability check when there's an email and it contains '@'
     if (!emailValue || errors.email_usuario || !emailValue.includes("@")) {
       setEmailStatus("idle");
       return;
     }
-
-    setEmailStatus("checking");
     if (emailTimer.current) window.clearTimeout(emailTimer.current);
     emailTimer.current = window.setTimeout(async () => {
       try {
+        setEmailStatus("checking");
         const url = `${
           process.env.NEXT_PUBLIC_API_URL
         }/user/check-email?email=${encodeURIComponent(emailValue)}`;
@@ -168,7 +190,7 @@ export default function CadastroUsuario() {
         // network or server error -> don't block user
         setEmailStatus("idle");
       }
-    }, 600);
+    }, 1000);
 
     return () => {
       if (emailTimer.current) window.clearTimeout(emailTimer.current);
@@ -176,16 +198,16 @@ export default function CadastroUsuario() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [emailValue]);
 
-  // Debounced name check (avoid offensive words)
+  // Debounced name check (~1s after stop typing; avoid offensive words)
   useEffect(() => {
     if (!nomeValue) {
       setNomeStatus("idle");
       return;
     }
-    setNomeStatus("checking");
     if (nomeTimer.current) window.clearTimeout(nomeTimer.current);
     nomeTimer.current = window.setTimeout(async () => {
       try {
+        setNomeStatus("checking");
         const res = await fetch(
           `${process.env.NEXT_PUBLIC_API_URL}/user/validate-text`,
           {
@@ -203,23 +225,23 @@ export default function CadastroUsuario() {
       } catch (e) {
         setNomeStatus("idle");
       }
-    }, 600);
+    }, 1000);
 
     return () => {
       if (nomeTimer.current) window.clearTimeout(nomeTimer.current);
     };
   }, [nomeValue]);
 
-  // Debounced apelido check
+  // Debounced apelido check (~1s after stop typing)
   useEffect(() => {
     if (!apelidoValue) {
       setApelidoStatus("idle");
       return;
     }
-    setApelidoStatus("checking");
     if (apelidoTimer.current) window.clearTimeout(apelidoTimer.current);
     apelidoTimer.current = window.setTimeout(async () => {
       try {
+        setApelidoStatus("checking");
         const res = await fetch(
           `${process.env.NEXT_PUBLIC_API_URL}/user/validate-text`,
           {
@@ -237,7 +259,7 @@ export default function CadastroUsuario() {
       } catch (e) {
         setApelidoStatus("idle");
       }
-    }, 600);
+    }, 1000);
 
     return () => {
       if (apelidoTimer.current) window.clearTimeout(apelidoTimer.current);
@@ -572,26 +594,27 @@ export default function CadastroUsuario() {
               </div>
             )}
 
-            {/* Botão principal */}
-            {/* Botão principal */}
-            <motion.button
+            {/* Botão principal animado */}
+            <ActionButton
               type="submit"
+              textIdle={
+                isSubmitting
+                  ? "Cadastrando..."
+                  : emailStatus === "checking"
+                  ? "Verificando email..."
+                  : "Cadastrar-se"
+              }
+              isLoading={isSubmitting || emailStatus === "checking"}
+              isSuccess={success}
               disabled={
                 isSubmitting ||
                 emailStatus === "taken" ||
                 nomeStatus === "bad" ||
                 apelidoStatus === "bad"
               }
-              whileTap={{ scale: 0.98 }}
-              whileHover={isSubmitting ? undefined : { scale: 1.01 }}
-              className={`w-full bg-purple-600 text-white font-semibold py-3 rounded-lg shadow-md cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed transition-all`}
-            >
-              {isSubmitting
-                ? "Cadastrando..."
-                : emailStatus === "checking"
-                ? "Verificando email..."
-                : "Cadastrar-se"}
-            </motion.button>
+              enableRipplePulse
+              className="w-full"
+            />
 
             {/* email status feedback */}
             <AnimatePresence>

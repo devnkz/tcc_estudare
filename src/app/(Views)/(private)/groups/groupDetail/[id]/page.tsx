@@ -9,15 +9,24 @@ interface JWTPayload {
 }
 
 interface GrupoDetailPageProps {
-  params: Promise<{ id: string }>;
+  params: { id: string };
 }
 
 export default async function GrupoDetailPage({
   params,
 }: GrupoDetailPageProps) {
-  const { id } = await params;
+  const { id } = params;
 
-  const grupo = await fetchGruposById({ id });
+  let grupo: any = null;
+  try {
+    grupo = await fetchGruposById({ id });
+  } catch (e: any) {
+    console.error("Falha ao buscar grupo:", e?.response?.status, e?.message);
+    if (e?.response?.status === 404) {
+      return <div>Grupo não encontrado</div>;
+    }
+    return <div>Erro ao carregar grupo</div>;
+  }
   const users = await fetchUsers();
 
   const cookieStore = await cookies();

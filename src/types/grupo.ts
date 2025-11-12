@@ -30,4 +30,5 @@ export interface UpdateGrupoData {
   nome_grupo?: string;
   fkIdComponente?: string;
   membrosIds?: string[];
+  novosMembrosIds?: string[]; // compat com backend
 }

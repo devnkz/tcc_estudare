@@ -23,41 +23,49 @@ export default function PrivateLayout({
 
   const verifyToken = async () => {
     const token = getTokenFromCookies();
-
-    // Se não há token, redireciona para login
     if (!token) {
       router.push("/Auth/Login");
       return;
     }
-
-    // Verifica o token no servidor
+    const attempt = async () => {
+      return fetch(`${process.env.NEXT_PUBLIC_API_URL}/verifyToken`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ token }),
+      });
+    };
     try {
-      const res = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/verifyToken`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ token }),
-        }
-      );
-
+      let res = await attempt();
       if (!res.ok) {
-        // Token inválido no servidor
+        // uma segunda tentativa leve em caso de status >=500
+        if (res.status >= 500) res = await attempt();
+      }
+      if (!res.ok) {
         document.cookie =
           "token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
         router.push("/Auth/Login");
         return;
       }
-
-      console.log("Token verificado com sucesso");
       setIsLoading(false);
-    } catch (error) {
-      console.error("Erro ao verificar token:", error);
-      // Remove o token em caso de erro
-      document.cookie = "token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
-      router.push("/Auth/Login");
+    } catch (e) {
+      // erro de rede: mostra fallback sem expulsar imediatamente
+      console.warn("Falha de rede ao validar token, tentativa de retry em 1s");
+      setTimeout(async () => {
+        try {
+          const res2 = await attempt();
+          if (res2.ok) {
+            setIsLoading(false);
+            return;
+          }
+          document.cookie =
+            "token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+          router.push("/Auth/Login");
+        } catch {
+          document.cookie =
+            "token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+          router.push("/Auth/Login");
+        }
+      }, 1000);
     }
   };
 

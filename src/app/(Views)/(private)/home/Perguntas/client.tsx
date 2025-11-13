@@ -37,6 +37,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuLabel,
 } from "@/components/ui/dropdown-menu";
+import { validarTextoOuErro } from "@/utils/filterText";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -124,6 +125,7 @@ export function PerguntasClientPage({
 
   const [responderId, setResponderId] = useState<string | null>(null);
   const [resposta, setResposta] = useState("");
+  const [respostaError, setRespostaError] = useState<string>("");
 
   // Modal de pergunta aberta (overlay) para não esticar a coluna ao lado
   const [openPergunta, setOpenPergunta] = useState<Pergunta | null>(null);
@@ -131,6 +133,12 @@ export function PerguntasClientPage({
   const [modalDenunciaOpen, setModalDenunciaOpen] = useState<{
     [key: string]: boolean;
   }>({});
+
+  // Estado para controlar modal de editar pergunta
+  const [editPerguntaId, setEditPerguntaId] = useState<string | null>(null);
+
+  // Estado para controlar modal de editar resposta
+  const [editRespostaId, setEditRespostaId] = useState<string | null>(null);
 
   // controla expandir/ocultar respostas por pergunta
   const [openAnswers, setOpenAnswers] = useState<Record<string, boolean>>({});
@@ -168,13 +176,29 @@ export function PerguntasClientPage({
     );
 
   const handleEnviarResposta = (data: CreateRespostaData) => {
-    createResposta.mutate(data, {
-      onSuccess: () => {
-        setResponderId(null);
-        setResposta("");
-        triggerAlert("Resposta enviada");
-      },
-    });
+    try {
+      // Valida badwords antes de enviar
+      validarTextoOuErro(data.resposta);
+      setRespostaError(""); // Limpa erro se passar
+
+      createResposta.mutate(data, {
+        onSuccess: () => {
+          setResponderId(null);
+          setResposta("");
+          setRespostaError("");
+          triggerAlert("Resposta enviada");
+        },
+        onError: (err: any) => {
+          setRespostaError(
+            err?.response?.data?.message ||
+              err?.message ||
+              "Erro ao enviar resposta"
+          );
+        },
+      });
+    } catch (err: any) {
+      setRespostaError(err.message || "Conteúdo impróprio detectado");
+    }
   };
 
   const toggleModalDenuncia = (id: string) => {
@@ -323,9 +347,16 @@ export function PerguntasClientPage({
               ))}
             </select>
           </div>
+        </div>
 
-          {/* Botão limpar */}
-          <div className="flex md:justify-end">
+        {/* Linha de status + chips de filtros */}
+        <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-zinc-600">
+          <div className="flex items-center gap-3">
+            <span className="whitespace-nowrap">
+              {filteredPerguntas.length} pergunta(s) encontradas
+              {textQuery && ` para "${textQuery}"`}
+            </span>
+            {/* Botão limpar */}
             {(filterCursoId || filterComponenteId || textQuery) && (
               <button
                 onClick={() => {
@@ -333,20 +364,12 @@ export function PerguntasClientPage({
                   setFilterComponenteId("");
                   setTextQuery("");
                 }}
-                className="px-3 py-2 rounded-full border border-zinc-200 bg-white text-zinc-700 text-sm cursor-pointer hover:shadow-md"
+                className="px-3 py-1.5 rounded-full border border-zinc-200 bg-white text-zinc-700 text-xs cursor-pointer hover:shadow-md transition-shadow"
               >
                 Limpar
               </button>
             )}
           </div>
-        </div>
-
-        {/* Linha de status + chips de filtros */}
-        <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-zinc-600">
-          <span className="whitespace-nowrap">
-            {filteredPerguntas.length} pergunta(s) encontradas
-            {textQuery && ` para "${textQuery}"`}
-          </span>
           <div className="flex flex-wrap items-center gap-2">
             {textQuery && (
               <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-zinc-100 border border-zinc-200">
@@ -485,7 +508,7 @@ export function PerguntasClientPage({
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.28 }}
-                className={`group relative w-full overflow-hidden rounded-3xl border bg-white/70 backdrop-blur-sm shadow-[0_2px_6px_-1px_rgba(0,0,0,0.05)] hover:shadow-[0_4px_14px_-2px_rgba(0,0,0,0.08)] hover:-translate-y-0.5 transition-all px-5 py-5 flex flex-col gap-4
+                className={`group relative w-full h-full overflow-hidden rounded-3xl border bg-white/70 backdrop-blur-sm shadow-[0_2px_6px_-1px_rgba(0,0,0,0.05)] hover:shadow-[0_4px_14px_-2px_rgba(0,0,0,0.08)] hover:-translate-y-0.5 transition-all px-6 py-6 flex flex-col
                 ${
                   isPerguntaHighlighted
                     ? "ring-2 ring-purple-300/60"
@@ -497,18 +520,18 @@ export function PerguntasClientPage({
                   <div className="absolute inset-0 bg-gradient-to-br from-purple-500/10 via-transparent to-pink-500/10" />
                 </div>
                 {/* Header */}
-                <div className="flex items-start justify-between gap-3">
-                  <div className="flex items-center gap-3 min-w-0">
+                <div className="flex items-start justify-between gap-3 mb-4">
+                  <div className="flex items-start gap-3 min-w-0 flex-1">
                     {pergunta.usuario?.foto_perfil ? (
                       <Image
                         src={pergunta.usuario.foto_perfil}
                         width={42}
                         height={42}
                         alt={pergunta.usuario.nome_usuario || "avatar"}
-                        className="rounded-full object-cover shadow-sm"
+                        className="rounded-full object-cover shadow-sm flex-shrink-0"
                       />
                     ) : (
-                      <div className="w-10 h-10 rounded-full bg-purple-100 text-purple-600 flex items-center justify-center font-semibold">
+                      <div className="w-10 h-10 rounded-full bg-purple-100 text-purple-600 flex items-center justify-center font-semibold flex-shrink-0">
                         {pergunta.usuario?.nome_usuario
                           ? pergunta.usuario.nome_usuario
                               .charAt(0)
@@ -516,14 +539,17 @@ export function PerguntasClientPage({
                           : "U"}
                       </div>
                     )}
-                    <div className="flex flex-col truncate">
-                      <span className="text-sm font-semibold text-zinc-800 truncate">
+                    <div className="flex flex-col min-w-0 flex-1 items-start">
+                      <span className="text-sm font-semibold text-zinc-800 break-words text-left w-full">
                         {pergunta.usuario.nome_usuario} (
                         {pergunta.usuario.apelido_usuario})
                       </span>
-                      <span className="text-[11px] text-zinc-500 flex items-center gap-1">
+                      <span className="text-[11px] text-zinc-500 flex items-center gap-1 text-left">
                         <BsClock className="w-3.5 h-3.5" />{" "}
                         {timeAgo(pergunta.dataCriacao_pergunta)}
+                        {pergunta.dataAtualizacao_pergunta && (
+                          <span className="ml-1 text-zinc-400">• editado</span>
+                        )}
                       </span>
                     </div>
                   </div>
@@ -534,66 +560,65 @@ export function PerguntasClientPage({
                     <DropdownMenuContent className="z-[120]">
                       <DropdownMenuLabel>Ações</DropdownMenuLabel>
                       <DropdownMenuSeparator />
-                      <DropdownMenuItem
-                        onClick={() => {
-                          if (id_usuario === pergunta.usuario.id_usuario) {
-                            const btn = document.querySelector(
-                              `#edit-btn-${pergunta.id_pergunta}`
-                            ) as HTMLButtonElement | null;
-                            btn?.click();
-                          }
-                        }}
-                        className={
-                          id_usuario === pergunta.usuario.id_usuario
-                            ? "cursor-pointer"
-                            : "opacity-50 cursor-not-allowed text-zinc-400"
-                        }
-                      >
-                        Editar
-                      </DropdownMenuItem>
-                      <DropdownMenuItem
-                        onClick={() => {
-                          if (id_usuario === pergunta.usuario.id_usuario)
-                            handleDelete(pergunta.id_pergunta);
-                        }}
-                        className={
-                          id_usuario === pergunta.usuario.id_usuario
-                            ? "cursor-pointer text-red-600"
-                            : "opacity-50 cursor-not-allowed text-zinc-400"
-                        }
-                      >
-                        Excluir
-                      </DropdownMenuItem>
-                      <DropdownMenuItem
-                        onClick={() => {
-                          if (id_usuario !== pergunta.usuario.id_usuario) {
+                      {id_usuario === pergunta.usuario.id_usuario && (
+                        <DropdownMenuItem
+                          onClick={() => {
+                            setOpenPergunta(null); // Fecha modal de ver respostas
+                            setEditPerguntaId(pergunta.id_pergunta);
+                          }}
+                          className="cursor-pointer"
+                        >
+                          Editar
+                        </DropdownMenuItem>
+                      )}
+                      {id_usuario === pergunta.usuario.id_usuario && (
+                        <DropdownMenuItem
+                          onClick={() => handleDelete(pergunta.id_pergunta)}
+                          className="cursor-pointer text-red-600"
+                        >
+                          Excluir
+                        </DropdownMenuItem>
+                      )}
+                      {id_usuario !== pergunta.usuario.id_usuario && (
+                        <DropdownMenuItem
+                          onClick={() => {
                             setOpenPergunta(pergunta);
                             handleResponder(pergunta.id_pergunta);
+                          }}
+                          className="cursor-pointer"
+                        >
+                          Responder
+                        </DropdownMenuItem>
+                      )}
+                      {id_usuario !== pergunta.usuario.id_usuario && (
+                        <DropdownMenuItem
+                          onClick={() =>
+                            toggleModalDenuncia(pergunta.id_pergunta)
                           }
-                        }}
-                        className={
-                          id_usuario !== pergunta.usuario.id_usuario
-                            ? "cursor-pointer"
-                            : "opacity-50 cursor-not-allowed text-zinc-400"
-                        }
-                      >
-                        Responder
-                      </DropdownMenuItem>
+                          className="cursor-pointer text-red-500"
+                        >
+                          Denunciar
+                        </DropdownMenuItem>
+                      )}
                     </DropdownMenuContent>
                   </DropdownMenu>
                 </div>
+
                 {/* Pergunta */}
-                <div className="relative">
+                <div className="relative mb-4">
                   <h3 className="text-left text-[18px] md:text-[20px] font-bold leading-snug tracking-tight text-zinc-900">
                     {pergunta.pergunta}
                   </h3>
                 </div>
+
                 {/* Tags */}
-                <div className="flex flex-wrap gap-2">
-                  <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-zinc-100 text-[11px] font-medium text-zinc-700">
+                <div className="flex flex-wrap gap-2 mb-4">
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-blue-50 text-[12px] font-semibold text-blue-700 border border-blue-200">
+                    <BookOpen className="w-3.5 h-3.5" />
                     {pergunta.curso.nome_curso}
                   </span>
-                  <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-zinc-100 text-[11px] font-medium text-zinc-700">
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-purple-50 text-[12px] font-semibold text-purple-700 border border-purple-200">
+                    <Puzzle className="w-3.5 h-3.5" />
                     {pergunta.componente.nome_componente}
                   </span>
                   {temResposta && (
@@ -602,37 +627,62 @@ export function PerguntasClientPage({
                     </span>
                   )}
                 </div>
-                {/* Actions - canto inferior direito, sempre com Ver respostas */}
-                <div className="mt-1 flex items-center gap-2 justify-end">
-                  <button
-                    className="px-3 py-1.5 rounded-xl bg-white/60 border border-zinc-200 text-zinc-700 text-xs shadow-sm hover:bg-white hover:shadow-md transition cursor-pointer"
-                    onClick={() => setOpenPergunta(pergunta)}
-                  >
-                    Ver respostas
-                  </button>
+
+                {/* Spacer para empurrar botões para o final */}
+                <div className="flex-1"></div>
+
+                {/* Actions - botões sempre no final do card */}
+                <div className="flex flex-col gap-2 items-center w-full">
                   {id_usuario !== pergunta.usuario.id_usuario &&
                   !jaRespondida ? (
                     <button
-                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-purple-600 text-white text-xs shadow-sm hover:bg-purple-700 transition cursor-pointer"
+                      className="w-full flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl bg-purple-600 text-white text-sm font-medium shadow-sm hover:bg-purple-700 transition cursor-pointer"
                       onClick={() => {
                         setOpenPergunta(pergunta);
                         handleResponder(pergunta.id_pergunta);
                       }}
                     >
-                      <BsReply className="w-3.5 h-3.5" />
+                      <BsReply className="w-4 h-4" />
                       <span>Responder</span>
                     </button>
-                  ) : null}
+                  ) : (
+                    <div className="h-10" />
+                  )}
+                  <button
+                    className="w-full px-3 py-2 rounded-xl bg-white/60 border border-zinc-200 text-zinc-700 text-sm font-medium shadow-sm hover:bg-white hover:shadow-md transition cursor-pointer"
+                    onClick={() => setOpenPergunta(pergunta)}
+                  >
+                    Ver respostas
+                  </button>
                 </div>
-                {/* Trigger oculto para editar pergunta via menu */}
-                <div className="hidden">
-                  <ModalUpdateQuestion
-                    pergunta={pergunta}
-                    triggerId={`edit-btn-${pergunta.id_pergunta}`}
-                    triggerClassName="hidden"
-                    onSuccess={() => triggerAlert("Pergunta atualizada")}
-                  />
-                </div>
+
+                {/* Modal de editar pergunta - controlado por estado */}
+                <ModalUpdateQuestion
+                  pergunta={pergunta}
+                  isOpen={editPerguntaId === pergunta.id_pergunta}
+                  onOpenChange={(open) => {
+                    if (!open) setEditPerguntaId(null);
+                  }}
+                  onSuccess={() => {
+                    setEditPerguntaId(null);
+                    triggerAlert("Pergunta atualizada");
+                  }}
+                />
+
+                {/* Modal de denunciar pergunta */}
+                <ModalCreateDenuncia
+                  id_conteudo={pergunta.id_pergunta}
+                  id_usuario={id_usuario}
+                  fkId_usuario_conteudo={pergunta.usuario.id_usuario}
+                  tipo_conteudo="Pergunta"
+                  isOpen={!!modalDenunciaOpen[pergunta.id_pergunta]}
+                  onOpenChange={(open) =>
+                    setModalDenunciaOpen((prev) => ({
+                      ...prev,
+                      [pergunta.id_pergunta]: open,
+                    }))
+                  }
+                />
               </motion.div>
             );
           })}
@@ -732,10 +782,23 @@ export function PerguntasClientPage({
                           )}
                           <div className="flex-1 min-w-0">
                             <div className="flex items-start justify-between gap-2">
-                              <p className="font-semibold text-sm text-zinc-800 truncate">
-                                {r.usuario.nome_usuario} (
-                                {r.usuario.apelido_usuario})
-                              </p>
+                              <div className="flex flex-col">
+                                <p className="font-semibold text-sm text-zinc-800 truncate">
+                                  {r.usuario.nome_usuario} (
+                                  {r.usuario.apelido_usuario})
+                                </p>
+                                <span className="text-[11px] text-zinc-500 flex items-center gap-1">
+                                  <BsClock className="w-3 h-3" />
+                                  {r.dataCriacao_resposta
+                                    ? timeAgo(r.dataCriacao_resposta)
+                                    : "agora"}
+                                  {r.dataAtualizacao_resposta && (
+                                    <span className="ml-1 text-zinc-400">
+                                      • editado
+                                    </span>
+                                  )}
+                                </span>
+                              </div>
                               <DropdownMenu>
                                 <DropdownMenuTrigger className="opacity-80 hover:opacity-100 p-2 rounded-md hover:bg-zinc-100 transition cursor-pointer">
                                   <BsThreeDotsVertical className="w-4 h-4 text-zinc-600" />
@@ -745,10 +808,7 @@ export function PerguntasClientPage({
                                     <DropdownMenuItem
                                       className="cursor-pointer"
                                       onClick={() => {
-                                        const btn = document.querySelector(
-                                          `#edit-resposta-btn-${r.id_resposta}`
-                                        ) as HTMLButtonElement | null;
-                                        btn?.click();
+                                        setEditRespostaId(r.id_resposta);
                                       }}
                                     >
                                       Editar
@@ -782,18 +842,20 @@ export function PerguntasClientPage({
                             <p className="mt-1 text-sm text-zinc-700 leading-relaxed whitespace-pre-wrap break-words">
                               {r.resposta}
                             </p>
-                            {id_usuario === r.usuario.id_usuario && (
-                              <div className="hidden">
-                                <ModalUpdateResponse
-                                  resposta={r}
-                                  triggerId={`edit-resposta-btn-${r.id_resposta}`}
-                                  triggerClassName="hidden"
-                                  onSuccess={() =>
-                                    triggerAlert("Resposta atualizada")
-                                  }
-                                />
-                              </div>
-                            )}
+
+                            {/* Modal de editar resposta - controlado por estado */}
+                            <ModalUpdateResponse
+                              resposta={r}
+                              isOpen={editRespostaId === r.id_resposta}
+                              onOpenChange={(open) => {
+                                if (!open) setEditRespostaId(null);
+                              }}
+                              onSuccess={() => {
+                                setEditRespostaId(null);
+                                triggerAlert("Resposta atualizada");
+                              }}
+                            />
+
                             <ModalCreateDenuncia
                               id_conteudo={r.id_resposta}
                               id_usuario={id_usuario}
@@ -850,38 +912,69 @@ export function PerguntasClientPage({
                       );
                     }
                     return (
-                      <div className="rounded-2xl border border-zinc-200 bg-white p-3 sm:p-4 shadow-sm flex items-center gap-3">
-                        <input
-                          ref={respostaInputRef}
-                          type="text"
-                          value={
-                            responderId === openPergunta.id_pergunta
-                              ? resposta
-                              : ""
-                          }
-                          onChange={(e) => setResposta(e.target.value)}
-                          placeholder="Escreva sua resposta..."
-                          className="flex-1 bg-transparent outline-none placeholder:text-zinc-400 text-sm sm:text-base text-zinc-900"
-                          disabled={createResposta.isPending}
-                          onFocus={() =>
-                            setResponderId(openPergunta.id_pergunta)
-                          }
-                        />
-                        <button
-                          className="px-4 py-2 rounded-full bg-purple-600 hover:bg-purple-700 text-white text-sm sm:text-base shadow-sm hover:shadow-md transition disabled:opacity-50 cursor-pointer"
-                          onClick={() =>
-                            handleEnviarResposta({
-                              fkId_pergunta: openPergunta.id_pergunta,
-                              fkId_usuario: id_usuario!,
-                              resposta,
-                            })
-                          }
-                          disabled={
-                            createResposta.isPending || !resposta.trim()
-                          }
-                        >
-                          {createResposta.isPending ? "Enviando..." : "Enviar"}
-                        </button>
+                      <div className="flex flex-col gap-2">
+                        <div className="rounded-2xl border border-zinc-200 bg-white p-3 sm:p-4 shadow-sm">
+                          <div className="flex items-center gap-3">
+                            <input
+                              ref={respostaInputRef}
+                              type="text"
+                              value={
+                                responderId === openPergunta.id_pergunta
+                                  ? resposta
+                                  : ""
+                              }
+                              onChange={(e) => {
+                                if (e.target.value.length <= 191) {
+                                  setResposta(e.target.value);
+                                  setRespostaError(""); // Limpa erro ao digitar
+                                }
+                              }}
+                              maxLength={191}
+                              placeholder="Escreva sua resposta..."
+                              className="flex-1 bg-transparent outline-none placeholder:text-zinc-400 text-sm sm:text-base text-zinc-900"
+                              disabled={createResposta.isPending}
+                              onFocus={() =>
+                                setResponderId(openPergunta.id_pergunta)
+                              }
+                            />
+                            <button
+                              className="px-4 py-2 rounded-full bg-purple-600 hover:bg-purple-700 text-white text-sm sm:text-base shadow-sm hover:shadow-md transition disabled:opacity-50 cursor-pointer"
+                              onClick={() =>
+                                handleEnviarResposta({
+                                  fkId_pergunta: openPergunta.id_pergunta,
+                                  fkId_usuario: id_usuario!,
+                                  resposta,
+                                })
+                              }
+                              disabled={
+                                createResposta.isPending || !resposta.trim()
+                              }
+                            >
+                              {createResposta.isPending
+                                ? "Enviando..."
+                                : "Enviar"}
+                            </button>
+                          </div>
+                          {/* Contador de caracteres */}
+                          <div className="flex justify-between items-center mt-2">
+                            <div>
+                              {respostaError && (
+                                <p className="text-red-600 text-sm font-medium">
+                                  {respostaError}
+                                </p>
+                              )}
+                            </div>
+                            <p
+                              className={`text-xs ${
+                                resposta.length >= 191
+                                  ? "text-red-600 font-semibold"
+                                  : "text-zinc-500"
+                              }`}
+                            >
+                              {resposta.length}/191
+                            </p>
+                          </div>
+                        </div>
                       </div>
                     );
                   })()}

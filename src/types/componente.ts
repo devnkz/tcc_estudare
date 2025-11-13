@@ -1,6 +1,10 @@
 export interface Componente {
   id_componente: string;
   nome_componente: string;
+  curso?: {
+    id_curso: string;
+    nome_curso: string;
+  };
 }
 
 export interface CreateComponenteData {

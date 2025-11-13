@@ -84,7 +84,7 @@ export function SidebarDashboard({
 
   return (
     <motion.aside
-      className="group/sidebar hidden md:flex flex-col h-screen sticky top-0 border-r bg-white/80 backdrop-blur z-30"
+      className="group/sidebar hidden md:flex flex-col h-screen fixed left-0 top-0 border-r bg-white/80 backdrop-blur z-30"
       initial={{ width: widthCollapsed }}
       animate={{ width: effectiveCollapsed ? widthCollapsed : widthExpanded }}
       transition={{ type: "spring", stiffness: 260, damping: 28 }}

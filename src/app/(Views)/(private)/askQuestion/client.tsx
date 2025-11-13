@@ -19,6 +19,7 @@ import { Curso } from "@/types/curso";
 import { useEffect, useState, useMemo } from "react";
 import { motion } from "framer-motion";
 import badWordsJSON from "@/utils/badWordsPT.json";
+import { ActionButton } from "@/components/ui/actionButton";
 
 export default function AskQuestionPage({
   componentes,
@@ -30,9 +31,15 @@ export default function AskQuestionPage({
   id_usuario: string;
 }) {
   const TipsForAsking = [
-    { text: "Seja específico e forneça contexto." },
-    { text: "Verifique se sua pergunta está clara. " },
-    { text: "Adicione detalhes relevantes." },
+    { text: "Seja específico e forneça contexto sobre sua dúvida." },
+    { text: "Verifique se sua pergunta está clara e objetiva." },
+    { text: "Informe o que você já tentou fazer para resolver." },
+    { text: "Use linguagem respeitosa e cordial." },
+    { text: "Evite abreviações e gírias que possam confundir." },
+    { text: "Releia antes de enviar para corrigir erros." },
+    {
+      text: "Adicione detalhes relevantes que ajudem a entender a sua problemática.",
+    },
   ];
 
   const router = useRouter();
@@ -50,7 +57,25 @@ export default function AskQuestionPage({
   const [perguntaText, setPerguntaText] = useState("");
   const [filteredText, setFilteredText] = useState("");
   const [hasBadWords, setHasBadWords] = useState(false);
-  const maxChars = 1000;
+  const [isSuccess, setIsSuccess] = useState(false);
+  const maxChars = 191;
+
+  // Animated text for componentes
+  const [componenteIndex, setComponenteIndex] = useState(0);
+  const componenteNames = useMemo(
+    () => componentes.map((c) => c.nome_componente),
+    [componentes]
+  );
+
+  useEffect(() => {
+    if (componenteNames.length === 0) return;
+    const timeoutId = setTimeout(() => {
+      setComponenteIndex((prev) =>
+        prev === componenteNames.length - 1 ? 0 : prev + 1
+      );
+    }, 2000);
+    return () => clearTimeout(timeoutId);
+  }, [componenteIndex, componenteNames]);
 
   // use the full bad-words list from the utils JSON
   // note: the file is a local copy of the backend list for client-side UX checks
@@ -112,13 +137,6 @@ export default function AskQuestionPage({
 
   const { mutate, isPending } = useCreatePergunta();
 
-  const [headerHeight, setHeaderHeight] = useState(0);
-
-  useEffect(() => {
-    const header = document.querySelector("header");
-    if (header) setHeaderHeight(header.offsetHeight);
-  }, []);
-
   const onSubmit = (data: CreatePerguntaData) => {
     // run local filter and block submission if offensive words are present
     const filtro = filtrarTextoLocal(perguntaText || data.pergunta || "");
@@ -142,7 +160,12 @@ export default function AskQuestionPage({
     };
 
     mutate(payload, {
-      onSuccess: () => router.push("/home"),
+      onSuccess: () => {
+        setIsSuccess(true);
+        setTimeout(() => {
+          router.push("/home");
+        }, 1500);
+      },
     });
   };
 
@@ -157,191 +180,281 @@ export default function AskQuestionPage({
   };
 
   return (
-    <div
-      className="w-full min-h-screen flex flex-col justify-between items-center font-[Inter]"
-      style={{ paddingTop: headerHeight + 20 }}
-    >
-      <main
-        className="w-full max-w-[1100px] px-4 md:px-6 flex flex-col items-center"
-        style={{ paddingBottom: headerHeight - 10 }}
-      >
-        <motion.div
-          className="flex flex-col md:flex-row items-center justify-between gap-8 w-full p-6 md:p-10 bg-[var(--card)]/80 rounded-2xl shadow-xl border border-[var(--border)]/30 backdrop-blur-sm"
-          initial={{ opacity: 0, y: 40 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, ease: "easeOut" }}
-        >
-          {/* FORMULÁRIO */}
-          <div className="flex-1 w-full max-w-md">
-            <h1 className="text-3xl md:text-5xl font-extrabold leading-tight">
-              <span className="text-purple-500">FAÇA SUA </span>
-              <span className="text-purple-700">PERGUNTA</span>
+    <div className="w-full min-h-screen flex flex-col bg-gradient-to-br from-purple-50/30 via-white to-purple-50/20 pt-20 lg:pt-24">
+      <main className="flex-1 w-full px-4 sm:px-6 lg:px-8 py-8 lg:py-12">
+        <div className="max-w-7xl mx-auto">
+          {/* HEADER */}
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, ease: "easeOut" }}
+            className="text-center mb-8 lg:mb-12"
+          >
+            <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-semibold mb-1">
+              <span className="text-gray-900">Pergunte sobre</span>
             </h1>
 
-            <form
-              onSubmit={handleSubmit(onSubmit)}
-              className="flex flex-col gap-6"
+            {/* Animated subtitle */}
+            <div className="relative min-h-[4rem] sm:min-h-[3rem] md:min-h-[3.5rem] lg:min-h-[4rem] flex items-center justify-center overflow-visible mb-4 px-2 w-full max-w-full">
+              {componenteNames.map((nome, index) => (
+                <motion.span
+                  key={index}
+                  className="absolute text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-purple-700 text-center px-4 max-w-[90vw] break-words leading-tight"
+                  initial={{ opacity: 0, y: 20 }}
+                  transition={{
+                    duration: 0.5,
+                    ease: [0.4, 0, 0.2, 1],
+                  }}
+                  animate={
+                    componenteIndex === index
+                      ? { y: 0, opacity: 1 }
+                      : {
+                          y: componenteIndex > index ? -20 : 20,
+                          opacity: 0,
+                        }
+                  }
+                >
+                  {nome}
+                </motion.span>
+              ))}
+            </div>
+
+            <p className="text-zinc-600 text-base sm:text-lg max-w-2xl mx-auto">
+              Tire suas dúvidas com a comunidade Estudare
+            </p>
+          </motion.div>
+
+          {/* GRID LAYOUT */}
+          <div className="grid lg:grid-cols-2 gap-6 lg:gap-10 items-start max-w-6xl mx-auto">
+            {/* FORMULÁRIO */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{
+                duration: 0.7,
+                ease: [0.25, 0.1, 0.25, 1],
+                delay: 0.1,
+              }}
+              className="bg-white rounded-2xl shadow-lg border border-zinc-200/60 p-6 sm:p-8"
             >
-              {/* SELECT CURSO */}
-              <div>
-                <label className="text-sm font-semibold text-[var(--foreground)]">
-                  Curso
-                </label>
-                <Controller
-                  control={control}
-                  name="fkId_curso"
-                  rules={{ required: "Selecione um curso" }}
-                  render={({ field }) => (
-                    <Select onValueChange={field.onChange} value={field.value}>
-                      <SelectTrigger className="w-full text-base cursor-pointer bg-[var(--input)] border border-[var(--border)] rounded-md hover:border-purple-500 hover:shadow-md focus:border-purple-500 transition-all duration-300">
-                        <SelectValue placeholder="Selecione o curso" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectGroup>
-                          <SelectLabel>Cursos</SelectLabel>
-                          {cursos.map((curso: Curso) => (
-                            <SelectItem
-                              key={curso.id_curso}
-                              value={String(curso.id_curso)}
-                              className="hover:bg-purple-50 hover:text-purple-600 transition-all"
-                            >
-                              {curso.nome_curso}
-                            </SelectItem>
-                          ))}
-                        </SelectGroup>
-                      </SelectContent>
-                    </Select>
-                  )}
-                />
-                {errors.fkId_curso && (
-                  <p className="text-[var(--destructive)] text-sm mt-1">
-                    {errors.fkId_curso.message}
-                  </p>
-                )}
-              </div>
-
-              {/* SELECT COMPONENTE */}
-              <div>
-                <label className="text-sm font-semibold text-[var(--foreground)]">
-                  Componente
-                </label>
-                <Controller
-                  control={control}
-                  name="fkId_componente"
-                  rules={{ required: "Selecione um componente" }}
-                  render={({ field }) => (
-                    <Select onValueChange={field.onChange} value={field.value}>
-                      <SelectTrigger className="w-full text-base cursor-pointer bg-[var(--input)] border border-[var(--border)] rounded-md hover:border-purple-500 hover:shadow-md focus:border-purple-500 transition-all duration-300">
-                        <SelectValue placeholder="Selecione o componente" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectGroup>
-                          <SelectLabel>Componentes</SelectLabel>
-                          {componentes.map((componente: Componente) => (
-                            <SelectItem
-                              key={componente.id_componente}
-                              value={String(componente.id_componente)}
-                              className="hover:bg-purple-50 hover:text-purple-600 transition-all"
-                            >
-                              {componente.nome_componente}
-                            </SelectItem>
-                          ))}
-                        </SelectGroup>
-                      </SelectContent>
-                    </Select>
-                  )}
-                />
-                {errors.fkId_componente && (
-                  <p className="text-[var(--destructive)] text-sm mt-1">
-                    {errors.fkId_componente.message}
-                  </p>
-                )}
-              </div>
-
-              {/* TEXTAREA */}
-              <div>
-                <label className="text-sm font-semibold text-[var(--foreground)] mb-1 block">
-                  Sua pergunta
-                </label>
-                <textarea
-                  {...register("pergunta", {
-                    required: "A pergunta é obrigatória",
-                  })}
-                  value={perguntaText}
-                  onChange={handlePerguntaChange}
-                  className="w-full text-base bg-[var(--input)] border border-[var(--border)] rounded-lg px-3 py-3 min-h-[150px] focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/10 resize-y transition-all duration-300 hover:border-purple-500 hover:shadow-md"
-                  placeholder="Descreva sua dúvida com detalhes..."
-                />
-                <div className="flex items-center justify-between mt-1">
-                  <div className="text-sm">
-                    {errors.pergunta && (
-                      <p className="text-[var(--destructive)] text-sm">
-                        {errors.pergunta.message}
-                      </p>
+              <form
+                onSubmit={handleSubmit(onSubmit)}
+                className="flex flex-col gap-5"
+              >
+                {/* SELECT CURSO */}
+                <div className="space-y-2">
+                  <label className="text-sm font-semibold text-gray-700 flex items-center gap-2">
+                    <span className="w-1 h-4 bg-purple-600 rounded-full"></span>
+                    Curso
+                  </label>
+                  <Controller
+                    control={control}
+                    name="fkId_curso"
+                    rules={{ required: "Selecione um curso" }}
+                    render={({ field }) => (
+                      <Select
+                        onValueChange={field.onChange}
+                        value={field.value}
+                      >
+                        <SelectTrigger className="w-full h-11 text-base cursor-pointer bg-white border-2 border-zinc-200 rounded-xl hover:border-purple-400 hover:shadow-sm focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 transition-all duration-300">
+                          <SelectValue placeholder="Selecione o curso" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectGroup>
+                            <SelectLabel>Cursos</SelectLabel>
+                            {cursos.map((curso: Curso) => (
+                              <SelectItem
+                                key={curso.id_curso}
+                                value={String(curso.id_curso)}
+                                className="hover:bg-purple-50 hover:text-purple-600 transition-all cursor-pointer"
+                              >
+                                {curso.nome_curso}
+                              </SelectItem>
+                            ))}
+                          </SelectGroup>
+                        </SelectContent>
+                      </Select>
                     )}
-                    {hasBadWords && !errors.pergunta && (
-                      <p className="text-[var(--destructive)] text-sm">
-                        Sua pergunta contém palavras impróprias — remova-as
-                        antes de enviar.
-                      </p>
+                  />
+                  {errors.fkId_curso && (
+                    <p className="text-red-500 text-sm mt-1 font-medium">
+                      {errors.fkId_curso.message}
+                    </p>
+                  )}
+                </div>
+
+                {/* SELECT COMPONENTE */}
+                <div className="space-y-2">
+                  <label className="text-sm font-semibold text-gray-700 flex items-center gap-2">
+                    <span className="w-1 h-4 bg-purple-600 rounded-full"></span>
+                    Componente Curricular
+                  </label>
+                  <Controller
+                    control={control}
+                    name="fkId_componente"
+                    rules={{ required: "Selecione um componente" }}
+                    render={({ field }) => (
+                      <Select
+                        onValueChange={field.onChange}
+                        value={field.value}
+                      >
+                        <SelectTrigger className="w-full h-11 text-base cursor-pointer bg-white border-2 border-zinc-200 rounded-xl hover:border-purple-400 hover:shadow-sm focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 transition-all duration-300">
+                          <SelectValue placeholder="Selecione o componente" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectGroup>
+                            <SelectLabel>Componentes</SelectLabel>
+                            {componentes.map((componente: Componente) => (
+                              <SelectItem
+                                key={componente.id_componente}
+                                value={String(componente.id_componente)}
+                                className="hover:bg-purple-50 hover:text-purple-600 transition-all cursor-pointer"
+                              >
+                                {componente.nome_componente}
+                              </SelectItem>
+                            ))}
+                          </SelectGroup>
+                        </SelectContent>
+                      </Select>
                     )}
+                  />
+                  {errors.fkId_componente && (
+                    <p className="text-red-500 text-sm mt-1 font-medium">
+                      {errors.fkId_componente.message}
+                    </p>
+                  )}
+                </div>
+
+                {/* TEXTAREA */}
+                <div className="space-y-2">
+                  <label className="text-sm font-semibold text-gray-700 flex items-center gap-2">
+                    <span className="w-1 h-4 bg-purple-600 rounded-full"></span>
+                    Sua Pergunta
+                  </label>
+                  <textarea
+                    {...register("pergunta", {
+                      required: "A pergunta é obrigatória",
+                    })}
+                    value={perguntaText}
+                    onChange={handlePerguntaChange}
+                    className="w-full text-base bg-white border-2 border-zinc-200 rounded-xl px-4 py-3 min-h-[160px] focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 resize-y transition-all duration-300 hover:border-purple-400 hover:shadow-sm placeholder:text-zinc-400"
+                    placeholder="Descreva sua dúvida com detalhes... Quanto mais informações, melhor!"
+                  />
+                  <div className="flex items-center justify-between">
+                    <div className="text-sm flex-1">
+                      {errors.pergunta && (
+                        <p className="text-red-500 text-sm font-medium">
+                          {errors.pergunta.message}
+                        </p>
+                      )}
+                      {hasBadWords && !errors.pergunta && (
+                        <p className="text-red-500 text-sm font-medium">
+                          Sua pergunta contém palavras impróprias
+                        </p>
+                      )}
+                    </div>
+                    <div className="text-sm font-medium">
+                      <span
+                        className={`${
+                          perguntaText.length > maxChars
+                            ? "text-red-500"
+                            : perguntaText.length > maxChars * 0.9
+                            ? "text-orange-500"
+                            : "text-zinc-500"
+                        }`}
+                      >
+                        {perguntaText.length}/{maxChars}
+                      </span>
+                    </div>
                   </div>
-                  <div className="text-sm text-[var(--muted-foreground)]">
-                    <span
-                      className={`${
-                        perguntaText.length > maxChars
-                          ? "text-[var(--destructive)]"
-                          : "text-[var(--muted-foreground)]"
-                      }`}
-                    >
-                      {perguntaText.length}/{maxChars}
-                    </span>
+                </div>
+
+                {/* BOTÃO */}
+                <ActionButton
+                  type="submit"
+                  textIdle="Publicar Pergunta"
+                  isLoading={isPending}
+                  isSuccess={isSuccess}
+                  disabled={isPending || hasBadWords || isSuccess}
+                  enableRipplePulse
+                  className="mt-2 w-full h-12 rounded-full"
+                />
+              </form>
+            </motion.div>
+
+            {/* SIDEBAR - DICAS */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{
+                duration: 0.7,
+                ease: [0.25, 0.1, 0.25, 1],
+                delay: 0.2,
+              }}
+              className="flex flex-col gap-6 lg:sticky lg:top-6"
+            >
+              {/* CARD DE DICAS - ESTILO ARTÍSTICO */}
+              <div className="relative bg-gradient-to-br from-purple-600 via-purple-700 to-purple-800 rounded-3xl shadow-2xl overflow-hidden h-full">
+                {/* Decoração de fundo */}
+                <div className="absolute inset-0 opacity-10">
+                  <div className="absolute top-0 right-0 w-40 h-40 bg-white rounded-full blur-3xl"></div>
+                  <div className="absolute bottom-0 left-0 w-32 h-32 bg-white rounded-full blur-2xl"></div>
+                </div>
+
+                {/* Três pontinhos no topo */}
+                <div className="relative flex justify-end p-6 pb-0">
+                  <div className="flex gap-1.5">
+                    <div className="w-1.5 h-1.5 rounded-full bg-white/40"></div>
+                    <div className="w-1.5 h-1.5 rounded-full bg-white/40"></div>
+                    <div className="w-1.5 h-1.5 rounded-full bg-white/40"></div>
+                  </div>
+                </div>
+
+                {/* Conteúdo */}
+                <div className="relative px-8 pb-8 pt-4 flex flex-col h-full">
+                  {/* Aspas decorativas */}
+                  <div className="text-6xl font-serif text-white/20 leading-none mb-2">
+                    "
+                  </div>
+
+                  {/* Título */}
+                  <h3 className="text-2xl font-bold text-white mb-6 leading-tight">
+                    Dicas para uma{" "}
+                    <span className="text-purple-200">boa pergunta</span>
+                  </h3>
+
+                  {/* Lista de dicas */}
+                  <ul className="space-y-3 mb-6 flex-1">
+                    {TipsForAsking.map((tip, index) => (
+                      <motion.li
+                        key={index}
+                        className="flex items-start gap-3 group"
+                        whileHover={{ x: 6, scale: 1.02 }}
+                        transition={{
+                          type: "spring",
+                          stiffness: 400,
+                          damping: 25,
+                        }}
+                      >
+                        <span className="flex-shrink-0 w-7 h-7 rounded-full bg-white/20 backdrop-blur-sm text-white flex items-center justify-center text-sm font-bold mt-0.5 group-hover:bg-white/30 group-hover:scale-110 transition-all duration-300">
+                          {index + 1}
+                        </span>
+                        <span className="text-sm text-white/90 leading-relaxed pt-1">
+                          {tip.text}
+                        </span>
+                      </motion.li>
+                    ))}
+                  </ul>
+
+                  {/* Assinatura */}
+                  <div className="text-sm text-purple-200 font-medium mt-auto">
+                    - Equipe Estudare
                   </div>
                 </div>
               </div>
-
-              {/* BOTÃO */}
-              <button
-                type="submit"
-                disabled={isPending || hasBadWords}
-                className="p-4 rounded-md bg-purple-600 text-white flex gap-2 justify-center items-center hover:bg-purple-700 transition-all duration-300 cursor-pointer disabled:opacity-60"
-              >
-                <p className="text-white text-lg font-semibold tracking-wide">
-                  {isPending ? "Enviando..." : "Fazer pergunta"}
-                </p>
-              </button>
-            </form>
+            </motion.div>
           </div>
-
-          {/* DICAS E IMAGEM */}
-          <div className="flex flex-col items-center flex-1 justify-center gap-6 mt-6 md:mt-0">
-            <img
-              src="/imagens/search_13543825.png"
-              alt="Ilustração"
-              width={260}
-              height={260}
-              className="w-40 md:w-72 h-auto animate-bounce-slow p-3"
-            />
-
-            <div className="flex flex-col p-6 gap-2 bg-[var(--secondary)]/8 rounded-xl border border-[var(--border)]/20 shadow-md hover:shadow-lg transition-all duration-300 w-full max-w-xs">
-              <p className="text-base text-[var(--secondary-foreground)] font-semibold">
-                Dicas para uma boa pergunta:
-              </p>
-              <ul className="text-sm text-[var(--muted-foreground)] list-disc space-y-2 pl-5">
-                {TipsForAsking.map((tip, index) => (
-                  <li key={index}>
-                    <motion.div
-                      whileHover={{ scale: 1.02, x: 7 }}
-                      transition={{ type: "spring", stiffness: 100 }}
-                    >
-                      {tip.text}
-                    </motion.div>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          </div>
-        </motion.div>
+        </div>
       </main>
 
       <Footer />

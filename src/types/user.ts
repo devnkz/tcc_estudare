@@ -9,6 +9,11 @@ export interface User {
   dataCriacao_usuario: string;
   credibilidade_usuario: number;
 
+  tipoUsuario?: {
+    id_tipousuario: string;
+    nome_tipousuario: string;
+  };
+
   Penalidades: {
     id_penalidade: string;
     dataInicio_penalidade: string;

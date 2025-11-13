@@ -39,3 +39,19 @@ export async function updateDenuncia(
   const res = await axios.put(`${process.env.NEXT_PUBLIC_API_URL}/denuncia/${id}`, data);
   return res.data;
 }
+
+// Verifica se o usuário já denunciou um conteúdo específico
+export async function checkDenuncia(
+  id_usuario: string,
+  id_conteudo: string,
+  tipo_conteudo: string
+): Promise<{ exists: boolean; denuncia: any }> {
+  const res = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/denuncia/check`, {
+    params: {
+      id_usuario,
+      id_conteudo,
+      tipo_conteudo,
+    },
+  });
+  return res.data;
+}

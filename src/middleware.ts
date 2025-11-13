@@ -70,8 +70,10 @@ export function middleware(request: NextRequest) {
             try {
                 const payload: any = jwtDecode(authToken.value);
                 const role = (payload?.tipo_usuario || "").toLowerCase();
-                    const email = (payload?.email_usuario || "").toLowerCase();
-                    if (role !== "administrador" && !ADMIN_EMAILS.includes(email)) {
+                const email = (payload?.email_usuario || "").toLowerCase();
+                // Aceita "admin" ou "administrador" como tipos válidos
+                const isValidAdmin = role === "admin" || role === "administrador" || ADMIN_EMAILS.includes(email);
+                if (!isValidAdmin) {
                     const redirectUrl = request.nextUrl.clone();
                     redirectUrl.pathname = "/home";
                     return NextResponse.redirect(redirectUrl);

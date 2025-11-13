@@ -74,7 +74,6 @@ export default function RootLayoutViews({
         (token ? (
           <HeaderDesktopAutenticado
             tipo_usuario={decodedToken?.payload?.tipo_usuario || ""}
-            email_usuario={decodedToken?.payload?.email_usuario || ""}
           />
         ) : (
           <HeaderDesktopNaoAutenticado />

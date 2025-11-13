@@ -23,6 +23,8 @@ export async function updateCurso(data: UpdateCursoData): Promise<Curso> {
 }
 
 // Deleta um curso pelo id
-export async function deleteCurso(id: string): Promise<void> {
-  await axios.delete(`${process.env.NEXT_PUBLIC_API_URL}/curso/${id}`);
+export async function deleteCurso(id: string, force: boolean = false): Promise<{ deletedComponents?: number; deletedQuestions?: number }> {
+  const params = force ? { force: "true" } : {};
+  const res = await axios.delete(`${process.env.NEXT_PUBLIC_API_URL}/curso/${id}`, { params });
+  return res.data;
 }

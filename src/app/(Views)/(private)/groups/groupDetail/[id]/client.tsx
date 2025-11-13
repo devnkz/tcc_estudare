@@ -20,6 +20,7 @@ import { useLeaveGroup } from "@/hooks/grupo/useLeave";
 import { useGrupoById } from "@/hooks/grupo/useListById";
 import { useDeleteGrupo } from "@/hooks/grupo/useDelete";
 import { PencilIcon, PlusIcon } from "@heroicons/react/24/outline";
+import { UserCircleIcon } from "@heroicons/react/24/solid";
 import {
   EllipsisVertical,
   Crown,
@@ -54,6 +55,7 @@ interface Mensagem {
     apelido_usuario: string;
   };
   replyTo?: string | null; // id da mensagem original (opcional)
+  replyToId?: string | null; // campo vindo do backend
 }
 
 export default function ClientGrupoDetail({
@@ -126,6 +128,8 @@ export default function ClientGrupoDetail({
   const [editSuccess, setEditSuccess] = useState(false);
   const [nomeError, setNomeError] = useState<string | null>(null);
   const [showAllMembers, setShowAllMembers] = useState(false);
+  const [usersTyping, setUsersTyping] = useState<Set<string>>(new Set());
+  const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const isOwner = id_usuario_logado === grupo.fkId_usuario;
 
   // Animação de verificação do nome
@@ -170,7 +174,21 @@ export default function ClientGrupoDetail({
         // Remover pontuação periférica para análise (não altera token original até decidir censurar)
         const core = token.replace(/[.,;:!?"'()\[\]{}<>]/g, "");
         const norm = normalize(core);
-        const isBad = badRoots.some((root) => root && norm.includes(root));
+
+        // Verifica se é exatamente uma bad word (palavra completa)
+        // ou se começa/termina com bad word seguida de caracteres especiais
+        const isBad = badRoots.some((root) => {
+          if (!root) return false;
+
+          // Verifica se é a palavra exata
+          if (norm === root) return true;
+
+          // Verifica se é palavra completa com limites de palavra
+          // Só considera bad word se estiver isolada, não como parte de outra palavra
+          const wordBoundaryRegex = new RegExp(`(^|\\W)${root}(\\W|$)`, "i");
+          return wordBoundaryRegex.test(norm);
+        });
+
         if (!isBad) return token;
         // Substitui apenas caracteres alfabéticos/dígitos por '*', preservando pontuação interna.
         return token.replace(/[\p{L}\d]/gu, "*");
@@ -313,6 +331,16 @@ export default function ClientGrupoDetail({
       replyTo: replyTarget?.id_mensagem || null,
     });
 
+    // Parar animação de digitação imediatamente
+    if (typingTimeoutRef.current) {
+      clearTimeout(typingTimeoutRef.current);
+      typingTimeoutRef.current = null;
+    }
+    socketRef.current?.emit("stop_typing", {
+      userId: id_usuario_logado,
+      grupoId: grupo.id_grupo,
+    });
+
     setNovaMensagem("");
     setReplyTarget(null);
     setSending(false);
@@ -413,7 +441,13 @@ export default function ClientGrupoDetail({
     socket.on("historico", (msgs: Mensagem[]) => {
       const enriched = (msgs || []).map((m) => {
         const withUser = ensureUsuario(m);
-        return { ...withUser, mensagem: censorBadWords(withUser.mensagem) };
+        // Normalizar replyToId para replyTo
+        const normalized = {
+          ...withUser,
+          replyTo: withUser.replyToId || withUser.replyTo || null,
+          mensagem: censorBadWords(withUser.mensagem),
+        };
+        return normalized;
       });
       setMensagens((prev) => dedupeMessages([...prev, ...enriched]));
     });
@@ -421,18 +455,47 @@ export default function ClientGrupoDetail({
       const withUser = ensureUsuario(msg);
       const censored = {
         ...withUser,
+        replyTo: withUser.replyToId || withUser.replyTo || null,
         mensagem: censorBadWords(withUser.mensagem),
       };
       setMensagens((prev) => dedupeMessages([...prev, censored]));
     });
+
+    // Eventos de digitação
+    socket.on("user_typing", ({ userId }: { userId: string }) => {
+      console.log(
+        "🔵 user_typing recebido:",
+        userId,
+        "meu ID:",
+        id_usuario_logado
+      );
+      if (userId !== id_usuario_logado) {
+        setUsersTyping((prev) => new Set(prev).add(userId));
+      }
+    });
+
+    socket.on("user_stop_typing", ({ userId }: { userId: string }) => {
+      console.log("🔴 user_stop_typing recebido:", userId);
+      setUsersTyping((prev) => {
+        const next = new Set(prev);
+        next.delete(userId);
+        return next;
+      });
+    });
+
     return () => {
+      if (typingTimeoutRef.current) {
+        clearTimeout(typingTimeoutRef.current);
+      }
       socket.disconnect();
     };
   }, [grupo.id_grupo]);
 
   useEffect(() => {
-    chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [mensagens]);
+    if (chatEndRef.current) {
+      chatEndRef.current.scrollIntoView({ behavior: "smooth", block: "end" });
+    }
+  }, [mensagens, usersTyping]);
 
   const [headerHeight, setHeaderHeight] = useState(0);
   useEffect(() => {
@@ -443,95 +506,134 @@ export default function ClientGrupoDetail({
   return (
     <div
       className="flex justify-center px-4"
-      style={{ paddingTop: headerHeight + 20 }}
+      style={{ paddingTop: headerHeight + 32 }}
     >
       {/* Container sem max-width após breakpoint (tablet) */}
       <div className="w-full max-w-3xl md:max-w-none md:w-full bg-white rounded-2xl shadow-md border border-zinc-200 px-6 py-6 flex flex-col gap-6 transition-all">
-        {/* Topo */}
-        <div className="flex flex-row flex-nowrap justify-between items-start gap-3">
-          <h1 className="text-3xl font-bold text-purple-700 flex-1 min-w-0 truncate">
-            {grupo.nome_grupo}
-          </h1>
-          {/* Ações (menu de três pontinhos) */}
-          <div className="relative" ref={menuRef}>
-            <button
-              type="button"
-              aria-label="Opções do grupo"
-              className="inline-flex items-center justify-center p-1 cursor-pointer"
-              onClick={() => setMenuOpen((v) => !v)}
-            >
-              <EllipsisVertical className="w-6 h-6 text-zinc-700" />
-            </button>
-            <AnimatePresence>
-              {menuOpen && (
-                <motion.div
-                  initial={{ opacity: 0, y: -6, scale: 0.98 }}
-                  animate={{ opacity: 1, y: 0, scale: 1 }}
-                  exit={{ opacity: 0, y: -6, scale: 0.98 }}
-                  transition={{ duration: 0.18 }}
-                  className="absolute right-0 mt-2 w-48 bg-white border border-zinc-200 rounded-lg shadow-lg z-20 overflow-hidden"
+        {/* Header do Grupo - Modernizado */}
+        <div className="p-6 sm:p-8 -mx-6 -mt-6 border-b border-purple-100/60 bg-gradient-to-r from-purple-50/30 via-white to-fuchsia-50/30">
+          <div className="flex items-start justify-between gap-4">
+            <div className="flex items-center gap-3 flex-1 min-w-0">
+              {/* Ícone do grupo */}
+              <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-purple-500 to-fuchsia-600 flex items-center justify-center shadow-md flex-shrink-0">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  strokeWidth={2}
+                  stroke="white"
+                  className="w-7 h-7"
                 >
-                  <button
-                    disabled={!isOwner}
-                    title={
-                      !isOwner
-                        ? "Somente o criador pode editar o nome"
-                        : undefined
-                    }
-                    className={`w-full text-left px-3 py-2 text-sm flex items-center gap-2 ${
-                      isOwner
-                        ? "hover:bg-zinc-50 cursor-pointer"
-                        : "opacity-50 cursor-not-allowed"
-                    }`}
-                    onClick={() => {
-                      if (!isOwner) return;
-                      setEditNameOpen(true);
-                      setMenuOpen(false);
-                    }}
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M18 18.72a9.094 9.094 0 003.741-.479 3 3 0 00-4.682-2.72m.94 3.198l.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0112 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 016 18.719m12 0a5.971 5.971 0 00-.941-3.197m0 0A5.995 5.995 0 0012 12.75a5.995 5.995 0 00-5.058 2.772m0 0a3 3 0 00-4.681 2.72 8.986 8.986 0 003.74.477m.94-3.197a5.971 5.971 0 00-.94 3.197M15 6.75a3 3 0 11-6 0 3 3 0 016 0zm6 3a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0zm-13.5 0a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0z"
+                  />
+                </svg>
+              </div>
+
+              {/* Título e info */}
+              <div className="flex-1 min-w-0">
+                <h1 className="text-2xl sm:text-3xl font-extrabold text-gray-900 truncate flex items-center gap-2">
+                  {grupo.nome_grupo}
+                  {isOwner && (
+                    <span title="Você é o criador">
+                      <Crown className="w-5 h-5 text-yellow-500" />
+                    </span>
+                  )}
+                </h1>
+                <p className="text-sm text-gray-600 mt-0.5">
+                  {(grupoData?.membros || []).length}{" "}
+                  {(grupoData?.membros || []).length === 1
+                    ? "membro"
+                    : "membros"}
+                </p>
+              </div>
+            </div>
+
+            {/* Ações (menu de três pontinhos) */}
+            <div className="relative flex-shrink-0" ref={menuRef}>
+              <motion.button
+                type="button"
+                aria-label="Opções do grupo"
+                onClick={() => setMenuOpen((v) => !v)}
+                className="w-10 h-10 rounded-full bg-purple-50 hover:bg-purple-100 flex items-center justify-center text-purple-700 transition-colors cursor-pointer"
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+              >
+                <EllipsisVertical className="w-5 h-5" />
+              </motion.button>
+              <AnimatePresence>
+                {menuOpen && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -6, scale: 0.98 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: -6, scale: 0.98 }}
+                    transition={{ duration: 0.18 }}
+                    className="absolute right-0 mt-2 w-48 bg-white border border-zinc-200 rounded-lg shadow-lg z-20 overflow-hidden"
                   >
-                    <PencilIcon className="h-4 w-4" /> Editar nome
-                  </button>
-                  <button
-                    disabled={id_usuario_logado !== grupo.fkId_usuario}
-                    title={
-                      id_usuario_logado !== grupo.fkId_usuario
-                        ? "Somente o criador do grupo pode adicionar membros"
-                        : undefined
-                    }
-                    className={`w-full text-left px-3 py-2 text-sm flex items-center gap-2 ${
-                      id_usuario_logado !== grupo.fkId_usuario
-                        ? "opacity-50 cursor-not-allowed"
-                        : "hover:bg-zinc-50 cursor-pointer"
-                    }`}
-                    onClick={() => {
-                      if (id_usuario_logado !== grupo.fkId_usuario) return;
-                      setOpen(true);
-                      setMenuOpen(false);
-                    }}
-                  >
-                    <PlusIcon className="h-4 w-4" /> Adicionar membros
-                  </button>
-                  <button
-                    className="w-full text-left px-3 py-2 text-sm hover:bg-zinc-50 text-red-600 flex items-center gap-2 cursor-pointer"
-                    onClick={() => {
-                      setMenuOpen(false);
-                      setConfirmAction(isOwner ? "delete" : "leave");
-                      setConfirmOpen(true);
-                    }}
-                  >
-                    {isOwner ? (
-                      <>
-                        <Trash2 className="w-4 h-4" /> Excluir grupo
-                      </>
-                    ) : (
-                      <>
-                        <LogOut className="w-4 h-4" /> Sair do grupo
-                      </>
-                    )}
-                  </button>
-                </motion.div>
-              )}
-            </AnimatePresence>
+                    <button
+                      disabled={!isOwner}
+                      title={
+                        !isOwner
+                          ? "Somente o criador pode editar o nome"
+                          : undefined
+                      }
+                      className={`w-full text-left px-3 py-2 text-sm flex items-center gap-2 ${
+                        isOwner
+                          ? "hover:bg-zinc-50 cursor-pointer"
+                          : "opacity-50 cursor-not-allowed"
+                      }`}
+                      onClick={() => {
+                        if (!isOwner) return;
+                        setEditNameOpen(true);
+                        setMenuOpen(false);
+                      }}
+                    >
+                      <PencilIcon className="h-4 w-4" /> Editar nome
+                    </button>
+                    <button
+                      disabled={id_usuario_logado !== grupo.fkId_usuario}
+                      title={
+                        id_usuario_logado !== grupo.fkId_usuario
+                          ? "Somente o criador do grupo pode adicionar membros"
+                          : undefined
+                      }
+                      className={`w-full text-left px-3 py-2 text-sm flex items-center gap-2 ${
+                        id_usuario_logado !== grupo.fkId_usuario
+                          ? "opacity-50 cursor-not-allowed"
+                          : "hover:bg-zinc-50 cursor-pointer"
+                      }`}
+                      onClick={() => {
+                        if (id_usuario_logado !== grupo.fkId_usuario) return;
+                        setOpen(true);
+                        setMenuOpen(false);
+                      }}
+                    >
+                      <PlusIcon className="h-4 w-4" /> Adicionar membros
+                    </button>
+                    <button
+                      className="w-full text-left px-3 py-2 text-sm hover:bg-red-50 text-red-600 flex items-center gap-2 cursor-pointer"
+                      onClick={() => {
+                        setMenuOpen(false);
+                        setConfirmAction(isOwner ? "delete" : "leave");
+                        setConfirmOpen(true);
+                      }}
+                    >
+                      {isOwner ? (
+                        <>
+                          <Trash2 className="w-4 h-4" /> Excluir grupo
+                        </>
+                      ) : (
+                        <>
+                          <LogOut className="w-4 h-4" /> Sair do grupo
+                        </>
+                      )}
+                    </button>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
           </div>
         </div>
 
@@ -905,120 +1007,118 @@ export default function ClientGrupoDetail({
 
         {/* Layout em duas colunas: esquerda (info) + direita (chat) */}
         <div className="grid grid-cols-1 md:grid-cols-[320px_1fr] gap-8">
-          {/* Coluna esquerda: criador e membros */}
-          <div className="space-y-6">
-            <div>
-              <h2 className="text-sm font-semibold text-gray-700 mb-1">
-                Criador
-              </h2>
-              <div className="flex items-center gap-3 p-3 rounded-lg border border-zinc-200 bg-zinc-50">
-                <img
-                  src={
-                    (grupo.usuario as any).foto_perfil ??
-                    "/imagens/default-avatar.png"
-                  }
-                  alt={grupo.usuario.nome_usuario}
-                  className="w-12 h-12 rounded-full object-cover border border-zinc-200"
-                />
-                <div className="min-w-0">
-                  <p className="text-sm font-medium text-purple-700 truncate">
-                    {grupo.usuario.nome_usuario}
-                  </p>
-                  <p className="text-xs text-zinc-600 truncate">
-                    Apelido:{" "}
-                    {(grupo.usuario as any).apelido_usuario ||
-                      grupo.usuario.nome_usuario}
-                  </p>
-                </div>
-              </div>
-            </div>
-            <div>
-              <h2 className="text-sm font-semibold text-gray-700 mb-2">
-                Membros
+          {/* Coluna esquerda: membros */}
+          <div className="space-y-4">
+            {/* Card dos Membros (com criador no topo) */}
+            <div className="bg-white rounded-2xl border border-purple-100 shadow-sm p-5">
+              <h2 className="text-sm font-bold text-gray-900 mb-3">
+                Membros ({(grupoData?.membros || []).length})
               </h2>
               {(() => {
-                const allMembers = (grupoData?.membros || []).filter(
-                  (m) => m.usuario.id_usuario !== grupo.fkId_usuario // exclui dono na lista
+                // Pega todos os membros exceto o criador
+                const otherMembers = (grupoData?.membros || []).filter(
+                  (m) => m.usuario.id_usuario !== grupo.fkId_usuario
                 );
-                const sorted = allMembers.sort((a, b) =>
+
+                // Ordena os outros membros
+                const sortedOthers = otherMembers.sort((a, b) =>
                   a.usuario.apelido_usuario.localeCompare(
                     b.usuario.apelido_usuario,
                     "pt-BR",
                     { sensitivity: "base" }
                   )
                 );
+
+                // Cria array com criador primeiro
+                const creatorMember = (grupoData?.membros || []).find(
+                  (m) => m.usuario.id_usuario === grupo.fkId_usuario
+                );
+
+                const allMembersSorted = creatorMember
+                  ? [creatorMember, ...sortedOthers]
+                  : sortedOthers;
+
                 const limit = 3;
-                const shouldCollapse = sorted.length > limit;
+                const shouldCollapse = allMembersSorted.length > limit;
                 const visible = showAllMembers
-                  ? sorted
-                  : sorted.slice(0, limit);
+                  ? allMembersSorted
+                  : allMembersSorted.slice(0, limit);
+
                 return (
-                  <div className="flex flex-col gap-3">
+                  <div className="flex flex-col gap-2">
                     <AnimatePresence initial={false}>
-                      {visible.map((membro) => (
-                        <motion.div
-                          key={membro.id_membro}
-                          initial={{ opacity: 0, y: 10 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          exit={{ opacity: 0, y: -10 }}
-                          transition={{ duration: 0.22 }}
-                          className="flex items-center gap-3 p-2 rounded-md border border-zinc-200 bg-white"
-                        >
-                          <div className="relative">
-                            <img
-                              src={
-                                membro.usuario.foto_perfil ??
-                                "/imagens/default-avatar.png"
-                              }
-                              alt={membro.usuario.nome_usuario}
-                              className="w-10 h-10 rounded-full object-cover border border-zinc-200"
-                            />
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <p className="text-sm font-medium truncate">
-                              {membro.usuario.nome_usuario}
-                            </p>
-                            <p className="text-xs text-zinc-600 truncate">
-                              Apelido: {membro.usuario.apelido_usuario}
-                            </p>
-                          </div>
-                          {isOwner && (
-                            <button
-                              className="text-xs text-red-500 hover:underline cursor-pointer"
-                              onClick={() =>
-                                handleRemoveMember(membro.id_membro)
-                              }
-                              disabled={removeMemberMutation.isPending}
-                            >
-                              {removeMemberMutation.isPending
-                                ? "..."
-                                : "Remover"}
-                            </button>
-                          )}
-                        </motion.div>
-                      ))}
+                      {visible.map((membro) => {
+                        const isCreator =
+                          membro.usuario.id_usuario === grupo.fkId_usuario;
+                        return (
+                          <motion.div
+                            key={membro.id_membro}
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: -10 }}
+                            transition={{ duration: 0.2 }}
+                            className="flex items-center gap-3 p-3 rounded-xl border border-gray-100 hover:border-purple-200 hover:bg-purple-50/30 transition-all group"
+                          >
+                            {/* Foto com coroa para o criador */}
+                            <div className="relative flex-shrink-0">
+                              {isCreator && (
+                                <div className="absolute -top-1 -right-1 z-10">
+                                  <Crown className="w-3 h-3 animate-accordion-down rotate-45 text-yellow-500 drop-shadow-md" />
+                                </div>
+                              )}
+                              {membro.usuario.foto_perfil ? (
+                                <img
+                                  src={membro.usuario.foto_perfil}
+                                  alt={membro.usuario.nome_usuario}
+                                  className="w-10 h-10 rounded-full object-cover border border-gray-200 group-hover:border-purple-300 transition-colors"
+                                />
+                              ) : (
+                                <UserCircleIcon className="w-10 h-10 text-gray-400 group-hover:text-purple-400 transition-colors" />
+                              )}
+                            </div>
+
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-medium text-gray-900 truncate">
+                                {membro.usuario.nome_usuario}
+                              </p>
+                              <p className="text-xs text-gray-600 truncate">
+                                @{membro.usuario.apelido_usuario}
+                              </p>
+                            </div>
+
+                            {isOwner && !isCreator && (
+                              <button
+                                className="text-xs text-red-500 hover:text-red-700 font-medium cursor-pointer opacity-0 group-hover:opacity-100 transition-opacity"
+                                onClick={() =>
+                                  handleRemoveMember(membro.id_membro)
+                                }
+                                disabled={removeMemberMutation.isPending}
+                              >
+                                {removeMemberMutation.isPending
+                                  ? "..."
+                                  : "Remover"}
+                              </button>
+                            )}
+                          </motion.div>
+                        );
+                      })}
                     </AnimatePresence>
                     {shouldCollapse && (
                       <motion.button
                         type="button"
                         onClick={() => setShowAllMembers((v) => !v)}
-                        className="mt-1 text-xs font-medium text-purple-700 hover:text-purple-900 transition flex items-center gap-1 self-start cursor-pointer"
-                        whileHover={{ scale: 1.05 }}
-                        whileTap={{ scale: 0.92 }}
+                        className="mt-2 text-sm font-medium text-purple-600 hover:text-purple-800 transition flex items-center gap-1 cursor-pointer"
+                        whileHover={{ x: 3 }}
                       >
-                        <motion.span
-                          key={showAllMembers ? "menos" : "mais"}
-                          initial={{ opacity: 0, y: 4 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          exit={{ opacity: 0, y: -4 }}
-                          transition={{ duration: 0.18 }}
-                        >
-                          {showAllMembers ? "Mostrar menos" : "Mostrar todos"}
-                        </motion.span>
+                        <span>
+                          {showAllMembers
+                            ? "Mostrar menos"
+                            : `Ver todos (${allMembersSorted.length})`}
+                        </span>
                         <motion.span
                           animate={{ rotate: showAllMembers ? 180 : 0 }}
                           transition={{ duration: 0.25 }}
-                          className="inline-block"
+                          className="inline-block text-xs"
                         >
                           ▾
                         </motion.span>
@@ -1029,7 +1129,13 @@ export default function ClientGrupoDetail({
               })()}
             </div>
           </div>
-          <div>
+
+          {/* Coluna direita: Chat */}
+          <motion.div
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.4, delay: 0.1 }}
+          >
             <h2 className="font-semibold text-lg text-gray-800 mb-3">
               Chat do grupo
             </h2>
@@ -1070,40 +1176,98 @@ export default function ClientGrupoDetail({
                   return (
                     <motion.div
                       key={m.id_mensagem}
-                      initial={{ opacity: 0, x: isMine ? 40 : -40 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      exit={{ opacity: 0, x: isMine ? 40 : -40 }}
-                      transition={{ duration: 0.2, ease: "easeOut" }}
+                      initial={{
+                        opacity: 0,
+                        scale: 0.3,
+                        y: 20,
+                      }}
+                      animate={{
+                        opacity: 1,
+                        scale: 1,
+                        y: 0,
+                      }}
+                      exit={{
+                        opacity: 0,
+                        scale: 0.8,
+                        transition: { duration: 0.15 },
+                      }}
+                      transition={{
+                        type: "spring",
+                        stiffness: 260,
+                        damping: 20,
+                        mass: 0.8,
+                      }}
                       className={`mb-2 flex ${
                         isMine ? "justify-end" : "justify-start"
                       }`}
                     >
-                      <div className={`relative ${isMine ? "pl-6" : "pr-6"}`}>
-                        <button
+                      <div
+                        className={`relative group/msg ${
+                          isMine ? "pl-8" : "pr-8"
+                        } max-w-[85%] md:max-w-[75%]`}
+                      >
+                        <motion.button
                           type="button"
                           aria-label="Responder mensagem"
                           className={`absolute ${
                             isMine ? "left-0" : "right-0"
-                          } top-1 w-5 h-5 grid place-items-center rounded-full text-zinc-500 hover:text-purple-700 cursor-pointer transition-opacity opacity-80 md:opacity-0 md:group-hover:opacity-100`}
+                          } top-2 w-7 h-7 flex items-center justify-center rounded-full bg-white/80 backdrop-blur-sm border border-purple-200/50 text-purple-600 hover:text-purple-700 hover:bg-purple-50 cursor-pointer transition-all opacity-0 group-hover/msg:opacity-100 shadow-sm hover:shadow-md`}
                           onClick={(e) => {
                             e.stopPropagation();
                             setReplyTarget(m);
                           }}
                           title="Responder"
+                          whileHover={{ scale: 1.1 }}
+                          whileTap={{ scale: 0.9 }}
                         >
-                          <span className="absolute inset-0 rounded-full bg-zinc-200/0 group-hover:bg-zinc-200/70 transition" />
-                          <CornerUpLeft className="w-3.5 h-3.5 relative" />
-                        </button>
-                        <div
-                          className={`px-3 py-2 rounded-2xl max-w-md md:max-w-lg break-words relative ${
+                          <CornerUpLeft className="w-4 h-4" />
+                        </motion.button>
+                        <motion.div
+                          className={`px-4 py-2.5 rounded-2xl break-words overflow-wrap-anywhere ${
+                            quoted ? "min-w-[12rem]" : "min-w-[5rem]"
+                          } ${
                             isMine
-                              ? "bg-purple-600 text-white"
-                              : "bg-white text-gray-800"
-                          } shadow-sm`}
+                              ? "bg-gradient-to-br from-purple-600 to-fuchsia-600 text-white rounded-tr-md"
+                              : "bg-white text-gray-800 border border-gray-100 rounded-tl-md"
+                          }`}
+                          style={{
+                            wordBreak: "break-word",
+                            overflowWrap: "anywhere",
+                          }}
+                          initial={{
+                            scale: 0.85,
+                            boxShadow: "0 0 0 rgba(0,0,0,0)",
+                          }}
+                          animate={{
+                            scale: 1,
+                            boxShadow: "0 1px 2px 0 rgba(0, 0, 0, 0.05)",
+                          }}
+                          transition={{
+                            type: "spring",
+                            stiffness: 300,
+                            damping: 18,
+                            delay: 0.05,
+                          }}
+                          whileHover={{
+                            scale: 1.02,
+                            boxShadow:
+                              "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)",
+                            transition: { duration: 0.2 },
+                          }}
                         >
                           {quoted && (
-                            <div className="mb-1 px-2 py-1 rounded-md border-l-2 border-purple-500 bg-white/95 backdrop-blur-[1px]">
-                              <div className="text-[11px] font-semibold text-purple-700">
+                            <div
+                              className={`mb-2 px-3 py-2 rounded-xl border-l-[6px] min-h-[3rem] flex flex-col justify-center ${
+                                isMine
+                                  ? "border-white/80 bg-white/30 backdrop-blur-sm"
+                                  : "border-purple-600 bg-purple-200"
+                              }`}
+                            >
+                              <div
+                                className={`text-xs font-semibold mb-0.5 ${
+                                  isMine ? "text-white" : "text-purple-900"
+                                }`}
+                              >
                                 {(quoted as any).usuario?.apelido_usuario ||
                                   users.find(
                                     (u) => u.id_usuario === quoted.fkId_usuario
@@ -1113,64 +1277,208 @@ export default function ClientGrupoDetail({
                                   )?.nome_usuario ||
                                   "Usuário"}
                               </div>
-                              <div className="text-[11px] text-zinc-700 truncate">
+                              <div
+                                className={`text-xs line-clamp-2 ${
+                                  isMine ? "text-white/90" : "text-gray-700"
+                                }`}
+                              >
                                 {quoted.mensagem}
                               </div>
                             </div>
                           )}
-                          <span className="font-bold text-sm mr-1">
-                            {displayUsuario.apelido_usuario}:
-                          </span>
-                          <span className="text-sm">{m.mensagem}</span>
-                        </div>
+                          <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            transition={{ delay: 0.1, duration: 0.3 }}
+                            className="flex flex-col gap-1"
+                          >
+                            <div
+                              className="break-words"
+                              style={{
+                                wordBreak: "break-word",
+                                overflowWrap: "anywhere",
+                              }}
+                            >
+                              <span className="font-semibold text-sm mr-1 whitespace-nowrap">
+                                {displayUsuario.apelido_usuario}:
+                              </span>
+                              <span className="text-sm leading-snug">
+                                {m.mensagem}
+                              </span>
+                            </div>
+                            <span
+                              className={`text-[10px] ${
+                                isMine ? "text-white/60" : "text-gray-400"
+                              } text-right`}
+                            >
+                              {new Date(
+                                m.dataCriacao_Mensagem
+                              ).toLocaleTimeString("pt-BR", {
+                                hour: "2-digit",
+                                minute: "2-digit",
+                              })}
+                            </span>
+                          </motion.div>
+                        </motion.div>
                       </div>
                     </motion.div>
                   );
                 })}
+
+                {/* Indicador de digitação */}
+                {usersTyping.size > 0 && (
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.3, y: 20 }}
+                    animate={{ opacity: 1, scale: 1, y: 0 }}
+                    exit={{ opacity: 0, scale: 0.8, y: 10 }}
+                    transition={{
+                      type: "spring",
+                      stiffness: 260,
+                      damping: 20,
+                    }}
+                    className="mb-3 flex justify-start"
+                  >
+                    <motion.div
+                      className="bg-white border border-gray-100 px-4 py-3 rounded-2xl rounded-tl-md shadow-sm"
+                      initial={{ scale: 0.9 }}
+                      animate={{ scale: 1 }}
+                      transition={{
+                        type: "spring",
+                        stiffness: 300,
+                        damping: 18,
+                        delay: 0.05,
+                      }}
+                    >
+                      <div className="flex items-center gap-2">
+                        <div className="flex gap-1">
+                          <motion.div
+                            className="w-2 h-2 bg-purple-400 rounded-full"
+                            animate={{ y: [0, -10, 0] }}
+                            transition={{
+                              duration: 0.5,
+                              repeat: Infinity,
+                              ease: [0.4, 0, 0.2, 1],
+                            }}
+                          />
+                          <motion.div
+                            className="w-2 h-2 bg-purple-400 rounded-full"
+                            animate={{ y: [0, -10, 0] }}
+                            transition={{
+                              duration: 0.5,
+                              repeat: Infinity,
+                              ease: [0.4, 0, 0.2, 1],
+                              delay: 0.15,
+                            }}
+                          />
+                          <motion.div
+                            className="w-2 h-2 bg-purple-400 rounded-full"
+                            animate={{ y: [0, -10, 0] }}
+                            transition={{
+                              duration: 0.5,
+                              repeat: Infinity,
+                              ease: [0.4, 0, 0.2, 1],
+                              delay: 0.3,
+                            }}
+                          />
+                        </div>
+                        <span className="text-xs text-gray-500">
+                          {Array.from(usersTyping)
+                            .map(
+                              (uid) =>
+                                users.find((u) => u.id_usuario === uid)
+                                  ?.apelido_usuario ||
+                                users.find((u) => u.id_usuario === uid)
+                                  ?.nome_usuario ||
+                                "Alguém"
+                            )
+                            .join(", ")}{" "}
+                          {usersTyping.size === 1
+                            ? "está digitando..."
+                            : "estão digitando..."}
+                        </span>
+                      </div>
+                    </motion.div>
+                  </motion.div>
+                )}
               </AnimatePresence>
               <div ref={chatEndRef} />
             </div>
 
             {/* Barra de resposta ao usuário */}
-            {replyTarget && (
-              <div className="mt-2 mb-1 flex items-stretch border-l-4 border-purple-500 bg-white rounded-md shadow-sm">
-                <div className="px-3 py-2 flex-1 min-w-0">
-                  <div className="text-xs font-semibold text-purple-700">
-                    {replyTarget.usuario.apelido_usuario}
-                  </div>
-                  <div className="text-xs text-zinc-700 max-h-10 overflow-hidden">
-                    {replyTarget.mensagem}
-                  </div>
-                </div>
-                <button
-                  type="button"
-                  aria-label="Cancelar resposta"
-                  className="p-2 text-zinc-500 hover:text-zinc-800 cursor-pointer"
-                  onClick={() => setReplyTarget(null)}
-                  title="Cancelar resposta"
+            <AnimatePresence>
+              {replyTarget && (
+                <motion.div
+                  initial={{ opacity: 0, y: -10, scale: 0.95 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: -10, scale: 0.95 }}
+                  transition={{
+                    type: "spring",
+                    stiffness: 400,
+                    damping: 25,
+                  }}
+                  className="mt-2 mb-1 flex items-stretch border-l-4 border-purple-500 bg-gradient-to-r from-purple-50 to-fuchsia-50 rounded-lg shadow-sm overflow-hidden"
                 >
-                  <X className="w-4 h-4" />
-                </button>
-              </div>
-            )}
+                  <div className="px-4 py-2.5 flex-1 min-w-0">
+                    <div className="text-xs font-bold text-purple-700 mb-0.5">
+                      Respondendo a {replyTarget.usuario.apelido_usuario}
+                    </div>
+                    <div className="text-sm text-gray-700 max-h-10 overflow-hidden line-clamp-2">
+                      {replyTarget.mensagem}
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    aria-label="Cancelar resposta"
+                    className="px-3 text-purple-600 hover:text-purple-700 hover:bg-purple-100/50 cursor-pointer transition-colors"
+                    onClick={() => setReplyTarget(null)}
+                    title="Cancelar resposta"
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
+                </motion.div>
+              )}
+            </AnimatePresence>
 
             {/* Input + Enviar */}
-            <div className="flex flex-col gap-1 mt-3">
-              <div className="flex gap-2 items-start">
+            <div className="flex flex-col gap-2 mt-3">
+              <div className="flex gap-3 items-center">
                 <div className="relative flex-1">
                   <input
                     type="text"
                     maxLength={MAX_CHARS}
-                    className={`w-full h-10 p-2 pr-3 border rounded-md focus:outline-none focus:ring-2 transition ${
+                    className={`w-full h-11 px-4 py-2.5 border-2 rounded-xl focus:outline-none transition-all ${
                       charCount > MAX_CHARS
-                        ? "border-red-500 focus:ring-red-400"
-                        : "border-zinc-300 focus:ring-purple-500"
-                    }`}
+                        ? "border-red-400 focus:border-red-500 bg-red-50/30"
+                        : "border-purple-200 focus:border-purple-500 bg-white hover:border-purple-300"
+                    } shadow-sm focus:shadow-md`}
                     placeholder="Digite sua mensagem..."
                     value={novaMensagem}
                     onChange={(e) => {
                       setNovaMensagem(e.target.value);
                       if (chatError) setChatError(null);
+
+                      // Emitir evento de digitação
+                      console.log(
+                        "⌨️ Emitindo typing para grupo:",
+                        grupo.id_grupo
+                      );
+                      socketRef.current?.emit("typing", {
+                        userId: id_usuario_logado,
+                        grupoId: grupo.id_grupo,
+                      });
+
+                      // Resetar timeout de parar de digitar
+                      if (typingTimeoutRef.current) {
+                        clearTimeout(typingTimeoutRef.current);
+                      }
+
+                      typingTimeoutRef.current = setTimeout(() => {
+                        console.log("⏹️ Emitindo stop_typing");
+                        socketRef.current?.emit("stop_typing", {
+                          userId: id_usuario_logado,
+                          grupoId: grupo.id_grupo,
+                        });
+                      }, 10000);
                     }}
                     onKeyDown={(e) =>
                       e.key === "Enter" && !sending && handleEnviarMensagem()
@@ -1187,69 +1495,94 @@ export default function ClientGrupoDetail({
                   disabled={
                     sending || !novaMensagem.trim() || charCount > MAX_CHARS
                   }
-                  className="relative h-10 flex items-center justify-center bg-gradient-to-r from-purple-600 to-fuchsia-600 text-white px-4 rounded-lg shadow-md min-w-[88px] cursor-pointer disabled:opacity-40 overflow-hidden group"
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.93 }}
+                  className="h-11 flex items-center justify-center bg-gradient-to-r from-purple-600 to-fuchsia-600 text-white px-5 rounded-xl shadow-md disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer overflow-hidden group relative min-w-[100px]"
+                  whileHover={{ scale: sending ? 1 : 1.02 }}
+                  whileTap={{ scale: sending ? 1 : 0.98 }}
                 >
-                  <motion.span
-                    key={sending ? "sending" : sendSuccess ? "success" : "idle"}
-                    initial={{ opacity: 0, y: 8 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -8 }}
-                    className="flex items-center gap-1 text-sm font-medium"
-                  >
-                    {sendSuccess ? (
-                      <span className="text-green-300 text-xs">Enviado!</span>
-                    ) : (
-                      <motion.span
-                        animate={
-                          sending
-                            ? { x: [0, 6, -4, 0], rotate: [0, 15, -10, 0] }
-                            : {}
-                        }
-                        transition={{
-                          duration: 0.6,
-                          repeat: sending ? Infinity : 0,
-                        }}
-                        className="relative flex items-center justify-center"
-                      >
-                        <span className="absolute inset-0 flex items-center justify-center">
-                          <span className="w-6 h-6 rounded-full group-hover:bg-white/15 transition" />
+                  <AnimatePresence mode="wait">
+                    <motion.span
+                      key={
+                        sending ? "sending" : sendSuccess ? "success" : "idle"
+                      }
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -10 }}
+                      className="flex items-center gap-2 text-sm font-semibold"
+                    >
+                      {sendSuccess ? (
+                        <span className="flex items-center gap-1.5">
+                          <svg
+                            className="w-5 h-5"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2.5}
+                              d="M5 13l4 4L19 7"
+                            />
+                          </svg>
+                          Enviado
                         </span>
-                        <Send className="w-5 h-5" />
-                      </motion.span>
-                    )}
-                    {!sendSuccess && <span>Enviar</span>}
-                  </motion.span>
+                      ) : (
+                        <>
+                          <motion.span
+                            animate={
+                              sending
+                                ? { x: [0, 4, -3, 0], rotate: [0, 10, -8, 0] }
+                                : {}
+                            }
+                            transition={{
+                              duration: 0.5,
+                              repeat: sending ? Infinity : 0,
+                              ease: "easeInOut",
+                            }}
+                          >
+                            <Send className="w-5 h-5" />
+                          </motion.span>
+                          <span>Enviar</span>
+                        </>
+                      )}
+                    </motion.span>
+                  </AnimatePresence>
+
                   {sending && (
                     <motion.div
                       className="absolute inset-0 bg-white/10"
                       initial={{ opacity: 0 }}
-                      animate={{ opacity: [0, 0.4, 0.15, 0.4] }}
-                      transition={{ duration: 1.2, repeat: Infinity }}
+                      animate={{ opacity: [0, 0.3, 0.1, 0.3] }}
+                      transition={{ duration: 1, repeat: Infinity }}
                     />
                   )}
                 </motion.button>
               </div>
-              <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between px-1">
                 {chatError && (
-                  <p className="text-xs text-red-600 mt-1">{chatError}</p>
+                  <p className="text-xs text-red-600 font-medium">
+                    {chatError}
+                  </p>
                 )}
                 <p
-                  className={`text-xs mt-1 ${
+                  className={`text-xs ml-auto ${
                     charCount > MAX_CHARS
-                      ? "text-red-600 font-medium"
-                      : "text-zinc-500"
+                      ? "text-red-600 font-semibold"
+                      : charCount > MAX_CHARS * 0.8
+                      ? "text-orange-500 font-medium"
+                      : "text-gray-500"
                   }`}
                 >
                   {charCount}/{MAX_CHARS}
                   {charCount > MAX_CHARS && (
-                    <> — remova {charCount - MAX_CHARS} caractere(s)</>
+                    <span className="ml-1">
+                      — remova {charCount - MAX_CHARS}
+                    </span>
                   )}
                 </p>
               </div>
             </div>
-          </div>
+          </motion.div>
         </div>
       </div>
       {/* fim container */}

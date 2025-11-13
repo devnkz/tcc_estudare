@@ -30,6 +30,8 @@ export async function updateComponente(data: UpdateComponenteData): Promise<Comp
 }
 
 // Deleta um componente pelo id
-export async function deleteComponente(id: string): Promise<void> {
-  await axios.delete(`${process.env.NEXT_PUBLIC_API_URL}/componente/${id}`);
+export async function deleteComponente(id: string, force: boolean = false): Promise<{ deletedQuestions?: number }> {
+  const params = force ? { force: "true" } : {};
+  const res = await axios.delete(`${process.env.NEXT_PUBLIC_API_URL}/componente/${id}`, { params });
+  return res.data;
 }

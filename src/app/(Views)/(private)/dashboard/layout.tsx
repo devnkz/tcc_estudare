@@ -1,7 +1,6 @@
 "use client";
 import "@/app/globals.css";
 import { Inter } from "next/font/google";
-import { ToastProvider } from "@/components/ui/animatedToast";
 import { SidebarDashboard } from "@/components/layout/sidebarDashboard";
 import { useState } from "react";
 
@@ -18,27 +17,24 @@ export default function RootLayoutDashboard({
   const [auditNonce, setAuditNonce] = useState<number>(0);
 
   return (
-    <ToastProvider>
-      <div className={`${inter.className} w-full flex justify-center`}>
-        <div className="w-full max-w-7xl flex">
-          <SidebarDashboard
-            onCreateCurso={() => setCreateKey("curso")}
-            onCreateComponente={() => setCreateKey("componente")}
-            onCreateUsuario={() => setCreateKey("usuario")}
-            onOpenAudit={() => setAuditNonce((n) => n + 1)}
-          />
-          <main className="flex-1 min-h-screen px-4 md:px-6 py-4">
-            {/* Propaga sinal de criação via data-atributo em um wrapper conhecido */}
-            <div
-              id="dashboard-root-wrapper"
-              data-create-key={createKey || ""}
-              data-open-audit={auditNonce || ""}
-            >
-              {children}
-            </div>
-          </main>
+    <div className={`${inter.className} w-full min-h-screen overflow-x-hidden`}>
+      <SidebarDashboard
+        onCreateCurso={() => setCreateKey("curso")}
+        onCreateComponente={() => setCreateKey("componente")}
+        onCreateUsuario={() => setCreateKey("usuario")}
+        onOpenAudit={() => setAuditNonce((n) => n + 1)}
+      />
+      <main className="md:ml-[68px] min-h-screen overflow-x-hidden pt-6 px-6 md:px-8 lg:px-12 xl:px-16 pb-10 md:mr-6 lg:mr-8 xl:mr-12">
+        {/* Propaga sinal de criação via data-atributo em um wrapper conhecido */}
+        <div
+          id="dashboard-root-wrapper"
+          data-create-key={createKey || ""}
+          data-open-audit={auditNonce || ""}
+          className="max-w-[1600px]"
+        >
+          {children}
         </div>
-      </div>
-    </ToastProvider>
+      </main>
+    </div>
   );
 }

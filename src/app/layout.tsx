@@ -6,6 +6,7 @@ import { getTokenFromCookie } from "@/lib/getTokenServer";
 
 import { QueryProvider } from "../providers/QueryProvider";
 import { RouteChangeLoader } from "@/components/shared/RouteChangeLoader";
+import { ToastProvider } from "@/components/ui/animatedToast";
 
 import "./globals.css";
 
@@ -60,7 +61,9 @@ export default async function RootLayout({
         className={`${inter.className} w-full flex flex-col justify-center`}
       >
         <RouteChangeLoader />
-        <QueryProvider>{children}</QueryProvider>
+        <ToastProvider>
+          <QueryProvider>{children}</QueryProvider>
+        </ToastProvider>
       </body>
     </html>
   );

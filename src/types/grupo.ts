@@ -17,6 +17,10 @@ export interface Grupo {
   }
   fkId_usuario: string;
   dataCriacao_grupo?: string; // opcional 
+  _count?: {
+    mensagens?: number;
+  };
+  hasUnreadMessages?: boolean; // indica se há mensagens não lidas
 }
 
 export interface CreateGrupoData {

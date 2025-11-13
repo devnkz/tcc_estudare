@@ -192,6 +192,8 @@ export default function DashboardPage({
       | "deleteGrupo";
     id: string;
     nome: string;
+    force?: boolean;
+    message?: string;
   } | null>(null);
 
   // edit user modal state
@@ -260,8 +262,12 @@ export default function DashboardPage({
         if (!isNaN(min) && den.nivel_denuncia < min) return false;
       }
       if (filtroUsuario) {
+        const searchTerm = filtroUsuario.toLowerCase();
         const nome = den.usuario.nome_usuario.toLowerCase();
-        if (!nome.includes(filtroUsuario.toLowerCase())) return false;
+        const apelido = (den.usuario.apelido_usuario || "").toLowerCase();
+        if (!nome.includes(searchTerm) && !apelido.includes(searchTerm)) {
+          return false;
+        }
       }
       return true;
     });
@@ -426,13 +432,7 @@ export default function DashboardPage({
         .toString()
         .toLowerCase()
     );
-    const base = new Set([
-      "aluno",
-      "professor",
-      "adm",
-      ...nomes.filter(Boolean),
-    ]);
-    return Array.from(base);
+    return Array.from(new Set(nomes.filter(Boolean)));
   }, [tipousuario]);
 
   const PlusButtons = [
@@ -536,9 +536,9 @@ export default function DashboardPage({
 
   // RETORNO PRINCIPAL
   return (
-    <div className="space-y-10" id="dashboard-root">
+    <div className="space-y-10 overflow-x-hidden" id="dashboard-root">
       {/* Barra superior de ações rápidas */}
-      <div className="flex flex-wrap items-center justify-between gap-4 -mt-2">
+      <div className="flex flex-wrap items-center justify-between gap-4">
         <h1 className="text-2xl sm:text-3xl font-extrabold bg-gradient-to-r from-purple-700 via-fuchsia-600 to-pink-600 bg-clip-text text-transparent tracking-tight">
           Dashboard
         </h1>
@@ -845,8 +845,8 @@ export default function DashboardPage({
 
       <section id="manage-denuncias" className="space-y-4 scroll-mt-24">
         {/* Filtros de denúncias - padronizado com a search bar */}
-        <div className="rounded-2xl border border-purple-200/60 bg-white/80 backdrop-blur p-5 shadow-sm">
-          <div className="flex flex-col gap-4 lg:flex-row">
+        <div className="rounded-2xl border border-purple-200/60 bg-white/80 backdrop-blur p-5 shadow-sm overflow-hidden">
+          <div className="flex flex-col gap-4 lg:flex-row lg:flex-wrap">
             {/* Status */}
             <div className="w-full sm:w-60 flex flex-col gap-1">
               <label className="text-[11px] font-semibold tracking-wide text-zinc-500 uppercase">
@@ -875,14 +875,15 @@ export default function DashboardPage({
               <input
                 type="number"
                 min={0}
-                max={10}
+                max={3}
                 className="w-full rounded-xl border border-zinc-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-300"
                 value={filtroNivel}
+                placeholder="1 - 3"
                 onChange={(e) => setFiltroNivel(e.target.value)}
               />
             </div>
             {/* Usuário */}
-            <div className="flex-1 min-w-[200px] flex flex-col gap-1">
+            <div className="flex-1 min-w-0 flex flex-col gap-1">
               <label className="text-[11px] font-semibold tracking-wide text-zinc-500 uppercase">
                 Usuário
               </label>
@@ -890,7 +891,7 @@ export default function DashboardPage({
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-400" />
                 <input
                   className="w-full rounded-xl border border-zinc-200 bg-white pl-9 pr-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-300"
-                  placeholder="nome do usuário"
+                  placeholder="Nome ou apelido do usuário"
                   value={filtroUsuario}
                   onChange={(e) => setFiltroUsuario(e.target.value)}
                 />
@@ -923,16 +924,22 @@ export default function DashboardPage({
           return (
             <div
               key={denuncia.id_denuncia}
-              className="group relative flex flex-col sm:flex-row sm:justify-between gap-4 p-5 bg-white/90 backdrop-blur rounded-2xl shadow-sm border border-zinc-200 hover:shadow-md hover:border-purple-200 transition-all duration-300"
+              className="group relative flex flex-col gap-4 p-5 bg-white/90 backdrop-blur rounded-2xl shadow-sm border border-zinc-200 hover:shadow-md hover:border-purple-200 transition-all duration-300 overflow-hidden"
             >
               <div className="absolute inset-0 rounded-2xl pointer-events-none opacity-0 group-hover:opacity-100 transition">
                 <div className="h-full w-full rounded-2xl bg-gradient-to-br from-purple-500/5 via-transparent to-pink-500/10" />
               </div>
-              <div className="flex flex-col gap-1 text-sm sm:text-base">
+              <div className="flex flex-col gap-1 text-sm break-words">
                 <span className="text-zinc-500">
                   Nova denúncia de{" "}
                   <span className="font-semibold text-zinc-800">
                     {denuncia.usuario.nome_usuario}
+                    {denuncia.usuario.apelido_usuario && (
+                      <span className="font-normal text-zinc-600">
+                        {" "}
+                        ({denuncia.usuario.apelido_usuario})
+                      </span>
+                    )}
                   </span>
                 </span>
                 <span className="text-zinc-600 text-sm">
@@ -950,12 +957,12 @@ export default function DashboardPage({
                 <span className="text-sm text-zinc-500">
                   {new Date(denuncia.dataCriacao_denuncia).toLocaleString()}
                 </span>
-                <span className="text-zinc-600 italic">
+                <span className="text-zinc-600 italic break-words">
                   Motivo: {denuncia.descricao}
                 </span>
               </div>
 
-              <div className="flex flex-col sm:items-end gap-2">
+              <div className="flex flex-col gap-2">
                 <div className="flex flex-wrap gap-2">
                   <span
                     className={`text-sm px-3 py-1 rounded-full font-medium ${
@@ -1538,7 +1545,11 @@ export default function DashboardPage({
                   <div className="flex flex-col">
                     <span className="text-sm font-medium text-zinc-800 flex items-center gap-2">
                       {u.nome_usuario}
-                      {/* indicador online removido */}
+                      {u.tipoUsuario && (
+                        <span className="text-xs px-2 py-0.5 rounded-full bg-purple-100 text-purple-700 font-normal">
+                          {u.tipoUsuario.nome_tipousuario}
+                        </span>
+                      )}
                     </span>
                     <span className="text-sm text-zinc-600">
                       {u.email_usuario}
@@ -1550,7 +1561,10 @@ export default function DashboardPage({
                   <div className="flex gap-2">
                     <button
                       className="cursor-pointer px-3 py-1 text-xs rounded-lg bg-purple-200 text-purple-800 hover:bg-purple-300"
-                      onClick={() => setEditUser(u)}
+                      onClick={() => {
+                        setEditUserSuccess(false);
+                        setEditUser(u);
+                      }}
                     >
                       Editar
                     </button>
@@ -1664,7 +1678,7 @@ export default function DashboardPage({
         }}
       >
         {confirmData?.open && (
-          <DialogContent className="w-[calc(100vw-2rem)] sm:w-auto max-w-sm rounded-2xl p-6 bg-white border border-red-200 shadow-xl">
+          <DialogContent className="w-[calc(100vw-2rem)] sm:w-auto max-w-sm rounded-2xl p-6 bg-white border border-red-200 shadow-xl z-[9999]">
             <DialogHeader>
               <DialogTitle className="text-xl font-extrabold bg-gradient-to-r from-red-600 to-rose-600 bg-clip-text text-transparent">
                 Confirmar ação
@@ -1677,9 +1691,13 @@ export default function DashboardPage({
             >
               <Info className="w-4 h-4 mt-0.5 text-red-600" />
               <p className="text-xs sm:text-sm">
-                Tem certeza que deseja excluir{" "}
-                <span className="font-semibold">{confirmData.nome}</span>? Esta
-                ação não poderá ser desfeita.
+                {confirmData.message || (
+                  <>
+                    Tem certeza que deseja excluir{" "}
+                    <span className="font-semibold">{confirmData.nome}</span>?
+                    Esta ação não poderá ser desfeita.
+                  </>
+                )}
               </p>
             </motion.div>
             <DialogFooter>
@@ -1697,40 +1715,132 @@ export default function DashboardPage({
                   enableRipplePulse
                   className="min-w-[180px] cursor-pointer bg-gradient-to-r from-red-600 to-rose-600"
                   onClick={async () => {
+                    let shouldCloseModal = true;
+
                     try {
                       if (confirmData.action === "deleteCurso") {
                         const { deleteCurso } = await import(
                           "@/services/cursoService"
                         );
-                        await deleteCurso(confirmData.id);
-                        setCursosState((prev) =>
-                          prev.filter((c) => c.id_curso !== confirmData.id)
-                        );
-                        push({ kind: "success", message: "Curso excluído." });
-                        pushAudit({
-                          action: "delete",
-                          entity: "curso",
-                          entityId: confirmData.id,
-                          details: confirmData.nome,
-                        });
+
+                        try {
+                          const result = await deleteCurso(
+                            confirmData.id,
+                            confirmData.force || false
+                          );
+
+                          setCursosState((prev) =>
+                            prev.filter((c) => c.id_curso !== confirmData.id)
+                          );
+
+                          const message =
+                            result.deletedComponents || result.deletedQuestions
+                              ? `Curso excluído junto com ${
+                                  result.deletedComponents || 0
+                                } componente(s) e ${
+                                  result.deletedQuestions || 0
+                                } pergunta(s) vinculada(s).`
+                              : "Curso excluído.";
+
+                          push({ kind: "success", message });
+
+                          pushAudit({
+                            action: "delete",
+                            entity: "curso",
+                            entityId: confirmData.id,
+                            details: confirmData.nome,
+                          });
+                        } catch (err: any) {
+                          console.log("Erro ao deletar curso:", err);
+
+                          if (
+                            err.response?.status === 409 &&
+                            err.response?.data?.code === "HAS_LINKED_DATA"
+                          ) {
+                            const componentesCount =
+                              err.response.data.componentesCount;
+                            const perguntasCount =
+                              err.response.data.perguntasCount;
+
+                            setConfirmData({
+                              open: true,
+                              id: confirmData.id,
+                              nome: confirmData.nome,
+                              action: "deleteCurso",
+                              force: true,
+                              message: `Este curso possui ${componentesCount} componente(s) e ${perguntasCount} pergunta(s) vinculada(s). Ao excluir o curso, todos os dados vinculados também serão excluídos permanentemente. Deseja continuar?`,
+                            });
+                            shouldCloseModal = false;
+                            return;
+                          }
+
+                          throw err;
+                        }
                       } else if (confirmData.action === "deleteComponente") {
                         const { deleteComponente } = await import(
                           "@/services/componenteService"
                         );
-                        await deleteComponente(confirmData.id);
-                        setComponentesState((prev) =>
-                          prev.filter((c) => c.id_componente !== confirmData.id)
-                        );
-                        push({
-                          kind: "success",
-                          message: "Componente excluído.",
-                        });
-                        pushAudit({
-                          action: "delete",
-                          entity: "componente",
-                          entityId: confirmData.id,
-                          details: confirmData.nome,
-                        });
+
+                        try {
+                          const result = await deleteComponente(
+                            confirmData.id,
+                            confirmData.force || false
+                          );
+
+                          setComponentesState((prev) =>
+                            prev.filter(
+                              (c) => c.id_componente !== confirmData.id
+                            )
+                          );
+
+                          const message = result.deletedQuestions
+                            ? `Componente excluído junto com ${result.deletedQuestions} pergunta(s) vinculada(s).`
+                            : "Componente excluído.";
+
+                          push({
+                            kind: "success",
+                            message,
+                          });
+
+                          pushAudit({
+                            action: "delete",
+                            entity: "componente",
+                            entityId: confirmData.id,
+                            details: confirmData.nome,
+                          });
+                        } catch (err: any) {
+                          console.log("Erro ao deletar componente:", err);
+                          console.log("Status:", err.response?.status);
+                          console.log("Data:", err.response?.data);
+
+                          if (
+                            err.response?.status === 409 &&
+                            err.response?.data?.code === "HAS_LINKED_QUESTIONS"
+                          ) {
+                            // Mostrar segundo popup de confirmação
+                            const linkedCount =
+                              err.response.data.linkedQuestionsCount;
+
+                            console.log(
+                              "Abrindo popup de confirmação com linkedCount:",
+                              linkedCount
+                            );
+
+                            setConfirmData({
+                              open: true,
+                              id: confirmData.id,
+                              nome: confirmData.nome,
+                              action: "deleteComponente",
+                              force: true,
+                              message: `Este componente possui ${linkedCount} pergunta(s) vinculada(s). Ao excluir o componente, todas as perguntas vinculadas também serão excluídas permanentemente. Deseja continuar?`,
+                            });
+                            shouldCloseModal = false;
+                            return; // Não fecha o modal e não re-lança erro
+                          }
+
+                          // Apenas re-throw outros erros (não relacionados a perguntas vinculadas)
+                          throw err;
+                        }
                       } else if (confirmData.action === "deletePergunta") {
                         const token = document.cookie
                           .split(";")
@@ -1794,7 +1904,9 @@ export default function DashboardPage({
                           "Falha ao excluir.",
                       });
                     } finally {
-                      setConfirmData(null);
+                      if (shouldCloseModal) {
+                        setConfirmData(null);
+                      }
                     }
                   }}
                 />
@@ -1925,22 +2037,57 @@ export default function DashboardPage({
                   Nome também validado contra palavras impróprias.
                 </p>
               </div>
-              <input
-                className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
-                value={editComponente.nome_componente}
-                onChange={(e) =>
-                  setEditComponente({
-                    ...editComponente,
-                    nome_componente: e.target.value,
-                  })
-                }
-              />
-              {filtrarTexto(editComponente.nome_componente)
-                .contemPalavraOfensiva && (
-                <p className="text-sm text-red-600 mt-1">
-                  Remova palavras impróprias.
-                </p>
-              )}
+              <div>
+                <label className="block text-sm font-medium text-zinc-700 mb-1">
+                  Nome do Componente
+                </label>
+                <input
+                  className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  value={editComponente.nome_componente}
+                  onChange={(e) =>
+                    setEditComponente({
+                      ...editComponente,
+                      nome_componente: e.target.value,
+                    })
+                  }
+                />
+                {filtrarTexto(editComponente.nome_componente)
+                  .contemPalavraOfensiva && (
+                  <p className="text-sm text-red-600 mt-1">
+                    Remova palavras impróprias.
+                  </p>
+                )}
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-zinc-700 mb-1">
+                  Curso
+                </label>
+                <select
+                  className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  value={editComponente.curso?.id_curso || ""}
+                  onChange={(e) => {
+                    const cursoSelecionado = cursosState.find(
+                      (c) => c.id_curso === e.target.value
+                    );
+                    setEditComponente({
+                      ...editComponente,
+                      curso: cursoSelecionado
+                        ? {
+                            id_curso: cursoSelecionado.id_curso,
+                            nome_curso: cursoSelecionado.nome_curso,
+                          }
+                        : undefined,
+                    });
+                  }}
+                >
+                  <option value="">Selecione um curso</option>
+                  {cursosState.map((curso) => (
+                    <option key={curso.id_curso} value={curso.id_curso}>
+                      {curso.nome_curso}
+                    </option>
+                  ))}
+                </select>
+              </div>
             </div>
             <DialogFooter className="mt-4 flex justify-end">
               <ActionButton
@@ -1964,6 +2111,13 @@ export default function DashboardPage({
                     });
                     return;
                   }
+                  if (!editComponente.curso?.id_curso) {
+                    push({
+                      kind: "error",
+                      message: "Selecione um curso.",
+                    });
+                    return;
+                  }
                   setSavingEdit(true);
                   setSavingSuccess(false);
                   try {
@@ -1973,6 +2127,7 @@ export default function DashboardPage({
                     await updateComponente({
                       id: editComponente.id_componente,
                       nome: editComponente.nome_componente,
+                      fkIdCurso: editComponente.curso.id_curso,
                     });
                     setComponentesState((prev) =>
                       prev.map((c) =>
@@ -1980,6 +2135,7 @@ export default function DashboardPage({
                           ? {
                               ...c,
                               nome_componente: editComponente.nome_componente,
+                              curso: editComponente.curso,
                             }
                           : c
                       )
@@ -2193,7 +2349,10 @@ export default function DashboardPage({
           <div
             className="absolute inset-0 bg-black/40 backdrop-blur-sm"
             onClick={() => {
-              if (!editUserLoading) setEditUser(null);
+              if (!editUserLoading) {
+                setEditUserSuccess(false);
+                setEditUser(null);
+              }
             }}
           />
           <div className="relative w-full max-w-md rounded-2xl bg-white border border-purple-200 shadow-xl p-6">
@@ -2317,7 +2476,12 @@ export default function DashboardPage({
             <div className="flex justify-end gap-4 mt-6">
               <button
                 disabled={editUserLoading}
-                onClick={() => !editUserLoading && setEditUser(null)}
+                onClick={() => {
+                  if (!editUserLoading) {
+                    setEditUserSuccess(false);
+                    setEditUser(null);
+                  }
+                }}
                 className="text-sm cursor-pointer text-zinc-600 hover:text-zinc-800"
               >
                 Cancelar

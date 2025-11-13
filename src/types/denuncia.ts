@@ -11,6 +11,7 @@ export interface Denuncia {
     usuario: {
         id_usuario: string
         nome_usuario: string
+        apelido_usuario?: string
         credibilidade_usuario: number
     }
 }

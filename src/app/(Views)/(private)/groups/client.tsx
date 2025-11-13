@@ -7,6 +7,7 @@ import { User } from "@/types/user";
 import { Input } from "@/components/ui/input";
 import { MultiSelectCombobox } from "@/components/ui/comboxFilter";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { UserCircleIcon } from "@heroicons/react/24/solid";
 import { useRouter } from "next/navigation";
 import { Card, CardContent } from "@/components/ui/card";
 import { useListGruposByUser } from "@/hooks/grupo/useListByUser";
@@ -70,6 +71,23 @@ const GroupsPage: React.FC<GroupsPageProps> = ({
   const [selectedMembersForAdd, setSelectedMembersForAdd] = useState<string[]>(
     []
   );
+  // Rastrear contagem de mensagens dos grupos (para detectar novas mensagens)
+  const [lastMessageCount, setLastMessageCount] = useState<
+    Record<string, number>
+  >({});
+
+  // Carregar contagem de mensagens do localStorage ao montar
+  useEffect(() => {
+    const stored = localStorage.getItem("groupMessageCounts");
+    if (stored) {
+      try {
+        setLastMessageCount(JSON.parse(stored));
+      } catch (e) {
+        console.error("Erro ao carregar contagens:", e);
+      }
+    }
+  }, []);
+
   // close card menus by clicking outside
   useEffect(() => {
     function onDocClick(e: MouseEvent) {
@@ -272,10 +290,10 @@ const GroupsPage: React.FC<GroupsPageProps> = ({
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.6 }}
         >
-          <h1 className="text-6xl font-extrabold bg-gradient-to-r from-purple-600 to-fuchsia-500 bg-clip-text text-transparent flex items-center gap-3 mb-4">
+          <h1 className="text-7xl md:text-8xl font-extrabold bg-gradient-to-r from-purple-600 to-fuchsia-500 bg-clip-text text-transparent flex items-center gap-3 mb-4">
             Grupos
           </h1>
-          <p className="text-zinc-600 leading-relaxed text-lg mb-6">
+          <p className="text-zinc-600 leading-relaxed text-xl md:text-2xl mb-6">
             Participe de grupos privados com seus colegas e compartilhe
             conhecimento, dúvidas e ideias em um ambiente colaborativo.
           </p>
@@ -493,13 +511,47 @@ const GroupsPage: React.FC<GroupsPageProps> = ({
                 </svg>
                 <Card
                   className="group relative bg-white rounded-2xl shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-300 cursor-pointer"
-                  onClick={() =>
-                    router.push(`/groups/groupDetail/${group.id_grupo}`)
-                  }
+                  onClick={() => {
+                    // Atualizar a contagem de mensagens ao visitar o grupo
+                    const currentCount = group._count?.mensagens ?? 0;
+                    const updated = {
+                      ...lastMessageCount,
+                      [group.id_grupo]: currentCount,
+                    };
+                    setLastMessageCount(updated);
+                    localStorage.setItem(
+                      "groupMessageCounts",
+                      JSON.stringify(updated)
+                    );
+                    router.push(`/groups/groupDetail/${group.id_grupo}`);
+                  }}
                   ref={(el: HTMLDivElement | null) => {
                     cardRefs.current[group.id_grupo] = el;
                   }}
                 >
+                  {/* Indicador de mensagens não lidas */}
+                  {(() => {
+                    const currentCount = group._count?.mensagens ?? 0;
+                    const lastCount = lastMessageCount[group.id_grupo] ?? 0;
+                    const hasNewMessages = currentCount > lastCount;
+                    return (
+                      hasNewMessages && (
+                        <div className="absolute top-1 right-2 z-10 group/notification">
+                          <div className="flex items-center gap-2">
+                            {/* Texto que aparece no hover */}
+                            <span className="opacity-0 group-hover/notification:opacity-100 transition-opacity duration-300 bg-purple-600 text-white text-xs font-medium px-3 py-1 rounded-full whitespace-nowrap shadow-lg">
+                              Novas Mensagens
+                            </span>
+                            {/* Badge pulsante */}
+                            <span className="relative flex h-4 w-4">
+                              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-purple-400 opacity-75"></span>
+                              <span className="relative inline-flex rounded-full h-4 w-4 bg-purple-500"></span>
+                            </span>
+                          </div>
+                        </div>
+                      )
+                    );
+                  })()}
                   <div className="px-6 pt-2 flex flex-nowrap items-start justify-between gap-2 relative">
                     <div
                       className={`flex items-center gap-2 text-lg font-semibold text-zinc-800 flex-1 min-w-0 truncate ${
@@ -545,15 +597,17 @@ const GroupsPage: React.FC<GroupsPageProps> = ({
                       </span>
                       <div className="flex -space-x-2">
                         {group.membros?.slice(0, 5).map((membro) => (
-                          <Avatar key={membro.id_membro} className="w-8 h-8">
-                            <AvatarImage
-                              src={
-                                membro.usuario?.foto_perfil ??
-                                "/imagens/default-avatar.png"
-                              }
-                            />
-                            <AvatarFallback>U</AvatarFallback>
-                          </Avatar>
+                          <div key={membro.id_membro} className="relative">
+                            {membro.usuario?.foto_perfil ? (
+                              <img
+                                src={membro.usuario.foto_perfil}
+                                alt={membro.usuario.nome_usuario}
+                                className="w-8 h-8 rounded-full object-cover border-2 border-white"
+                              />
+                            ) : (
+                              <UserCircleIcon className="w-8 h-8 text-gray-400 border-2 border-white rounded-full bg-white" />
+                            )}
+                          </div>
                         ))}
                       </div>
                     </div>

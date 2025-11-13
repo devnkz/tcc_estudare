@@ -1,15 +1,17 @@
 // Centralized role hierarchy & helpers
-export type UserRole = 'aluno' | 'professor' | 'administrador';
+export type UserRole = 'Aluno' | 'Professor' | 'Admin';
 
 // Ordem de força
 export const ROLE_POWER: Record<UserRole, number> = {
-  aluno: 1,
-  professor: 2,
-  administrador: 3,
+  Aluno: 1,
+  Professor: 2,
+  Admin: 3,
 };
 
 export function isAdmin(role?: string | null): boolean {
-  return role?.toLowerCase() === 'administrador';
+  if (!role) return false;
+  const normalized = role.toLowerCase();
+  return normalized === 'admin' || normalized === 'administrador';
 }
 
 export function compareRolePriority(a: UserRole, b: UserRole): number {
@@ -21,8 +23,8 @@ export function hasAtLeast(role: UserRole | undefined, min: UserRole): boolean {
   return ROLE_POWER[role] >= ROLE_POWER[min];
 }
 
-// Admin emails (overrides role check)
-export const ADMIN_EMAILS: string[] = ['lilvhx@gmail.com'];
+// Admin emails - lista vazia agora, pois a verificação é por tipo_usuario
+export const ADMIN_EMAILS: string[] = [];
 
 export function isAdminEmail(email?: string | null): boolean {
   if (!email) return false;

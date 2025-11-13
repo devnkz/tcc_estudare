@@ -51,6 +51,7 @@ export default function AskQuestionPage({
     formState: { errors },
     setValue,
     setError,
+    watch,
   } = useForm<CreatePerguntaData>();
 
   // local state for textarea, bad-words filter and char counter
@@ -77,10 +78,46 @@ export default function AskQuestionPage({
     return () => clearTimeout(timeoutId);
   }, [componenteIndex, componenteNames]);
 
-  // use the full bad-words list from the utils JSON
-  // note: the file is a local copy of the backend list for client-side UX checks
-  // we still recommend server-side validation for security
-  // import via require/import at top
+  // sort cursos and componentes alphabetically for the selects
+  const sortedCursos = useMemo(() => {
+    return [...cursos].sort((a, b) =>
+      String(a.nome_curso).localeCompare(String(b.nome_curso), undefined, {
+        sensitivity: "base",
+      })
+    );
+  }, [cursos]);
+
+  const sortedComponentesAll = useMemo(() => {
+    return [...componentes].sort((a, b) =>
+      String(a.nome_componente).localeCompare(
+        String(b.nome_componente),
+        undefined,
+        {
+          sensitivity: "base",
+        }
+      )
+    );
+  }, [componentes]);
+
+  // watch curso selection so we can filter componentes when curso is selected
+  const selectedCursoId = watch("fkId_curso");
+
+  const filteredComponentes = useMemo(() => {
+    if (!selectedCursoId) return sortedComponentesAll;
+    return sortedComponentesAll.filter(
+      (c) => String(c.curso?.id_curso) === String(selectedCursoId)
+    );
+  }, [sortedComponentesAll, selectedCursoId]);
+
+  const componentePlaceholder = selectedCursoId
+    ? filteredComponentes.length
+      ? "Selecione um componente para este curso"
+      : "Nenhum componente para este curso"
+    : "Selecione o componente";
+
+  const componenteDisabled = Boolean(
+    selectedCursoId && filteredComponentes.length === 0
+  );
 
   function normalize(text: string) {
     return text
@@ -95,7 +132,6 @@ export default function AskQuestionPage({
       .replace(/(\w)\1{2,}/g, "$1");
   }
 
-  // build a normalized set from the JSON list for fast client-side checks
   const normalizedBadWords = useMemo(() => {
     try {
       const list = (badWordsJSON && (badWordsJSON as any).words) || [];
@@ -138,8 +174,19 @@ export default function AskQuestionPage({
   const { mutate, isPending } = useCreatePergunta();
 
   const onSubmit = (data: CreatePerguntaData) => {
+    // prevent empty or whitespace-only submissions
+    const raw = (perguntaText || data.pergunta || "").toString();
+    const perguntaTrim = raw.trim();
+    if (!perguntaTrim) {
+      setError("pergunta" as any, {
+        type: "manual",
+        message: "A pergunta não pode ser vazia",
+      });
+      return;
+    }
+
     // run local filter and block submission if offensive words are present
-    const filtro = filtrarTextoLocal(perguntaText || data.pergunta || "");
+    const filtro = filtrarTextoLocal(perguntaTrim);
     setFilteredText(filtro.textoFiltrado);
     setHasBadWords(filtro.contemPalavraOfensiva);
 
@@ -165,6 +212,17 @@ export default function AskQuestionPage({
         setTimeout(() => {
           router.push("/home");
         }, 1500);
+      },
+      onError: (err: any) => {
+        // try to extract server validation message
+        const serverMessage =
+          err?.response?.data?.error ||
+          err?.message ||
+          "Erro ao criar pergunta";
+        setError("pergunta" as any, {
+          type: "server",
+          message: serverMessage,
+        });
       },
     });
   };
@@ -225,7 +283,7 @@ export default function AskQuestionPage({
           </motion.div>
 
           {/* GRID LAYOUT */}
-          <div className="grid lg:grid-cols-2 gap-6 lg:gap-10 items-start max-w-6xl mx-auto">
+          <div className="grid lg:grid-cols-2 gap-6 lg:gap-10 items-stretch max-w-6xl mx-auto">
             {/* FORMULÁRIO */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
@@ -235,7 +293,7 @@ export default function AskQuestionPage({
                 ease: [0.25, 0.1, 0.25, 1],
                 delay: 0.1,
               }}
-              className="bg-white rounded-2xl shadow-lg border border-zinc-200/60 p-6 sm:p-8"
+              className="bg-white rounded-3xl shadow-lg border border-zinc-200/60 p-6 sm:p-8 h-full"
             >
               <form
                 onSubmit={handleSubmit(onSubmit)}
@@ -253,7 +311,23 @@ export default function AskQuestionPage({
                     rules={{ required: "Selecione um curso" }}
                     render={({ field }) => (
                       <Select
-                        onValueChange={field.onChange}
+                        onValueChange={(val) => {
+                          // when user selects course, clear componente if it doesn't belong
+                          field.onChange(val);
+                          const compSelected = watch("fkId_componente");
+                          if (compSelected) {
+                            const compObj = componentes.find(
+                              (c) =>
+                                String(c.id_componente) === String(compSelected)
+                            );
+                            if (
+                              compObj &&
+                              String(compObj.curso?.id_curso) !== String(val)
+                            ) {
+                              setValue("fkId_componente" as any, "");
+                            }
+                          }
+                        }}
                         value={field.value}
                       >
                         <SelectTrigger className="w-full h-11 text-base cursor-pointer bg-white border-2 border-zinc-200 rounded-xl hover:border-purple-400 hover:shadow-sm focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 transition-all duration-300">
@@ -262,7 +336,7 @@ export default function AskQuestionPage({
                         <SelectContent>
                           <SelectGroup>
                             <SelectLabel>Cursos</SelectLabel>
-                            {cursos.map((curso: Curso) => (
+                            {sortedCursos.map((curso: Curso) => (
                               <SelectItem
                                 key={curso.id_curso}
                                 value={String(curso.id_curso)}
@@ -295,29 +369,56 @@ export default function AskQuestionPage({
                     rules={{ required: "Selecione um componente" }}
                     render={({ field }) => (
                       <Select
-                        onValueChange={field.onChange}
+                        onValueChange={(val) => {
+                          field.onChange(val);
+                          // if componente selected first, auto-select its curso
+                          const compObj = componentes.find(
+                            (c) => String(c.id_componente) === String(val)
+                          );
+                          if (compObj) {
+                            setValue(
+                              "fkId_curso" as any,
+                              String(compObj.curso?.id_curso)
+                            );
+                          }
+                        }}
                         value={field.value}
                       >
-                        <SelectTrigger className="w-full h-11 text-base cursor-pointer bg-white border-2 border-zinc-200 rounded-xl hover:border-purple-400 hover:shadow-sm focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 transition-all duration-300">
-                          <SelectValue placeholder="Selecione o componente" />
+                        <SelectTrigger
+                          className={`w-full h-11 text-base cursor-pointer bg-white border-2 border-zinc-200 rounded-xl focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 transition-all duration-300 ${
+                            componenteDisabled
+                              ? "pointer-events-none opacity-60"
+                              : "hover:border-purple-400 hover:shadow-sm"
+                          }`}
+                        >
+                          <SelectValue placeholder={componentePlaceholder} />
                         </SelectTrigger>
                         <SelectContent>
                           <SelectGroup>
                             <SelectLabel>Componentes</SelectLabel>
-                            {componentes.map((componente: Componente) => (
-                              <SelectItem
-                                key={componente.id_componente}
-                                value={String(componente.id_componente)}
-                                className="hover:bg-purple-50 hover:text-purple-600 transition-all cursor-pointer"
-                              >
-                                {componente.nome_componente}
-                              </SelectItem>
-                            ))}
+                            {filteredComponentes.map(
+                              (componente: Componente) => (
+                                <SelectItem
+                                  key={componente.id_componente}
+                                  value={String(componente.id_componente)}
+                                  className="hover:bg-purple-50 hover:text-purple-600 transition-all cursor-pointer"
+                                >
+                                  {componente.nome_componente}
+                                </SelectItem>
+                              )
+                            )}
                           </SelectGroup>
                         </SelectContent>
                       </Select>
                     )}
                   />
+                  {(!selectedCursoId || filteredComponentes.length === 0) && (
+                    <p className="text-sm text-zinc-500 mt-1">
+                      {!selectedCursoId
+                        ? "Você pode selecionar um componente primeiro — o curso será preenchido automaticamente."
+                        : "Nenhum componente disponível para este curso."}
+                    </p>
+                  )}
                   {errors.fkId_componente && (
                     <p className="text-red-500 text-sm mt-1 font-medium">
                       {errors.fkId_componente.message}
@@ -391,7 +492,7 @@ export default function AskQuestionPage({
                 ease: [0.25, 0.1, 0.25, 1],
                 delay: 0.2,
               }}
-              className="flex flex-col gap-6 lg:sticky lg:top-6"
+              className="flex flex-col gap-6 lg:sticky lg:top-6 h-full"
             >
               {/* CARD DE DICAS - ESTILO ARTÍSTICO */}
               <div className="relative bg-gradient-to-br from-purple-600 via-purple-700 to-purple-800 rounded-3xl shadow-2xl overflow-hidden h-full">
@@ -416,15 +517,13 @@ export default function AskQuestionPage({
                   <div className="text-6xl font-serif text-white/20 leading-none mb-2">
                     "
                   </div>
-
                   {/* Título */}
                   <h3 className="text-2xl font-bold text-white mb-6 leading-tight">
                     Dicas para uma{" "}
                     <span className="text-purple-200">boa pergunta</span>
                   </h3>
-
                   {/* Lista de dicas */}
-                  <ul className="space-y-3 mb-6 flex-1">
+                  <ul className="space-y-3 flex-1">
                     {TipsForAsking.map((tip, index) => (
                       <motion.li
                         key={index}
@@ -445,9 +544,8 @@ export default function AskQuestionPage({
                       </motion.li>
                     ))}
                   </ul>
-
                   {/* Assinatura */}
-                  <div className="text-sm text-purple-200 font-medium mt-auto">
+                  <div className="text-sm text-purple-200 font-medium py-10">
                     - Equipe Estudare
                   </div>
                 </div>

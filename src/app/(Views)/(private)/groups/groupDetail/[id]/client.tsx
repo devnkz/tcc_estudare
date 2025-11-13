@@ -292,7 +292,7 @@ export default function ClientGrupoDetail({
   }, [novoNome, nomeDirty]);
 
   // Enviar mensagem (mínimo para compilar; integrações em tempo real mantidas via servidor existente)
-  const MAX_CHARS = 500;
+  const MAX_CHARS = 191;
   const charCount = novaMensagem.length;
   const handleEnviarMensagem = () => {
     const text = novaMensagem.trim();
@@ -505,7 +505,7 @@ export default function ClientGrupoDetail({
 
   return (
     <div
-      className="flex justify-center px-4"
+      className="flex justify-center px-4 md:max-w-[980px]"
       style={{ paddingTop: headerHeight + 32 }}
     >
       {/* Container sem max-width após breakpoint (tablet) */}

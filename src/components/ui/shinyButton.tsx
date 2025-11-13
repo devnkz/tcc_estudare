@@ -18,13 +18,13 @@ export const ShinyButton = ({
   children,
   className,
   variant = "primary",
-  sparkles = 3,
+  sparkles = 5,
   ...rest
 }: ShinyButtonProps) => {
   const colors =
     variant === "primary"
-      ? "bg-gradient-to-r from-purple-700 via-violet-600 to-indigo-600"
-      : "bg-gradient-to-r from-zinc-700 via-zinc-600 to-zinc-700";
+      ? "bg-gradient-to-r from-purple-600 via-violet-600 to-purple-600"
+      : "bg-gradient-to-r from-zinc-600 via-zinc-600 to-purple-600";
 
   // Generate persistent random star positions & sizes
   const stars = React.useMemo(() => {

@@ -539,7 +539,7 @@ export default function DashboardPage({
     <div className="space-y-10 overflow-x-hidden" id="dashboard-root">
       {/* Barra superior de ações rápidas */}
       <div className="flex flex-wrap items-center justify-between gap-4">
-        <h1 className="text-2xl sm:text-3xl font-extrabold bg-gradient-to-r from-purple-700 via-fuchsia-600 to-pink-600 bg-clip-text text-transparent tracking-tight">
+        <h1 className="text-2xl sm:text-3xl font-extrabold bg-gradient-to-r from-purple-800 via-purple-600 to-purple-400 bg-clip-text text-transparent tracking-tight">
           Dashboard
         </h1>
         <ActionButton
@@ -547,8 +547,8 @@ export default function DashboardPage({
           isLoading={refreshingAll}
           onClick={handleGlobalRefresh}
           enableRipplePulse
-          className={`bg-gradient-to-r from-purple-600 via-fuchsia-600 to-pink-600 min-w-[170px] cursor-pointer ${
-            refreshingAll ? "animate-pulse ring-2 ring-purple-300/50" : ""
+          className={`bg-gradient-to-r from-purple-700 via-purple-600 to-violet-600 min-w-[170px] cursor-pointer ${
+            refreshingAll ? "animate-pulse ring-2 ring-purple-400/40" : ""
           }`}
         />
       </div>

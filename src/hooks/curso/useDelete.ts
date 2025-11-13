@@ -5,7 +5,7 @@ export function useDeleteCurso() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: deleteCurso,
+    mutationFn: (id: string) => deleteCurso(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["cursos"] });
     },

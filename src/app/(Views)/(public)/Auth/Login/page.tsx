@@ -7,6 +7,7 @@ import {
   EyeSlashIcon,
 } from "@heroicons/react/24/solid";
 import { HeaderLoginCadastro } from "../../../../../components/layout/header";
+import { GlowingEffect } from "@/components/ui/glowing-effect";
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { ActionButton } from "@/components/ui/actionButton";
@@ -109,129 +110,141 @@ export default function LoginUsuario() {
         <HeaderLoginCadastro />
 
         <main className="flex-1 flex flex-col items-center">
-          <form
-            onSubmit={login}
-            className="bg-white shadow-lg rounded-2xl p-8 w-full max-w-md border border-gray-100 flex flex-col gap-5"
-          >
-            {/* Email */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Email
-              </label>
-              <div className="relative">
-                <EnvelopeIcon className="w-4 h-4 text-gray-400 absolute left-3 top-3.5" />
-                <input
-                  type="email"
-                  placeholder="Digite seu email"
-                  value={form.email_usuario}
-                  onChange={(e) =>
-                    handleChange("email_usuario", e.target.value)
-                  }
-                  className="w-full pl-10 pr-4 py-2 border rounded-lg border-gray-300 focus:border-purple-500 focus:ring focus:ring-purple-200 outline-none"
-                />
-                {emailError && (
-                  <p className="text-red-500 text-xs mt-1">{emailError}</p>
+          <div className="relative w-full max-w-md">
+            <GlowingEffect
+              spread={80}
+              glow={true}
+              disabled={false}
+              proximity={160}
+              inactiveZone={0.25}
+              borderWidth={3}
+              movementDuration={0.9}
+              blur={8}
+            />
+            <form
+              onSubmit={login}
+              className="relative bg-white shadow-lg rounded-2xl p-8 w-full border border-gray-100 flex flex-col gap-5"
+            >
+              {/* Email */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Email
+                </label>
+                <div className="relative">
+                  <EnvelopeIcon className="w-4 h-4 text-gray-400 absolute left-3 top-3.5" />
+                  <input
+                    type="email"
+                    placeholder="Digite seu email"
+                    value={form.email_usuario}
+                    onChange={(e) =>
+                      handleChange("email_usuario", e.target.value)
+                    }
+                    className="w-full pl-10 pr-4 py-2 border rounded-lg border-gray-300 focus:border-purple-500 focus:ring focus:ring-purple-200 outline-none"
+                  />
+                  {emailError && (
+                    <p className="text-red-500 text-xs mt-1">{emailError}</p>
+                  )}
+                </div>
+              </div>
+
+              {/* Senha */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Senha
+                </label>
+                <div className="relative">
+                  <LockClosedIcon className="w-4 h-4 text-gray-400 absolute left-3 top-3" />
+                  <input
+                    type={mostrarSenha ? "text" : "password"}
+                    placeholder="Digite sua senha"
+                    value={form.senha_usuario}
+                    onChange={(e) =>
+                      handleChange("senha_usuario", e.target.value)
+                    }
+                    className="w-full pl-10 pr-10 py-2 border rounded-lg border-gray-300 focus:border-purple-500 focus:ring focus:ring-purple-200 outline-none"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setMostrarSenha(!mostrarSenha)}
+                    className="absolute right-3 top-3 text-gray-400 hover:text-gray-600 cursor-pointer"
+                  >
+                    {mostrarSenha ? (
+                      <EyeSlashIcon className="w-4.5 h-4.5 transition-colors" />
+                    ) : (
+                      <EyeIcon className="w-4.5 h-4.5 transition-colors" />
+                    )}
+                  </button>
+                </div>
+                {senhaError && (
+                  <p className="text-red-500 text-xs mt-1">{senhaError}</p>
                 )}
               </div>
-            </div>
 
-            {/* Senha */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Senha
-              </label>
-              <div className="relative">
-                <LockClosedIcon className="w-4 h-4 text-gray-400 absolute left-3 top-3" />
-                <input
-                  type={mostrarSenha ? "text" : "password"}
-                  placeholder="Digite sua senha"
-                  value={form.senha_usuario}
-                  onChange={(e) =>
-                    handleChange("senha_usuario", e.target.value)
-                  }
-                  className="w-full pl-10 pr-10 py-2 border rounded-lg border-gray-300 focus:border-purple-500 focus:ring focus:ring-purple-200 outline-none"
-                />
+              {/* Lembrar de mim / Esqueci senha */}
+              <div className="flex items-center justify-between text-sm">
+                <label
+                  htmlFor="remember"
+                  className="flex items-center relative cursor-pointer"
+                >
+                  <input
+                    type="checkbox"
+                    id="remember"
+                    checked={isChecked}
+                    onChange={() => setIsChecked(!isChecked)}
+                    className={`${interbold.className} peer appearance-none w-4.5 h-4.5 bg-white border-2 border-purple-400 rounded-sm checked:bg-purple-600 checked:text-gray-200 checked:border-purple-600 transition-colors duration-300 cursor-pointer mr-2`}
+                  />
+                  <span className="absolute left-1 top-0 w-0.5 h-0.5 text-white text-sm pointer-events-none peer-checked:content-['✔']">
+                    ✔
+                  </span>
+                  <div
+                    className={`${interregular.className} font-regular font- text-gray-700 gap-1 text-sm`}
+                  >
+                    {isChecked ? "Lembraremos de você :)" : "Lembre de mim"}
+                  </div>
+                </label>
+
                 <button
                   type="button"
-                  onClick={() => setMostrarSenha(!mostrarSenha)}
-                  className="absolute right-3 top-3 text-gray-400 hover:text-gray-600 cursor-pointer"
+                  className="text-purple-600 hover:underline cursor-pointer"
                 >
-                  {mostrarSenha ? (
-                    <EyeSlashIcon className="w-4.5 h-4.5 transition-colors" />
-                  ) : (
-                    <EyeIcon className="w-4.5 h-4.5 transition-colors" />
-                  )}
+                  Esqueceu a senha?
                 </button>
               </div>
-              {senhaError && (
-                <p className="text-red-500 text-xs mt-1">{senhaError}</p>
-              )}
-            </div>
 
-            {/* Lembrar de mim / Esqueci senha */}
-            <div className="flex items-center justify-between text-sm">
-              <label
-                htmlFor="remember"
-                className="flex items-center relative cursor-pointer"
-              >
-                <input
-                  type="checkbox"
-                  id="remember"
-                  checked={isChecked}
-                  onChange={() => setIsChecked(!isChecked)}
-                  className={`${interbold.className} peer appearance-none w-4.5 h-4.5 bg-white border-2 border-purple-400 rounded-sm checked:bg-purple-600 checked:text-gray-200 checked:border-purple-600 transition-colors duration-300 cursor-pointer mr-2`}
-                />
-                <span className="absolute left-1 top-0 w-0.5 h-0.5 text-white text-sm pointer-events-none peer-checked:content-['✔']">
-                  ✔
-                </span>
-                <div
-                  className={`${interregular.className} font-regular font- text-gray-700 gap-1 text-sm`}
+              {/* Botão principal */}
+              {errorMessage && (
+                <motion.div
+                  initial={{ opacity: 0, y: 6 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="text-center text-sm text-red-600 bg-red-50 p-2 rounded mb-2"
                 >
-                  {isChecked ? "Lembraremos de você :)" : "Lembre de mim"}
-                </div>
-              </label>
+                  {errorMessage}
+                </motion.div>
+              )}
 
-              <button
-                type="button"
-                className="text-purple-600 hover:underline cursor-pointer"
-              >
-                Esqueceu a senha?
-              </button>
-            </div>
+              <ActionButton
+                type="submit"
+                textIdle={isLoading ? "Entrando..." : "Entrar"}
+                isLoading={isLoading}
+                isSuccess={success}
+                disabled={isLoading}
+                enableRipplePulse
+                className="w-full"
+              />
 
-            {/* Botão principal */}
-            {errorMessage && (
-              <motion.div
-                initial={{ opacity: 0, y: 6 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="text-center text-sm text-red-600 bg-red-50 p-2 rounded mb-2"
-              >
-                {errorMessage}
-              </motion.div>
-            )}
-
-            <ActionButton
-              type="submit"
-              textIdle={isLoading ? "Entrando..." : "Entrar"}
-              isLoading={isLoading}
-              isSuccess={success}
-              disabled={isLoading}
-              enableRipplePulse
-              className="w-full"
-            />
-
-            {/* Mensagem de redirecionamento */}
-            <p className="text-center text-sm text-gray-600">
-              Ainda não tem uma conta?
-              <Link
-                href="/Auth/Register"
-                className="text-purple-600 hover:text-purple-700 font-medium transition-colors"
-              >
-                {" "}
-                Criar agora
-              </Link>
-            </p>
-          </form>
+              {/* Mensagem de redirecionamento */}
+              <p className="text-center text-sm text-gray-600">
+                Ainda não tem uma conta?
+                <Link
+                  href="/Auth/Register"
+                  className="text-purple-600 hover:text-purple-700 font-medium transition-colors"
+                >
+                  {" "}
+                  Criar agora
+                </Link>
+              </p>
+            </form>
+          </div>
         </main>
       </div>
     </div>

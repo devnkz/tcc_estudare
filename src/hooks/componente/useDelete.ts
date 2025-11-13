@@ -5,7 +5,7 @@ export function useDeleteComponente() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: deleteComponente,
+    mutationFn: (id: string) => deleteComponente(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["componentes"] });
     },

@@ -22,7 +22,7 @@ interface NavItem {
 }
 
 const navItems: NavItem[] = [
-  { href: "#dashboard-root", label: "Dashboard", icon: LayoutDashboard },
+  { href: "/home", label: "Home", icon: LayoutDashboard },
   { href: "#manage-usuarios", label: "Usuários", icon: Users2 },
   { href: "#manage-denuncias", label: "Denúncias", icon: FileWarning },
   { href: "#manage-cursos", label: "Cursos", icon: BookOpen },
@@ -106,25 +106,26 @@ export function SidebarDashboard({
         {navItems.map((item) => {
           const Icon = item.icon;
           const active = hash === item.href;
-          return (
-            <a
-              key={item.href}
-              href={item.href}
-              className={`relative group flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors
-               ${
-                 active
-                   ? "bg-purple-100 text-purple-700"
-                   : "text-zinc-600 hover:text-zinc-800 hover:bg-zinc-100"
-               }`}
-              onClick={(e) => {
-                // Auditoria abre modal
-                if (item.label === "Auditoria") {
-                  e.preventDefault();
-                  onOpenAudit?.();
-                  return;
-                }
-                // Smooth scroll para âncoras internas
-                if (item.href.startsWith("#")) {
+          const commonClass = `relative group flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors
+                 ${
+                   active
+                     ? "bg-purple-100 text-purple-700"
+                     : "text-zinc-600 hover:text-zinc-800 hover:bg-zinc-100"
+                 }`;
+
+          // if it's an internal anchor (#...), keep current behavior (smooth scroll/modal)
+          if (item.href.startsWith("#")) {
+            return (
+              <a
+                key={item.href}
+                href={item.href}
+                className={commonClass}
+                onClick={(e) => {
+                  if (item.label === "Auditoria") {
+                    e.preventDefault();
+                    onOpenAudit?.();
+                    return;
+                  }
                   e.preventDefault();
                   const el = document.querySelector(item.href);
                   if (el) {
@@ -133,13 +134,41 @@ export function SidebarDashboard({
                       block: "start",
                     });
                   } else {
-                    // fallback: altera hash para permitir padrão do navegador
                     window.location.hash = item.href;
                   }
-                }
-              }}
-              style={{ cursor: "pointer" }}
-            >
+                }}
+                style={{ cursor: "pointer" }}
+              >
+                <Icon size={18} className="shrink-0" />
+                <span
+                  className="overflow-hidden whitespace-nowrap"
+                  style={{ opacity: effectiveCollapsed ? 0 : 1 }}
+                >
+                  {item.label}
+                </span>
+                <AnimatePresence>
+                  {active && !effectiveCollapsed && (
+                    <motion.span
+                      layoutId="sidebar-active-dot"
+                      className="absolute right-2 h-2 w-2 rounded-full bg-gradient-to-br from-purple-500 to-violet-600 shadow"
+                      initial={{ scale: 0.4, opacity: 0 }}
+                      animate={{ scale: 1, opacity: 1 }}
+                      exit={{ scale: 0.4, opacity: 0 }}
+                      transition={{
+                        type: "spring",
+                        stiffness: 300,
+                        damping: 20,
+                      }}
+                    />
+                  )}
+                </AnimatePresence>
+              </a>
+            );
+          }
+
+          // otherwise treat as a route — use Next Link for client navigation
+          return (
+            <Link key={item.href} href={item.href} className={commonClass}>
               <Icon size={18} className="shrink-0" />
               <span
                 className="overflow-hidden whitespace-nowrap"
@@ -147,7 +176,6 @@ export function SidebarDashboard({
               >
                 {item.label}
               </span>
-              {/* Indicator animado */}
               <AnimatePresence>
                 {active && !effectiveCollapsed && (
                   <motion.span
@@ -160,7 +188,7 @@ export function SidebarDashboard({
                   />
                 )}
               </AnimatePresence>
-            </a>
+            </Link>
           );
         })}
       </nav>

@@ -1,7 +1,7 @@
 import Link from "next/link";
 
-interface PropsButton {
-  icon?: React.ElementType;
+interface ButtonProps {
+  icon?: React.ComponentType<any>;
   textButton: string;
   rotaRedirecionamento: string;
 }
@@ -10,7 +10,7 @@ export function Button({
   icon: Icon,
   textButton,
   rotaRedirecionamento,
-}: PropsButton) {
+}: ButtonProps) {
   return (
     <Link href={rotaRedirecionamento}>
       <button
@@ -28,12 +28,15 @@ export function Button({
 
 import { useRouter } from "next/navigation";
 
-interface PropsButton {
+interface ButtonAuthProps {
   textButton: string;
   rotaRedirecionamento: string;
 }
 
-export function ButtonAuth({ textButton, rotaRedirecionamento }: PropsButton) {
+export function ButtonAuth({
+  textButton,
+  rotaRedirecionamento,
+}: ButtonAuthProps) {
   const router = useRouter();
 
   return (

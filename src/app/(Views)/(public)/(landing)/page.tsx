@@ -1,6 +1,5 @@
 "use client";
 
-import { ArrowRightIcon } from "@heroicons/react/16/solid";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Inter } from "next/font/google";
@@ -29,8 +28,8 @@ export default function TelaHome() {
   }, []);
 
   return (
-    <div className="flex flex-col min-h-screen py-14 w-full bg-white">
-      <main className="flex flex-col lg:flex-row items-center justify-center flex-grow px-6 sm:px-10 md:px-16 lg:px-24 pt-14 pb-24 gap-14 lg:gap-20">
+    <div className="flex flex-col min-h-screen w-full bg-white">
+      <main className="flex flex-col lg:flex-row py- mt-28 items-center justify-center flex-grow px-6 sm:px-10 md:px-16 lg:px-24 pt-14 pb-24 gap-14 lg:gap-20">
         {/* IMAGEM À ESQUERDA */}
         <motion.div
           initial={{ opacity: 0, x: -30 }}

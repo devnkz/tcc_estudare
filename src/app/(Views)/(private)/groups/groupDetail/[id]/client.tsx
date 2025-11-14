@@ -261,7 +261,7 @@ export default function ClientGrupoDetail({
       leaveGroupMutation.mutate({ grupoId: grupo.id_grupo } as any, {
         onSuccess: () => {
           setConfirmOpen(false);
-          router.push("/groups");
+          router.push("app(Views)(private)groupsclient.tsx");
         },
         onError: (err: any) => {
           console.error("Erro ao sair do grupo", err);

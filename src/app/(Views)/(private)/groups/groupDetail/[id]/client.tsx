@@ -237,7 +237,7 @@ export default function ClientGrupoDetail({
   };
   const handleLeaveGroup = () => {
     leaveGroupMutation.mutate({ grupoId: grupo.id_grupo } as any, {
-      onSuccess: () => router.push("/groupss"),
+      onSuccess: () => router.push("/groups"),
       onError: (err: any) => {
         console.error("Erro ao sair do grupo", err);
       },
@@ -261,7 +261,7 @@ export default function ClientGrupoDetail({
       leaveGroupMutation.mutate({ grupoId: grupo.id_grupo } as any, {
         onSuccess: () => {
           setConfirmOpen(false);
-          router.push("/groupss");
+          router.push("/groups");
         },
         onError: (err: any) => {
           console.error("Erro ao sair do grupo", err);

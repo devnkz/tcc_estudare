@@ -193,7 +193,7 @@ export default function ModalCreateDenuncia({
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-lg rounded-2xl border border-red-200 bg-white shadow-xl">
+      <DialogContent className="max-w-lg rounded-2xl border border-red-200 bg-white shadow-xl z-[110]">
         <DialogHeader>
           <DialogTitle className="text-2xl font-extrabold bg-gradient-to-r from-red-600 to-rose-600 bg-clip-text text-transparent flex flex-col gap-1">
             Registrar Denúncia

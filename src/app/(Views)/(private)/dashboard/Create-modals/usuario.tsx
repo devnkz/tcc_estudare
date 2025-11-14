@@ -51,6 +51,7 @@ export function SignUpUserModal({
   tipousuarios,
   onFeedback,
 }: Props) {
+  const isEtecEmail = (email: string) => /@etec\.sp\.gov\.br$/i.test(email);
   const [badFields, setBadFields] = React.useState<{
     nome?: boolean;
     apelido?: boolean;
@@ -218,6 +219,9 @@ export function SignUpUserModal({
             rules={{
               required: "O email é obrigatório",
               pattern: { value: /^\S+@\S+\.\S+$/, message: "Email inválido" },
+              validate: (v: string) =>
+                isEtecEmail(v) ||
+                "É necessário usar um email da ETEC (@etec.sp.gov.br)",
             }}
             render={({ field }) => (
               <motion.div
@@ -238,6 +242,17 @@ export function SignUpUserModal({
                     field.onChange(e);
                     const val = e.target.value;
                     setEmailState((prev) => ({ ...prev, touched: true }));
+                    // domínio obrigatório da ETEC
+                    if (val && !isEtecEmail(val)) {
+                      setEmailState((prev) => ({
+                        ...prev,
+                        error:
+                          "É necessário usar um email da ETEC (@etec.sp.gov.br)",
+                      }));
+                      return;
+                    }
+                    // limpa erro de domínio antes de checar existência
+                    setEmailState((prev) => ({ ...prev, error: undefined }));
                     debouncedCheckEmail(val);
                   }}
                 />

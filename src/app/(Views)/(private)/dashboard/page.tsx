@@ -4,6 +4,7 @@ import { fetchCursos } from "@/services/cursoService";
 import { fetchComponentes } from "@/services/componenteService";
 import { fetchUsers } from "@/services/userService";
 import { fetchPerguntas } from "@/services/perguntaService";
+import { fetchRespostas } from "@/services/respostaService";
 import { fetchGrupos } from "@/services/grupos/grupoService";
 import { getTokenFromCookie } from "@/lib/getTokenServer";
 import { jwtDecode } from "jwt-decode";
@@ -33,7 +34,7 @@ export default async function DashboardPageIndex() {
     `${process.env.NEXT_PUBLIC_API_URL}/tipousuario`
   );
   const dataTipoUsuario = await resTipoUsuario.json();
-  const [cursos, denuncias, componentes, users, perguntas, grupos] =
+  const [cursos, denuncias, componentes, users, perguntas, grupos, respostas] =
     await Promise.all([
       fetchCursos(),
       fetchDenuncias(),
@@ -41,6 +42,7 @@ export default async function DashboardPageIndex() {
       fetchUsers(),
       fetchPerguntas(),
       fetchGrupos(),
+      fetchRespostas(),
     ]);
 
   console.log(denuncias);
@@ -53,6 +55,7 @@ export default async function DashboardPageIndex() {
       denuncias={denuncias}
       componentes={componentes}
       perguntas={perguntas}
+      respostas={respostas}
       grupos={grupos}
     />
   );

@@ -1,3 +1,5 @@
+"use client";
+
 import { CreateCursoData } from "@/types/curso";
 import { useState } from "react";
 import * as React from "react";

@@ -36,6 +36,7 @@ import { Curso } from "@/types/curso";
 import { Componente } from "@/types/componente";
 import { User } from "@/types/user";
 import { Pergunta } from "@/types/pergunta";
+import { Resposta } from "@/types/resposta";
 import { Grupo } from "@/types/grupo";
 import { PenalidadeModal } from "./Create-modals/penalidade";
 import { useToast } from "@/components/ui/animatedToast";
@@ -66,6 +67,7 @@ export default function DashboardPage({
   componentes,
   users,
   perguntas,
+  respostas,
   grupos,
 }: {
   tipousuario: any[];
@@ -74,6 +76,7 @@ export default function DashboardPage({
   componentes: Componente[];
   users: User[];
   perguntas: Pergunta[];
+  respostas: Resposta[];
   grupos: Grupo[];
 }) {
   // --- Auditoria local (reintroduzido após refatoração) ---
@@ -158,6 +161,7 @@ export default function DashboardPage({
     useState<Componente[]>(componentes);
   const [usersState, setUsersState] = useState<User[]>(users);
   const [perguntasState, setPerguntasState] = useState<Pergunta[]>(perguntas);
+  const [respostasState, setRespostasState] = useState<Resposta[]>(respostas);
   const [gruposState, setGruposState] = useState<Grupo[]>(grupos);
   const [denunciasState, setDenunciasState] = useState<Denuncia[]>(denuncias);
   // edição popups
@@ -188,6 +192,7 @@ export default function DashboardPage({
       | "deleteCurso"
       | "deleteComponente"
       | "deletePergunta"
+      | "deleteResposta"
       | "deleteUser"
       | "deleteGrupo";
     id: string;
@@ -302,6 +307,19 @@ export default function DashboardPage({
       ),
     [perguntasState]
   );
+  const respostasSorted = useMemo(
+    () =>
+      [...respostasState].sort((a, b) => {
+        const da = a.dataCriacao_resposta
+          ? new Date(a.dataCriacao_resposta).getTime()
+          : 0;
+        const db = b.dataCriacao_resposta
+          ? new Date(b.dataCriacao_resposta).getTime()
+          : 0;
+        return db - da;
+      }),
+    [respostasState]
+  );
   const gruposSorted = useMemo(
     () =>
       [...gruposState].sort((a, b) =>
@@ -316,6 +334,7 @@ export default function DashboardPage({
     "usuarios" | "grupos" | "cursos" | "componentes" | "perguntas"
   >("usuarios");
   const [searchTipoUsuario, setSearchTipoUsuario] = useState<string>("");
+  const [searchCursoFiltro, setSearchCursoFiltro] = useState<string>("");
   const [searchPage, setSearchPage] = useState(1);
   const pageSize = 20;
 
@@ -365,9 +384,12 @@ export default function DashboardPage({
           c.nome_curso.toLowerCase().includes(q)
         );
       case "componentes":
-        return componentesSorted.filter((c) =>
-          c.nome_componente.toLowerCase().includes(q)
-        );
+        return componentesSorted.filter((c) => {
+          const nomeMatch = c.nome_componente.toLowerCase().includes(q);
+          const cursoMatch =
+            !searchCursoFiltro || c.curso?.id_curso === searchCursoFiltro;
+          return nomeMatch && cursoMatch;
+        });
       case "perguntas":
         return perguntasSorted.filter((p) =>
           p.pergunta.toLowerCase().includes(q)
@@ -613,6 +635,30 @@ export default function DashboardPage({
                     {tipoUsuariosDisponiveis.map((t) => (
                       <option key={t} value={t}>
                         {t}
+                      </option>
+                    ))}
+                  </select>
+                  <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 text-xs">
+                    ▼
+                  </span>
+                </div>
+              </div>
+            )}
+            {searchDomain === "componentes" && (
+              <div className="w-full sm:w-60 flex flex-col gap-1">
+                <label className="text-[11px] font-semibold tracking-wide text-zinc-500 uppercase">
+                  Curso
+                </label>
+                <div className="relative">
+                  <select
+                    className="w-full rounded-xl border border-zinc-200 bg-white px-3 py-2 text-sm cursor-pointer focus:outline-none focus:ring-2 focus:ring-purple-300 pr-8 appearance-none"
+                    value={searchCursoFiltro || ""}
+                    onChange={(e) => setSearchCursoFiltro(e.target.value)}
+                  >
+                    <option value="">Todos</option>
+                    {cursos.map((curso) => (
+                      <option key={curso.id_curso} value={curso.id_curso}>
+                        {curso.nome_curso}
                       </option>
                     ))}
                   </select>
@@ -933,8 +979,8 @@ export default function DashboardPage({
                 <span className="text-zinc-500">
                   Nova denúncia de{" "}
                   <span className="font-semibold text-zinc-800">
-                    {denuncia.usuario.nome_usuario}
-                    {denuncia.usuario.apelido_usuario && (
+                    {denuncia.usuario?.nome_usuario}
+                    {denuncia.usuario?.apelido_usuario && (
                       <span className="font-normal text-zinc-600">
                         {" "}
                         ({denuncia.usuario.apelido_usuario})
@@ -942,11 +988,18 @@ export default function DashboardPage({
                     )}
                   </span>
                 </span>
+                <span className="text-xs text-zinc-500 ml-2">
+                  Autor da pergunta
+                </span>
                 <span className="text-zinc-600 text-sm">
                   Credibilidade do usuário:{" "}
                   <span className="font-semibold">
-                    {denuncia.usuario.credibilidade_usuario}
+                    {denuncia.usuario?.credibilidade_usuario ||
+                      "(credibilidade não disponível)"}
                   </span>
+                </span>
+                <span className="text-xs text-zinc-500 ml-2">
+                  Autor da resposta
                 </span>
                 <span className="text-zinc-600 text-sm">
                   Tipo de conteudo denunciado:{" "}
@@ -1130,7 +1183,7 @@ export default function DashboardPage({
       <section id="manage-cursos" className="space-y-2 scroll-mt-24">
         <h2 className="text-2xl font-bold">Cursos</h2>
         <div className="overflow-hidden rounded-xl border border-zinc-200 bg-white">
-          <div className="divide-y">
+          <div className="p-4 space-y-3">
             {refreshingAll && (
               <div className="px-4 py-3 flex justify-between items-center">
                 <div className="h-4 w-40 rounded bg-zinc-200 animate-pulse" />
@@ -1196,8 +1249,13 @@ export default function DashboardPage({
                   key={comp.id_componente}
                   className="flex items-center justify-between px-4 py-3 hover:bg-zinc-50"
                 >
-                  <div className="text-sm font-medium text-zinc-800">
+                  <div className="text-sm font-medium text-zinc-800 flex items-center gap-2">
                     {comp.nome_componente}
+                    {comp.curso?.nome_curso && (
+                      <span className="text-xs px-2 py-0.5 rounded-full bg-purple-100 text-purple-700 font-normal">
+                        {comp.curso.nome_curso}
+                      </span>
+                    )}
                   </div>
                   <div className="flex gap-2">
                     <button
@@ -1327,18 +1385,37 @@ export default function DashboardPage({
               perguntasSorted.slice(0, 8).map((p) => (
                 <div
                   key={p.id_pergunta}
-                  className="flex items-center justify-between px-4 py-3 hover:bg-zinc-50 text-sm"
+                  className="rounded-lg border border-zinc-100 bg-white p-4 flex items-start justify-between text-sm shadow-sm"
                 >
                   <div className="flex-1 min-w-0">
-                    <p className="font-medium text-zinc-800 truncate">
-                      {p.pergunta}
-                    </p>
-                    <p className="text-sm text-zinc-600">
-                      {p.usuario?.nome_usuario} •{" "}
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="text-sm text-zinc-700 font-medium">
+                        {p.usuario?.nome_usuario}
+                      </span>
+                      <span className="text-xs text-zinc-500 ml-2">
+                        Autor da pergunta
+                      </span>
+                      {p.usuario?.apelido_usuario && (
+                        <span className="text-xs text-purple-600">
+                          {p.usuario.apelido_usuario}
+                        </span>
+                      )}
+                      <span className="ml-2 text-xs text-zinc-400">
+                        {p.dataCriacao_pergunta
+                          ? new Date(p.dataCriacao_pergunta).toLocaleString(
+                              "pt-BR"
+                            )
+                          : ""}
+                      </span>
+                    </div>
+
+                    <p className="font-medium text-zinc-800">{p.pergunta}</p>
+
+                    <div className="text-sm text-zinc-600 mt-1">
                       {p.componente?.nome_componente} • {p.curso?.nome_curso}
-                    </p>
+                    </div>
                   </div>
-                  <div className="flex gap-2 ml-4">
+                  <div className="flex flex-col items-end gap-2 ml-4">
                     <a
                       className="cursor-pointer px-3 py-1 text-sm rounded-lg bg-purple-200 text-purple-800 hover:bg-purple-300 transform-gpu hover:-translate-y-0.5"
                       href={`/home?tipo_conteudo=Pergunta&id_conteudo=${p.id_pergunta}`}
@@ -1363,6 +1440,113 @@ export default function DashboardPage({
                   </div>
                 </div>
               ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Últimas respostas */}
+      <section id="manage-respostas" className="space-y-2 scroll-mt-24">
+        <h2 className="text-2xl font-bold">Últimas respostas</h2>
+        <div className="overflow-hidden rounded-xl border border-zinc-200 bg-white">
+          <div className="divide-y">
+            {refreshingAll && (
+              <div className="px-4 py-3">
+                <div className="h-4 w-64 rounded bg-zinc-200 animate-pulse mb-2" />
+                <div className="h-3 w-40 rounded bg-zinc-100 animate-pulse" />
+              </div>
+            )}
+            {!refreshingAll &&
+              respostasSorted.slice(0, 8).map((r) => {
+                const pergunta = perguntasState.find(
+                  (pq) => pq.id_pergunta === r.fkId_pergunta
+                );
+                return (
+                  <div
+                    key={r.id_resposta}
+                    className="rounded-lg border border-zinc-100 bg-white p-4 flex items-start justify-between text-sm shadow-sm"
+                  >
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="text-sm text-zinc-700 font-medium">
+                          {pergunta?.usuario?.nome_usuario}
+                        </span>
+                        <span className="text-xs text-zinc-500 ml-2">
+                          Autor da pergunta
+                        </span>
+                        {pergunta?.usuario?.apelido_usuario && (
+                          <span className="text-xs text-purple-600">
+                            {pergunta.usuario.apelido_usuario}
+                          </span>
+                        )}
+                        <span className="ml-2 text-xs text-zinc-400">
+                          {pergunta?.dataCriacao_pergunta
+                            ? new Date(
+                                pergunta.dataCriacao_pergunta
+                              ).toLocaleString("pt-BR")
+                            : ""}
+                        </span>
+                      </div>
+
+                      <p className="font-medium text-zinc-800 truncate">
+                        {pergunta?.pergunta || "(pergunta não encontrada)"}
+                      </p>
+
+                      <div className="text-sm text-zinc-600 mt-1">
+                        {pergunta?.componente?.nome_componente} •{" "}
+                        {pergunta?.curso?.nome_curso}
+                      </div>
+
+                      <div className="flex items-center gap-2 mt-3 mb-1">
+                        <span className="text-sm text-zinc-700 font-medium">
+                          {r.usuario?.nome_usuario ||
+                            "(Autor da resposta não disponível)"}
+                        </span>
+                        <span className="text-xs text-zinc-500 ml-2">
+                          Autor da resposta
+                        </span>
+                        {r.usuario?.apelido_usuario && (
+                          <span className="text-xs text-purple-600">
+                            {r.usuario.apelido_usuario}
+                          </span>
+                        )}
+                        <span className="ml-2 text-xs text-zinc-400">
+                          {r.dataCriacao_resposta
+                            ? new Date(r.dataCriacao_resposta).toLocaleString(
+                                "pt-BR"
+                              )
+                            : ""}
+                        </span>
+                      </div>
+
+                      <p className="text-sm text-zinc-600 mt-2">{r.resposta}</p>
+                    </div>
+
+                    <div className="flex flex-col items-end gap-2 ml-4">
+                      <a
+                        className="cursor-pointer px-3 py-1 text-sm rounded-lg bg-purple-200 text-purple-800 hover:bg-purple-300 transform-gpu hover:-translate-y-0.5"
+                        href={`/home?tipo_conteudo=Pergunta&id_conteudo=${r.fkId_pergunta}`}
+                        target="_blank"
+                        rel="noreferrer"
+                      >
+                        Visualizar
+                      </a>
+                      <button
+                        className="cursor-pointer px-3 py-1 text-sm rounded-lg bg-red-200 text-red-800 hover:bg-red-300 transform-gpu hover:-translate-y-0.5"
+                        onClick={() => {
+                          setConfirmData({
+                            open: true,
+                            action: "deleteResposta",
+                            id: r.id_resposta,
+                            nome: r.resposta,
+                          });
+                        }}
+                      >
+                        Excluir
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
           </div>
         </div>
       </section>
@@ -1861,6 +2045,29 @@ export default function DashboardPage({
                         pushAudit({
                           action: "delete",
                           entity: "pergunta",
+                          entityId: confirmData.id,
+                          details: confirmData.nome,
+                        });
+                      } else if (confirmData.action === "deleteResposta") {
+                        const token = document.cookie
+                          .split(";")
+                          .map((c) => c.trim())
+                          .find((c) => c.startsWith("token="))
+                          ?.split("=")[1];
+                        const { deleteResposta } = await import(
+                          "@/services/respostaService"
+                        );
+                        await deleteResposta(confirmData.id, token || "");
+                        setRespostasState((prev) =>
+                          prev.filter((r) => r.id_resposta !== confirmData.id)
+                        );
+                        push({
+                          kind: "success",
+                          message: "Resposta excluída.",
+                        });
+                        pushAudit({
+                          action: "delete",
+                          entity: "resposta",
                           entityId: confirmData.id,
                           details: confirmData.nome,
                         });

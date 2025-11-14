@@ -1,3 +1,5 @@
+"use client";
+
 import { CreateComponenteData } from "@/types/componente";
 import { Controller, useForm } from "react-hook-form";
 import { useCreateComponente } from "@/hooks/componente/useCreate";

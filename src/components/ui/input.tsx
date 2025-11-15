@@ -1,14 +1,12 @@
 import { EyeIcon, EyeSlashIcon } from "@heroicons/react/16/solid";
 import React, { FC, useState } from "react";
 
-interface InputProps {
+interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
   label: string;
   placeholder?: string;
   type?: string;
   icon?: FC<{ className?: string }>;
   podeMostrarSenha?: boolean;
-  value?: string;
-  onChange?: (e: React.ChangeEvent<HTMLInputElement>) => void;
   rightSlot?: React.ReactNode; // ícone/loader à direita dentro do input
   error?: boolean; // sinaliza erro visual
 }
@@ -23,6 +21,7 @@ export function Input({
   onChange,
   rightSlot,
   error = false,
+  ...rest
 }: InputProps) {
   const [mostrarSenha, setMostrarSenha] = useState(false);
 
@@ -46,6 +45,7 @@ export function Input({
       >
         {Icon && <Icon className="text-zinc-400 h-6 w-6" />}
         <input
+          {...rest}
           type={tipoInput}
           className={`flex-1 bg-transparent focus:outline-none ${
             !Icon && !podeMostrarSenha ? "px-0" : ""

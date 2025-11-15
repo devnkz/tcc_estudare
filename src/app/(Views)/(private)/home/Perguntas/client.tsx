@@ -152,6 +152,18 @@ export function PerguntasClientPage({
     setTimeout(() => respostaInputRef.current?.focus(), 100);
   };
 
+  // retorna true somente se houve atualização posterior à criação
+  const wasEdited = (created?: Date | string, updated?: Date | string) => {
+    if (!updated) return false;
+    const c = created ? new Date(created).getTime() : 0;
+    const u =
+      typeof updated === "string"
+        ? new Date(updated).getTime()
+        : (updated as Date).getTime();
+    // considera editado apenas se o timestamp de atualização for mais de 1s maior
+    return u - c > 1000;
+  };
+
   const deletePerguntaHook = useDeletePergunta();
   const deleteRespostaHook = useDeleteResposta();
 
@@ -552,7 +564,10 @@ export function PerguntasClientPage({
                         <span className="text-[11px] text-zinc-500 flex items-center gap-1 text-left">
                           <BsClock className="w-3.5 h-3.5" />{" "}
                           {timeAgo(pergunta.dataCriacao_pergunta)}
-                          {pergunta.dataAtualizacao_pergunta && (
+                          {wasEdited(
+                            pergunta.dataCriacao_pergunta,
+                            pergunta.dataAtualizacao_pergunta
+                          ) && (
                             <span className="ml-1 text-zinc-400">
                               • editado
                             </span>
@@ -799,7 +814,10 @@ export function PerguntasClientPage({
                                   {r.dataCriacao_resposta
                                     ? timeAgo(r.dataCriacao_resposta)
                                     : "agora"}
-                                  {r.dataAtualizacao_resposta && (
+                                  {wasEdited(
+                                    r.dataCriacao_resposta,
+                                    r.dataAtualizacao_resposta
+                                  ) && (
                                     <span className="ml-1 text-zinc-400">
                                       • editado
                                     </span>

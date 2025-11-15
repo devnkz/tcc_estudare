@@ -10,7 +10,7 @@ import {
   EyeSlashIcon,
 } from "@heroicons/react/24/solid";
 import { CheckCircleIcon, XCircleIcon } from "@heroicons/react/24/outline";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useForm, Controller } from "react-hook-form";
 import { useRouter, useSearchParams } from "next/navigation";
 import { HeaderLoginCadastro } from "@/components/layout/header";
@@ -18,6 +18,7 @@ import { GlowingEffect } from "@/components/ui/glowing-effect";
 import { motion, AnimatePresence } from "framer-motion";
 import { ActionButton } from "@/components/ui/actionButton";
 import { modal } from "@heroui/react";
+import { useToast } from "@/components/ui/animatedToast";
 
 export default function CadastroUsuario() {
   const [mostrarSenha, setMostrarSenha] = useState(false);
@@ -35,6 +36,8 @@ export default function CadastroUsuario() {
     handleSubmit,
     control,
     watch,
+    setError,
+    clearErrors,
     formState: { errors, isSubmitting },
   } = useForm({
     defaultValues: {
@@ -46,6 +49,11 @@ export default function CadastroUsuario() {
     },
   });
 
+  const isEtecEmail = useCallback((email?: string) => {
+    if (!email) return false;
+    return /@etec\.sp\.gov\.br$/i.test(String(email).trim());
+  }, []);
+
   const senha = watch("senha_usuario");
   const emailValue = watch("email_usuario");
   const nomeValue = watch("nome_usuario");
@@ -55,6 +63,7 @@ export default function CadastroUsuario() {
   const [emailStatus, setEmailStatus] = useState<
     "idle" | "checking" | "available" | "taken"
   >("idle");
+  const [emailBlurred, setEmailBlurred] = useState(false);
   const emailTimer = useRef<number | null>(null);
   const nomeTimer = useRef<number | null>(null);
   const apelidoTimer = useRef<number | null>(null);
@@ -65,13 +74,22 @@ export default function CadastroUsuario() {
   const [apelidoStatus, setApelidoStatus] = useState<
     "idle" | "checking" | "clean" | "bad"
   >("idle");
+  const [apelidoFormatError, setApelidoFormatError] = useState<string | null>(
+    null
+  );
+  const [apelidoHasBad, setApelidoHasBad] = useState(false);
+  const [apelidoExists, setApelidoExists] = useState(false);
+  const [apelidoEndsWithInvalid, setApelidoEndsWithInvalid] = useState(false);
 
   const [success, setSuccess] = useState(false);
+  const { push } = useToast();
 
   const onSubmit = async (data: any) => {
     setMensagem({ tipo: null, texto: "" });
     if (emailStatus === "taken") {
-      setMensagem({ tipo: "erro", texto: "Este email já está em uso." });
+      const msg = "E-mail já cadastrado.";
+      setMensagem({ tipo: "erro", texto: msg });
+      push({ kind: "error", message: msg });
       return;
     }
 
@@ -83,10 +101,9 @@ export default function CadastroUsuario() {
       });
 
       if (res.ok) {
-        setMensagem({
-          tipo: "sucesso",
-          texto: "Você foi cadastrado com sucesso! Redirecionando...",
-        });
+        const successMsg = "Cadastro realizado com sucesso. Redirecionando...";
+        setMensagem({ tipo: "sucesso", texto: successMsg });
+        push({ kind: "success", message: successMsg });
         setSuccess(true);
         // Preserve redirect context (?next, ?redirect, ?from, ?returnUrl) and add a short delay before redirect
         const nextParam =
@@ -104,25 +121,22 @@ export default function CadastroUsuario() {
 
         console.log("Usuário cadastrado com sucesso", data);
       } else if (res.status === 409) {
-        setMensagem({
-          tipo: "erro",
-          texto: "Já existe um usuário cadastrado com esse email.",
-        });
+        const errMsg = "E-mail já cadastrado.";
+        setMensagem({ tipo: "erro", texto: errMsg });
+        push({ kind: "error", message: errMsg });
       } else {
-        const errorData = await res.json();
-        setMensagem({
-          tipo: "erro",
-          texto: errorData.message || "Erro ao cadastrar usuário.",
-        });
+        const errorData = await res.json().catch(() => ({}));
+        const serverMsg = errorData?.message || "Erro ao cadastrar usuário.";
+        setMensagem({ tipo: "erro", texto: serverMsg });
+        push({ kind: "error", message: serverMsg });
         console.error("Erro ao cadastrar usuário:", errorData);
         console.log("Resposta do servidor:", data);
       }
     } catch (error) {
       console.error("Erro ao cadastrar usuário:", error);
-      setMensagem({
-        tipo: "erro",
-        texto: "Erro ao conectar ao servidor.",
-      });
+      const netMsg = "Erro ao conectar ao servidor.";
+      setMensagem({ tipo: "erro", texto: netMsg });
+      push({ kind: "error", message: netMsg });
     }
   };
 
@@ -163,8 +177,14 @@ export default function CadastroUsuario() {
 
   // Debounced email availability check (~1s after user stops typing)
   useEffect(() => {
-    // only run availability check when there's an email and it contains '@'
-    if (!emailValue || errors.email_usuario || !emailValue.includes("@")) {
+    // only run availability check when there's an email, no validation errors and it's an ETEC email
+    const shouldCheck =
+      Boolean(emailValue) &&
+      !errors.email_usuario &&
+      emailValue.includes("@") &&
+      isEtecEmail(emailValue);
+
+    if (!shouldCheck) {
       setEmailStatus("idle");
       return;
     }
@@ -197,7 +217,49 @@ export default function CadastroUsuario() {
       if (emailTimer.current) window.clearTimeout(emailTimer.current);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [emailValue]);
+  }, [emailValue, errors.email_usuario?.type, isEtecEmail]);
+
+  // Show validation error only after the user leaves the email input (onBlur)
+  useEffect(() => {
+    if (!emailValue) {
+      if (emailBlurred) clearErrors("email_usuario");
+      return;
+    }
+
+    // Don't show domain errors until input has been blurred
+    if (!emailBlurred) {
+      // keep availability idle until user finishes and blurs
+      setEmailStatus("idle");
+      return;
+    }
+
+    // If the email has at least an @ and is not ETEC, set a validation error
+    if (emailValue.includes("@") && !isEtecEmail(emailValue)) {
+      // only set the validate error if it's not already set to avoid loops
+      if (errors.email_usuario?.type !== "validate") {
+        setError("email_usuario", {
+          type: "validate",
+          message:
+            "É necessário utilizar um e‑mail institucional da ETEC (etec.sp.gov.br).",
+        });
+      }
+      // ensure availability status is idle when domain invalid
+      setEmailStatus("idle");
+      return;
+    }
+
+    // If it becomes valid ETEC, remove the validate error (but keep other errors)
+    if (isEtecEmail(emailValue) && errors.email_usuario?.type === "validate") {
+      clearErrors("email_usuario");
+    }
+  }, [
+    emailValue,
+    isEtecEmail,
+    setError,
+    clearErrors,
+    errors.email_usuario?.type,
+    emailBlurred,
+  ]);
 
   // Debounced name check (~1s after stop typing; avoid offensive words)
   useEffect(() => {
@@ -237,6 +299,8 @@ export default function CadastroUsuario() {
   useEffect(() => {
     if (!apelidoValue) {
       setApelidoStatus("idle");
+      setApelidoHasBad(false);
+      setApelidoExists(false);
       return;
     }
     if (apelidoTimer.current) window.clearTimeout(apelidoTimer.current);
@@ -253,7 +317,71 @@ export default function CadastroUsuario() {
         );
         if (res.ok) {
           const body = await res.json();
-          setApelidoStatus(body.containsOffensive ? "bad" : "clean");
+          const isBad = body.containsOffensive;
+          if (isBad) {
+            setApelidoFormatError(null);
+            setApelidoStatus("bad");
+            setApelidoHasBad(true);
+            setApelidoExists(false);
+            return;
+          }
+
+          // validate format: letters, numbers, dot, underscore, min 3
+          const trimmed = String(apelidoValue || "").trim();
+          const formatOk =
+            /^(?=.{3,}$)[A-Za-z0-9](?:[A-Za-z0-9._]*[A-Za-z0-9])$/.test(
+              trimmed
+            );
+          if (!formatOk) {
+            const endsInvalidNow = /[._]$/.test(trimmed);
+            if (endsInvalidNow) {
+              setApelidoFormatError(null);
+              setApelidoStatus("bad");
+              setApelidoEndsWithInvalid(true);
+              setApelidoHasBad(false);
+              setApelidoExists(false);
+              return;
+            }
+            setApelidoStatus("bad");
+            setApelidoFormatError(
+              "Use letras, números, '.' ou '_' sem espaços (mínimo 3 caracteres)."
+            );
+            setApelidoHasBad(false);
+            setApelidoExists(false);
+            return;
+          }
+
+          // format ok and no bad words -> check availability
+          setApelidoFormatError(null);
+          try {
+            setApelidoEndsWithInvalid(false);
+            const checkRes = await fetch(
+              `${
+                process.env.NEXT_PUBLIC_API_URL
+              }/user/check-apelido?apelido=${encodeURIComponent(trimmed)}`
+            );
+            if (checkRes.ok) {
+              const body2 = await checkRes.json();
+              setApelidoExists(!!body2.exists);
+              setApelidoHasBad(false);
+              setApelidoStatus(body2.exists ? "bad" : "clean");
+            } else {
+              const errBody = await checkRes.json().catch(() => ({}));
+              const serverMsg = String(errBody?.message || "");
+              if (/terminar|não pode terminar|termina com/.test(serverMsg)) {
+                setApelidoEndsWithInvalid(true);
+                setApelidoHasBad(false);
+                setApelidoExists(false);
+                setApelidoStatus("bad");
+              } else {
+                setApelidoExists(false);
+                setApelidoHasBad(false);
+                setApelidoStatus("clean");
+              }
+            }
+          } catch (e) {
+            setApelidoStatus("clean");
+          }
         } else {
           setApelidoStatus("idle");
         }
@@ -290,6 +418,7 @@ export default function CadastroUsuario() {
               blur={8}
             />
             <motion.form
+              autoComplete="off"
               onSubmit={handleSubmit(onSubmit)}
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
@@ -310,6 +439,7 @@ export default function CadastroUsuario() {
                     render={({ field }) => (
                       <input
                         {...field}
+                        autoComplete="off"
                         type="text"
                         placeholder="Digite seu nome"
                         className="w-full pl-10 pr-4 py-2 border rounded-lg border-gray-300 focus:border-purple-500 focus:ring focus:ring-purple-200 outline-none"
@@ -373,8 +503,38 @@ export default function CadastroUsuario() {
                     render={({ field }) => (
                       <input
                         {...field}
+                        autoComplete="off"
                         type="text"
                         placeholder="Digite seu apelido"
+                        onKeyDown={(e) => {
+                          if (e.key === " " || e.key === "Spacebar")
+                            e.preventDefault();
+                        }}
+                        onPaste={(e) => {
+                          const text = e.clipboardData?.getData("text") || "";
+                          const endsInvalid = /[._]$/.test(text.trim());
+                          setApelidoEndsWithInvalid(endsInvalid);
+                          const cleaned = text
+                            .normalize("NFD")
+                            .replace(/[\u0300-\u036f]/g, "")
+                            .replace(/\s+/g, "")
+                            .toLowerCase()
+                            .replace(/[^a-z0-9._]/g, "");
+                          e.preventDefault();
+                          field.onChange(cleaned);
+                        }}
+                        onChange={(e) => {
+                          const raw = (e.target as HTMLInputElement).value;
+                          const endsInvalid = /[._]$/.test(raw.trim());
+                          setApelidoEndsWithInvalid(endsInvalid);
+                          const cleaned = raw
+                            .normalize("NFD")
+                            .replace(/[\u0300-\u036f]/g, "")
+                            .replace(/\s+/g, "")
+                            .toLowerCase()
+                            .replace(/[^a-z0-9._]/g, "");
+                          field.onChange(cleaned);
+                        }}
                         className="w-full pl-10 pr-4 py-2 border rounded-lg border-gray-300 focus:border-purple-500 focus:ring focus:ring-purple-200 outline-none"
                       />
                     )}
@@ -415,17 +575,43 @@ export default function CadastroUsuario() {
                     {errors.apelido_usuario.message}
                   </p>
                 )}
-                {apelidoStatus === "bad" && (
+                {apelidoFormatError && (
                   <p className="text-red-500 text-xs mt-1">
-                    Apelido contém palavras impróprias.
+                    {apelidoFormatError}
                   </p>
+                )}
+                {!apelidoFormatError && apelidoStatus === "bad" && (
+                  <>
+                    {apelidoEndsWithInvalid && (
+                      <p className="text-red-500 text-xs mt-1">
+                        Apelido não pode terminar com '.' ou '_'.
+                      </p>
+                    )}
+                    {apelidoHasBad && (
+                      <p className="text-red-500 text-xs mt-1">
+                        Apelido contém palavras impróprias.
+                      </p>
+                    )}
+                    {apelidoExists && (
+                      <p className="text-red-500 text-xs mt-1">
+                        Este apelido já está em uso.
+                      </p>
+                    )}
+                    {!apelidoEndsWithInvalid &&
+                      !apelidoHasBad &&
+                      !apelidoExists && (
+                        <p className="text-red-500 text-xs mt-1">
+                          Apelido inválido.
+                        </p>
+                      )}
+                  </>
                 )}
               </div>
 
               {/* Email */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Email
+                  Email Institucional ETEC
                 </label>
                 <div className="relative">
                   <EnvelopeIcon className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
@@ -473,17 +659,26 @@ export default function CadastroUsuario() {
                     name="email_usuario"
                     control={control}
                     rules={{
-                      required: "Email é obrigatório.",
+                      required: "O e-mail é obrigatório.",
                       pattern: {
                         value: /^\S+@\S+$/i,
-                        message: "Email inválido.",
+                        message: "E-mail inválido.",
                       },
+                      validate: (v: string) =>
+                        isEtecEmail(v) ||
+                        "É necessário utilizar um e‑mail institucional da ETEC (@etec.sp.gov.br).",
                     }}
                     render={({ field }) => (
                       <input
                         {...field}
+                        autoComplete="off"
                         type="email"
                         placeholder="Digite seu email"
+                        onBlur={(e) => {
+                          field.onBlur();
+                          setEmailBlurred(true);
+                        }}
+                        onFocus={() => setEmailBlurred(false)}
                         className="w-full pl-10 pr-10 py-2 border rounded-lg border-gray-300 focus:border-purple-500 focus:ring focus:ring-purple-200 outline-none"
                       />
                     )}
@@ -516,6 +711,7 @@ export default function CadastroUsuario() {
                     render={({ field }) => (
                       <input
                         {...field}
+                        autoComplete="off"
                         type={mostrarSenha ? "text" : "password"}
                         placeholder="Digite sua senha"
                         onFocus={() => setSenhaFocus(true)}
@@ -672,7 +868,7 @@ export default function CadastroUsuario() {
                     exit={{ opacity: 0, y: 6 }}
                     className="text-sm text-red-600 bg-red-50 p-2 rounded"
                   >
-                    Este email já está em uso.
+                    E-mail já cadastrado.
                   </motion.div>
                 )}
                 {emailStatus === "available" && (
@@ -682,7 +878,7 @@ export default function CadastroUsuario() {
                     exit={{ opacity: 0, y: 6 }}
                     className="text-sm text-green-700 bg-green-50 p-2 rounded"
                   >
-                    Email disponível ✅
+                    E-mail disponível.
                   </motion.div>
                 )}
               </AnimatePresence>

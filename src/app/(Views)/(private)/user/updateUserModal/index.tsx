@@ -77,16 +77,61 @@ export function UpdateUserModal({
   // estados para animação de checagem (debounce)
   const [checkingNome, setCheckingNome] = React.useState(false);
   const [checkingApelido, setCheckingApelido] = React.useState(false);
+  const [apelidoExists, setApelidoExists] = React.useState(false);
+  const [apelidoError, setApelidoError] = React.useState<string | null>(null);
+  const [confirmOpen, setConfirmOpen] = React.useState(false);
 
   // simples debounce manual
+  // debounce for nome
   React.useEffect(() => {
     setCheckingNome(true);
     const t = setTimeout(() => setCheckingNome(false), 450);
     return () => clearTimeout(t);
   }, [values?.nome_usuario]);
+
+  // apelido debounce + availability check
   React.useEffect(() => {
     setCheckingApelido(true);
-    const t = setTimeout(() => setCheckingApelido(false), 450);
+    setApelidoError(null);
+    setApelidoExists(false);
+    const t = setTimeout(async () => {
+      const val = String(values?.apelido_usuario || "").trim();
+      if (!val) {
+        setCheckingApelido(false);
+        return;
+      }
+      // format check
+      if (!/^(?=.{3,}$)[A-Za-z0-9](?:[A-Za-z0-9._]*[A-Za-z0-9])$/.test(val)) {
+        setApelidoError(
+          "Use letras e números; não termine com '.' ou '_' (mínimo 3 caracteres)."
+        );
+        setCheckingApelido(false);
+        return;
+      }
+      try {
+        const res = await fetch(
+          `${
+            process.env.NEXT_PUBLIC_API_URL
+          }/user/check-apelido?apelido=${encodeURIComponent(val)}`
+        );
+        if (res.ok) {
+          const body = await res.json();
+          setApelidoExists(!!body.exists && val !== user.apelido_usuario);
+        } else {
+          const errBody = await res.json().catch(() => ({}));
+          const serverMsg = String(errBody?.message || "");
+          if (/terminar|não pode terminar|termina com/.test(serverMsg)) {
+            setApelidoError("Apelido não pode terminar com '.' ou '_' .");
+          } else {
+            setApelidoError(serverMsg || "Falha ao verificar apelido");
+          }
+        }
+      } catch (e) {
+        setApelidoError("Falha ao verificar apelido");
+      } finally {
+        setCheckingApelido(false);
+      }
+    }, 450);
     return () => clearTimeout(t);
   }, [values?.apelido_usuario]);
 
@@ -112,10 +157,57 @@ export function UpdateUserModal({
     }
     if (blocked) return;
 
+    // if apelido changed, and no cooldown issue, require confirmation
+    const apelidoChanged = data.apelido_usuario !== user.apelido_usuario;
+    if (apelidoChanged) {
+      // cooldown check: if user's ultimaAlteracao_apelido exists and less than 14 days, block
+      if (user.ultimaAlteracao_apelido) {
+        const last = new Date(user.ultimaAlteracao_apelido).getTime();
+        const now = Date.now();
+        const FOURTEEN_DAYS_MS = 14 * 24 * 60 * 60 * 1000;
+        if (now - last < FOURTEEN_DAYS_MS) {
+          const nextDate = new Date(last + FOURTEEN_DAYS_MS).toLocaleString();
+          setError("apelido_usuario", {
+            type: "validate",
+            message: `Você só pode alterar o apelido a cada 14 dias. Próxima alteração em ${nextDate}`,
+          });
+          return;
+        }
+      }
+
+      // if apelido exists (another user), block
+      if (apelidoExists) {
+        setError("apelido_usuario", {
+          type: "validate",
+          message: "Este apelido já está em uso.",
+        });
+        return;
+      }
+
+      // show confirmation modal before proceeding
+      setConfirmOpen(true);
+      return;
+    }
+
+    // no apelido change -> proceed
     mutate(data, {
       onSuccess: () => {
         setSuccess(true);
         // fecha com um pequeno delay para permitir feedback visual
+        setTimeout(() => {
+          setSuccess(false);
+          setOpenDialog(null);
+        }, 1200);
+      },
+    });
+  };
+
+  const confirmAndSubmit = (data: UpdateUserData) => {
+    // close confirm and submit
+    setConfirmOpen(false);
+    mutate(data, {
+      onSuccess: () => {
+        setSuccess(true);
         setTimeout(() => {
           setSuccess(false);
           setOpenDialog(null);
@@ -164,28 +256,30 @@ export function UpdateUserModal({
             name="nome_usuario"
             control={control}
             render={({ field }) => {
-              let statusIcon: React.ReactNode = null;
+              let nameStatus: React.ReactNode = null;
               if (checkingNome) {
-                statusIcon = (
+                nameStatus = (
                   <Loader2 className="h-4 w-4 animate-spin text-zinc-500" />
                 );
               } else if (field.value && !nameHasBad) {
-                statusIcon = (
+                nameStatus = (
                   <CheckCircle2 className="h-4 w-4 text-emerald-600 animate-in fade-in" />
                 );
               } else if (nameHasBad) {
-                statusIcon = (
+                nameStatus = (
                   <XCircle className="h-4 w-4 text-red-600 animate-in fade-in" />
                 );
               }
+
               return (
                 <div className="space-y-1">
                   <Input
                     {...field}
+                    autoComplete="off"
                     label="Seu nome"
                     placeholder="Digitar seu novo nome"
                     podeMostrarSenha={false}
-                    rightSlot={statusIcon}
+                    rightSlot={nameStatus}
                   />
                   {(errors?.nome_usuario?.message || nameHasBad) && (
                     <p className="text-xs text-red-600">
@@ -197,6 +291,7 @@ export function UpdateUserModal({
               );
             }}
           />
+
           <Controller
             name="apelido_usuario"
             control={control}
@@ -215,14 +310,40 @@ export function UpdateUserModal({
                   <XCircle className="h-4 w-4 text-red-600 animate-in fade-in" />
                 );
               }
+
               return (
                 <div className="space-y-1">
                   <Input
                     {...field}
+                    autoComplete="off"
                     label="Seu apelido"
                     placeholder="Digitar seu novo apelido"
                     podeMostrarSenha={false}
                     rightSlot={statusIcon}
+                    onKeyDown={(e: any) => {
+                      if (e.key === " " || e.key === "Spacebar")
+                        e.preventDefault();
+                    }}
+                    onPaste={async (e: any) => {
+                      const text = e.clipboardData?.getData("text") || "";
+                      const cleaned = text
+                        .normalize("NFD")
+                        .replace(/[\u0300-\u036f]/g, "")
+                        .replace(/\s+/g, "")
+                        .toLowerCase()
+                        .replace(/[^a-z0-9._]/g, "");
+                      e.preventDefault();
+                      field.onChange(cleaned);
+                    }}
+                    onChange={(e: any) => {
+                      const cleaned = (e.target as HTMLInputElement).value
+                        .normalize("NFD")
+                        .replace(/[\u0300-\u036f]/g, "")
+                        .replace(/\s+/g, "")
+                        .toLowerCase()
+                        .replace(/[^a-z0-9._]/g, "");
+                      field.onChange(cleaned);
+                    }}
                   />
                   {(errors?.apelido_usuario?.message || nickHasBad) && (
                     <p className="text-xs text-red-600">
@@ -230,6 +351,16 @@ export function UpdateUserModal({
                         "O apelido contém palavras impróprias."}
                     </p>
                   )}
+                  {!errors?.apelido_usuario?.message && apelidoError && (
+                    <p className="text-xs text-red-600">{apelidoError}</p>
+                  )}
+                  {!errors?.apelido_usuario?.message &&
+                    !apelidoError &&
+                    apelidoExists && (
+                      <p className="text-xs text-red-600">
+                        Este apelido já está em uso.
+                      </p>
+                    )}
                 </div>
               );
             }}
@@ -248,12 +379,45 @@ export function UpdateUserModal({
               textIdle={!isDirty ? "Sem mudanças" : "Salvar"}
               isLoading={isPending}
               isSuccess={success}
-              disabled={!isDirty || nameHasBad || nickHasBad}
+              disabled={
+                !isDirty ||
+                nameHasBad ||
+                nickHasBad ||
+                checkingApelido ||
+                apelidoExists ||
+                !!apelidoError
+              }
               enableRipplePulse
             />
           </div>
         </form>
       </DialogContent>
+      {/* Confirmation modal for apelido change */}
+      <Dialog open={confirmOpen} onOpenChange={(v) => setConfirmOpen(v)}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Confirmar alteração de apelido</DialogTitle>
+          </DialogHeader>
+          <div className="text-sm text-zinc-700">
+            Ao confirmar, seu apelido será alterado e você só poderá mudá-lo
+            novamente após 14 dias. Deseja continuar?
+          </div>
+          <div className="mt-4 flex justify-end gap-2">
+            <button
+              type="button"
+              className="px-4 py-2 rounded-md border cursor-pointer border-zinc-300 text-zinc-700 hover:bg-zinc-50"
+              onClick={() => setConfirmOpen(false)}
+            >
+              Cancelar
+            </button>
+            <ActionButton
+              type="button"
+              textIdle="Confirmar"
+              onClick={() => confirmAndSubmit(values as UpdateUserData)}
+            />
+          </div>
+        </DialogContent>
+      </Dialog>
     </Dialog>
   );
 }

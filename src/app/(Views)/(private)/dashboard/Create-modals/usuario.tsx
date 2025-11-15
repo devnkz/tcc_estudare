@@ -9,13 +9,6 @@ import { motion, AnimatePresence } from "framer-motion";
 import { checkEmail } from "@/services/userService";
 
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-
-import {
   Select,
   SelectContent,
   SelectGroup,
@@ -26,6 +19,12 @@ import {
 } from "@/components/ui/select";
 
 import { Input } from "@/components/ui/input";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { filtrarTexto } from "@/utils/filterText";
 import { ActionButton } from "@/components/ui/actionButton";
 
@@ -63,6 +62,14 @@ export function SignUpUserModal({
     touched: boolean;
     error?: string;
   }>({ checking: false, exists: false, touched: false });
+  const [apelidoState, setApelidoState] = React.useState<{
+    checking: boolean;
+    exists: boolean;
+    touched: boolean;
+    error?: string;
+  }>({ checking: false, exists: false, touched: false });
+  const [apelidoEndsWithInvalid, setApelidoEndsWithInvalid] =
+    React.useState(false);
   const {
     handleSubmit,
     control,
@@ -88,6 +95,13 @@ export function SignUpUserModal({
       push({
         kind: "error",
         message: "Remova palavras impróprias antes de enviar.",
+      });
+      return;
+    }
+    if (apelidoEndsWithInvalid) {
+      push({
+        kind: "error",
+        message: "Apelido não pode terminar com '.' ou '_' .",
       });
       return;
     }
@@ -148,6 +162,81 @@ export function SignUpUserModal({
     []
   );
 
+  const debouncedCheckApelido = React.useMemo(
+    () =>
+      debounce(async (value: string) => {
+        const trimmed = String(value || "").trim();
+        if (!trimmed || trimmed.length < 3) {
+          setApelidoState((prev) => ({
+            ...prev,
+            checking: false,
+            exists: false,
+            error: trimmed ? "Mínimo 3 caracteres" : "",
+          }));
+          return;
+        }
+        if (
+          !/^(?=.{3,}$)[A-Za-z0-9](?:[A-Za-z0-9._]*[A-Za-z0-9])$/.test(trimmed)
+        ) {
+          setApelidoState((prev) => ({
+            ...prev,
+            checking: false,
+            exists: false,
+            error:
+              "Use letras, números, '.' ou '_' sem espaços (mínimo 3 caracteres)",
+          }));
+          return;
+        }
+        try {
+          setApelidoEndsWithInvalid(false);
+          setApelidoState((prev) => ({
+            ...prev,
+            checking: true,
+            error: undefined,
+          }));
+          const res = await fetch(
+            `${
+              process.env.NEXT_PUBLIC_API_URL
+            }/user/check-apelido?apelido=${encodeURIComponent(trimmed)}`
+          );
+          if (res.ok) {
+            const body = await res.json();
+            setApelidoState((prev) => ({
+              ...prev,
+              checking: false,
+              exists: !!body.exists,
+            }));
+          } else {
+            const errBody = await res.json().catch(() => ({}));
+            const serverMsg = String(errBody?.message || "");
+            if (/terminar|não pode terminar|termina com/.test(serverMsg)) {
+              setApelidoEndsWithInvalid(true);
+              setApelidoState((prev) => ({
+                ...prev,
+                checking: false,
+                exists: false,
+                error: serverMsg,
+              }));
+            } else {
+              setApelidoState((prev) => ({
+                ...prev,
+                checking: false,
+                exists: false,
+              }));
+            }
+          }
+        } catch (e: any) {
+          setApelidoState((prev) => ({
+            ...prev,
+            checking: false,
+            exists: false,
+            error: "Falha ao validar apelido",
+          }));
+        }
+      }, 450),
+    []
+  );
+
   return (
     <Dialog
       open={openDialog === "usuario"}
@@ -173,6 +262,7 @@ export function SignUpUserModal({
               >
                 <Input
                   {...field}
+                  autoComplete="off"
                   label="Nome"
                   placeholder="Nome completo"
                   error={!!(errors as any).nome_usuario || !!badFields.nome}
@@ -217,11 +307,11 @@ export function SignUpUserModal({
             name="email_usuario"
             control={control}
             rules={{
-              required: "O email é obrigatório",
-              pattern: { value: /^\S+@\S+\.\S+$/, message: "Email inválido" },
+              required: "O e-mail é obrigatório.",
+              pattern: { value: /^\S+@\S+\.\S+$/, message: "E-mail inválido." },
               validate: (v: string) =>
                 isEtecEmail(v) ||
-                "É necessário usar um email da ETEC (@etec.sp.gov.br)",
+                "É necessário utilizar um e‑mail institucional da ETEC (@etec.sp.gov.br).",
             }}
             render={({ field }) => (
               <motion.div
@@ -231,7 +321,8 @@ export function SignUpUserModal({
               >
                 <Input
                   {...field}
-                  label="Email"
+                  autoComplete="off"
+                  label="E-mail institucional (@etec.sp.gov.br)"
                   placeholder="email@exemplo.com"
                   error={
                     !!(errors as any).email_usuario ||
@@ -247,7 +338,7 @@ export function SignUpUserModal({
                       setEmailState((prev) => ({
                         ...prev,
                         error:
-                          "É necessário usar um email da ETEC (@etec.sp.gov.br)",
+                          "É necessário utilizar um e‑mail institucional da ETEC (@etec.sp.gov.br).",
                       }));
                       return;
                     }
@@ -266,7 +357,7 @@ export function SignUpUserModal({
                         exit={{ opacity: 0, height: 0 }}
                         className="text-sm text-zinc-600"
                       >
-                        Verificando email...
+                        Verificando e-mail...
                       </motion.p>
                     )}
                   {!(errors as any).email_usuario &&
@@ -290,7 +381,7 @@ export function SignUpUserModal({
                         exit={{ opacity: 0, height: 0 }}
                         className="text-sm text-red-600"
                       >
-                        Email já está em uso.
+                        E-mail já cadastrado.
                       </motion.p>
                     )}
                   {(errors as any).email_usuario && (
@@ -321,19 +412,53 @@ export function SignUpUserModal({
               >
                 <Input
                   {...field}
+                  autoComplete="off"
                   label="Apelido"
                   placeholder="Digite seu apelido"
                   error={
                     !!(errors as any).apelido_usuario || !!badFields.apelido
                   }
+                  onPaste={(e) => {
+                    const text = e.clipboardData?.getData("text") || "";
+                    const endsInvalid = /[._]$/.test(text.trim());
+                    setApelidoEndsWithInvalid(endsInvalid);
+                    const lower = text
+                      .normalize("NFD")
+                      .replace(/[\u0300-\u036f]/g, "")
+                      .replace(/\s+/g, "")
+                      .toLowerCase()
+                      .replace(/[^a-z0-9._]/g, "");
+                    e.preventDefault();
+                    field.onChange(lower);
+                    setApelidoState((prev) => ({
+                      ...prev,
+                      touched: true,
+                      error: undefined,
+                    }));
+                    debouncedCheckApelido(lower);
+                  }}
                   onChange={(e) => {
-                    field.onChange(e);
-                    const val = e.target.value;
+                    const val = (e.target as HTMLInputElement).value;
+                    const endsInvalid = /[._]$/.test(val.trim());
+                    setApelidoEndsWithInvalid(endsInvalid);
+                    const lower = val
+                      .normalize("NFD")
+                      .replace(/[\u0300-\u036f]/g, "")
+                      .replace(/\s+/g, "")
+                      .toLowerCase()
+                      .replace(/[^a-z0-9._]/g, "");
+                    field.onChange(lower);
                     const resultado = filtrarTexto(val);
                     setBadFields((p) => ({
                       ...p,
                       apelido: resultado.contemPalavraOfensiva,
                     }));
+                    setApelidoState((prev) => ({
+                      ...prev,
+                      touched: true,
+                      error: undefined,
+                    }));
+                    debouncedCheckApelido(lower);
                   }}
                 />
                 <AnimatePresence>
@@ -357,6 +482,38 @@ export function SignUpUserModal({
                       Remova palavras impróprias do apelido.
                     </motion.p>
                   )}
+                  {apelidoState.touched && apelidoState.checking && (
+                    <motion.p
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: "auto" }}
+                      exit={{ opacity: 0, height: 0 }}
+                      className="text-sm text-zinc-600"
+                    >
+                      Verificando apelido...
+                    </motion.p>
+                  )}
+                  {apelidoState.touched && apelidoState.error && (
+                    <motion.p
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: "auto" }}
+                      exit={{ opacity: 0, height: 0 }}
+                      className="text-sm text-red-600"
+                    >
+                      {apelidoState.error}
+                    </motion.p>
+                  )}
+                  {apelidoState.touched &&
+                    !apelidoState.checking &&
+                    apelidoState.exists && (
+                      <motion.p
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: "auto" }}
+                        exit={{ opacity: 0, height: 0 }}
+                        className="text-sm text-red-600"
+                      >
+                        Apelido já em uso.
+                      </motion.p>
+                    )}
                 </AnimatePresence>
               </motion.div>
             )}
@@ -378,6 +535,7 @@ export function SignUpUserModal({
               >
                 <Input
                   {...field}
+                  autoComplete="off"
                   label="Senha"
                   placeholder="Senha"
                   podeMostrarSenha

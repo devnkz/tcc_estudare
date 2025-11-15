@@ -14,6 +14,8 @@ export interface User {
     nome_tipousuario: string;
   };
 
+  ultimaAlteracao_apelido?: string;
+
   Penalidades: {
     id_penalidade: string;
     dataInicio_penalidade: string;

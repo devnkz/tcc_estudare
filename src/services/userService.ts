@@ -10,7 +10,15 @@ export async function fetchUsers(): Promise<User[]> {
 
 // Busca usuário por id
 export async function fetchUsersId(id : string | undefined): Promise<User> {
-  
+  if (!id) {
+    throw new Error("fetchUsersId: id is undefined");
+  }
+  // Validação de formato: espera UUID (prisma usa uuid())
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+  if (!uuidRegex.test(id)) {
+    throw new Error("fetchUsersId: id inválido (formato esperado: UUID)");
+  }
+
   const res = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/user/${id}`);
   return res.data;
 } 

@@ -15,7 +15,7 @@ import {
 import { TbLayoutDashboardFilled } from "react-icons/tb";
 import { Inter } from "next/font/google";
 import { motion, AnimatePresence } from "framer-motion";
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -29,6 +29,25 @@ export function HeaderDesktopAutenticado({
   tipo_usuario: string;
 }) {
   const [isOpen, setIsOpen] = useState(false);
+  const wrapperRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent | TouchEvent) {
+      const el = wrapperRef.current;
+      if (!el) return;
+      const target = e.target as Node;
+      if (el && !el.contains(target)) {
+        setIsOpen(false);
+      }
+    }
+
+    document.addEventListener("mousedown", handleClickOutside);
+    document.addEventListener("touchstart", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("touchstart", handleClickOutside);
+    };
+  }, []);
 
   return (
     <header className="w-full bg-white border-b border-gray-100 shadow-sm fixed top-0 left-0 z-50">
@@ -83,7 +102,7 @@ export function HeaderDesktopAutenticado({
           </div>
 
           {/* Botão do menu dropdown */}
-          <div className="relative">
+          <div className="relative" ref={wrapperRef}>
             <motion.button
               whileTap={{ scale: 0.95 }}
               onClick={() => setIsOpen((prev) => !prev)}
@@ -198,6 +217,25 @@ export function HeaderDesktopAutenticado({
 /* ------------------ HEADER NÃO AUTENTICADO ------------------ */
 export function HeaderDesktopNaoAutenticado() {
   const [isOpen, setIsOpen] = useState(false);
+  const mobileRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent | TouchEvent) {
+      const el = mobileRef.current;
+      if (!el) return;
+      const target = e.target as Node;
+      if (el && !el.contains(target)) {
+        setIsOpen(false);
+      }
+    }
+
+    document.addEventListener("mousedown", handleClickOutside);
+    document.addEventListener("touchstart", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("touchstart", handleClickOutside);
+    };
+  }, []);
 
   return (
     <header className="w-full bg-white border-b border-gray-100 shadow-sm fixed top-0 left-0 z-50">
@@ -241,7 +279,7 @@ export function HeaderDesktopNaoAutenticado() {
         </div>
 
         {/* MENU MOBILE */}
-        <div className="sm:hidden flex items-center">
+        <div className="sm:hidden flex items-center" ref={mobileRef}>
           <motion.button
             whileTap={{ scale: 0.9 }}
             onClick={() => setIsOpen((prev) => !prev)}

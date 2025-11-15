@@ -5,6 +5,7 @@ import { Inter } from "next/font/google";
 import { jwtDecode } from "jwt-decode";
 import { InitialPage } from "./client";
 import { fetchUsersId } from "@/services/userService";
+import { redirect } from "next/navigation";
 import {
   BsEmojiAngry,
   BsEmojiExpressionless,
@@ -26,7 +27,20 @@ export default async function HomePage() {
     throw new Error("Token inválido ou não encontrado");
   }
 
-  const user = await fetchUsersId(decoded.id);
+  if (!decoded.id) {
+    // redireciona para a página de login quando token faltar id
+    redirect("/Auth/Login");
+  }
+
+  let user;
+  try {
+    user = await fetchUsersId(decoded.id);
+  } catch (err) {
+    // Em caso de erro ao buscar usuário (id inválido, erro de rede, etc.),
+    // redireciona para a tela de login para forçar nova autenticação.
+    console.error("HomePage: erro ao buscar usuário:", err);
+    redirect("/Auth/Login");
+  }
 
   return (
     <div className={`${inter.className} w-full`}>

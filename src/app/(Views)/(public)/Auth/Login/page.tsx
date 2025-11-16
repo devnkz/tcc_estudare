@@ -15,31 +15,43 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Inter } from "next/font/google";
 
-const interthin = Inter({ subsets: ["latin"], weight: ["100"] });
-const interextraLight = Inter({ subsets: ["latin"], weight: ["200"] });
-const interlight = Inter({ subsets: ["latin"], weight: ["300"] });
+import {
+  InputOTP,
+  InputOTPGroup,
+  InputOTPSeparator,
+  InputOTPSlot,
+} from "@/components/ui/input-otp";
+
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+
 const interregular = Inter({ subsets: ["latin"], weight: ["400"] });
-const intermedium = Inter({ subsets: ["latin"], weight: ["500"] });
-const intersemibold = Inter({ subsets: ["latin"], weight: ["600"] });
 const interbold = Inter({ subsets: ["latin"], weight: ["700"] });
-const interextrabold = Inter({ subsets: ["latin"], weight: ["800"] });
-const interblack = Inter({ subsets: ["latin"], weight: ["900"] });
 
 export default function LoginUsuario() {
   const [form, setForm] = useState({
     email_usuario: "",
     senha_usuario: "",
   });
+
   const router = useRouter();
-
   const [isChecked, setIsChecked] = useState(false);
-
   const [mostrarSenha, setMostrarSenha] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [success, setSuccess] = useState(false);
+
   const [errorMessage, setErrorMessage] = useState("");
   const [emailError, setEmailError] = useState("");
   const [senhaError, setSenhaError] = useState("");
+
+  // --------- MODAL + OTP ---------
+  const [openOTPModal, setOpenOTPModal] = useState(false);
+  const [otpValue, setOtpValue] = useState("");
 
   const handleChange = (field: string, value: string) => {
     setForm((prev) => ({
@@ -50,55 +62,77 @@ export default function LoginUsuario() {
 
   const login = async (event?: React.FormEvent) => {
     event?.preventDefault();
-    // reset errors
     setErrorMessage("");
     setEmailError("");
     setSenhaError("");
 
-    // basic client-side validation
-    if (!form.email_usuario.trim()) {
-      setEmailError("Preencha o email.");
-    }
-    if (!form.senha_usuario.trim()) {
-      setSenhaError("Preencha a senha.");
-    }
+    if (!form.email_usuario.trim()) setEmailError("Preencha o email.");
+    if (!form.senha_usuario.trim()) setSenhaError("Preencha a senha.");
     if (!form.email_usuario.trim() || !form.senha_usuario.trim()) return;
 
     setIsLoading(true);
+
     try {
+      // Apenas verifica credenciais primeiro
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(form),
       });
 
-      if (res.ok) {
-        const data = await res.json();
-        // set cookie and redirect
-        const maxAge = isChecked ? 60 * 60 * 24 * 30 : 60 * 60 * 24 * 7; // 30 days if remember me
-        document.cookie = `token=${data.token}; path=/; max-age=${maxAge}; SameSite=Strict`;
-        setSuccess(true);
-        setTimeout(() => router.push("/home"), 600);
+      if (!res.ok) {
+        if (res.status === 401) setSenhaError("Credenciais inválidas.");
+        else if (res.status === 404) setEmailError("Email não cadastrado.");
+        else setErrorMessage("Erro ao conectar ao servidor.");
         return;
       }
 
-      // handle common error statuses
-      if (res.status === 401) {
-        // generic message near password input
-        setSenhaError("Credenciais inválidas — verifique e tente novamente");
-      } else if (res.status === 404) {
-        // email not registered
-        setEmailError("Email não cadastrado.");
-      } else if (res.status === 400) {
-        const body = await res.json();
-        setErrorMessage(body?.message || "Requisição inválida.");
-      } else {
-        const body = await res.json().catch(() => null);
-        setErrorMessage(body?.message || "Erro ao conectar ao servidor.");
-      }
+      // Abre modal para digitar OTP
+      setOpenOTPModal(true);
     } catch (error) {
       console.error("Erro ao logar usuário:", error);
       setErrorMessage("Erro ao conectar ao servidor.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const confirmarOTP = async () => {
+    if (otpValue.length !== 6) {
+      setErrorMessage("Digite os 6 dígitos.");
+      return;
+    }
+
+    setIsLoading(true);
+
+    try {
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/verify-code`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            email: form.email_usuario,
+            code: otpValue,
+          }),
+        }
+      );
+
+      if (!res.ok) {
+        setErrorMessage("Código incorreto.");
+        return;
+      }
+
+      const data = await res.json();
+
+      document.cookie = `token=${data.token}; path=/; max-age=${
+        isChecked ? 60 * 60 * 24 * 30 : 60 * 60 * 24 * 7
+      }; SameSite=Strict`;
+
+      setSuccess(true);
+      setTimeout(() => router.push("/home"), 600);
+    } catch (e) {
+      setErrorMessage("Falha ao validar código.");
     } finally {
       setIsLoading(false);
     }
@@ -121,6 +155,7 @@ export default function LoginUsuario() {
               movementDuration={0.9}
               blur={8}
             />
+
             <form
               onSubmit={login}
               className="relative bg-white shadow-lg rounded-2xl p-8 w-full border border-gray-100 flex flex-col gap-5"
@@ -180,7 +215,7 @@ export default function LoginUsuario() {
                 )}
               </div>
 
-              {/* Lembrar de mim / Esqueci senha */}
+              {/* lembrete */}
               <div className="flex items-center justify-between text-sm">
                 <label
                   htmlFor="remember"
@@ -197,21 +232,18 @@ export default function LoginUsuario() {
                     ✔
                   </span>
                   <div
-                    className={`${interregular.className} font-regular font- text-gray-700 gap-1 text-sm`}
+                    className={`${interregular.className} text-gray-700 text-sm`}
                   >
                     {isChecked ? "Lembraremos de você :)" : "Lembre de mim"}
                   </div>
                 </label>
 
-                <button
-                  type="button"
-                  className="text-purple-600 hover:underline cursor-pointer"
-                >
+                <button className="text-purple-600 hover:underline">
                   Esqueceu a senha?
                 </button>
               </div>
 
-              {/* Botão principal */}
+              {/* mensagens */}
               {errorMessage && (
                 <motion.div
                   initial={{ opacity: 0, y: 6 }}
@@ -232,12 +264,11 @@ export default function LoginUsuario() {
                 className="w-full"
               />
 
-              {/* Mensagem de redirecionamento */}
               <p className="text-center text-sm text-gray-600">
                 Ainda não tem uma conta?
                 <Link
                   href="/Auth/Register"
-                  className="text-purple-600 hover:text-purple-700 font-medium transition-colors"
+                  className="text-purple-600 hover:text-purple-700 font-medium"
                 >
                   {" "}
                   Criar agora
@@ -247,6 +278,44 @@ export default function LoginUsuario() {
           </div>
         </main>
       </div>
+
+      {/* MODAL OTP */}
+      <Dialog open={openOTPModal} onOpenChange={setOpenOTPModal}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Digite o código enviado ao seu email</DialogTitle>
+          </DialogHeader>
+
+          <div className="flex justify-center py-4">
+            <InputOTP
+              maxLength={6}
+              value={otpValue}
+              onChange={(value) => setOtpValue(value)}
+            >
+              <InputOTPGroup>
+                <InputOTPSlot index={0} />
+                <InputOTPSlot index={1} />
+                <InputOTPSlot index={2} />
+              </InputOTPGroup>
+              <InputOTPSeparator />
+              <InputOTPGroup>
+                <InputOTPSlot index={3} />
+                <InputOTPSlot index={4} />
+                <InputOTPSlot index={5} />
+              </InputOTPGroup>
+            </InputOTP>
+          </div>
+
+          <DialogFooter>
+            <button
+              className="w-full bg-purple-600 hover:bg-purple-700 text-white"
+              onClick={confirmarOTP}
+            >
+              Confirmar
+            </button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

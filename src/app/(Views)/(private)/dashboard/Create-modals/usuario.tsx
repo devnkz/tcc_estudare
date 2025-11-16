@@ -589,15 +589,9 @@ export function SignUpUserModal({
                               item.pkId_tipoUsuario;
                             const id = rawId ? String(rawId) : "";
                             if (!id) return null;
-                            const label =
-                              item.nomeTipoUsuario ??
-                              item.nome_tipoUsuario ??
-                              item.nome ??
-                              item.descricao ??
-                              `Tipo ${id}`;
                             return (
                               <SelectItem key={id} value={id}>
-                                {label}
+                                {item.nome_tipousuario}
                               </SelectItem>
                             );
                           })

@@ -461,6 +461,23 @@ export default function ClientGrupoDetail({
       setMensagens((prev) => dedupeMessages([...prev, censored]));
     });
 
+    // Marca o grupo como "lido" ao abrir: atualiza a contagem armazenada
+    try {
+      const stored = localStorage.getItem("groupMessageCounts");
+      const parsed = stored ? JSON.parse(stored) : {};
+      const currentCount = grupo._count?.mensagens ?? 0;
+      parsed[grupo.id_grupo] = currentCount;
+      localStorage.setItem("groupMessageCounts", JSON.stringify(parsed));
+      // Dispara evento personalizado para notificar outras abas/componentes
+      window.dispatchEvent(
+        new CustomEvent("groupMessageCountsUpdated", {
+          detail: { id: grupo.id_grupo, count: currentCount },
+        })
+      );
+    } catch (e) {
+      console.error("Erro marcando grupo como lido:", e);
+    }
+
     // Eventos de digitação
     socket.on("user_typing", ({ userId }: { userId: string }) => {
       console.log(
@@ -496,6 +513,25 @@ export default function ClientGrupoDetail({
       chatEndRef.current.scrollIntoView({ behavior: "smooth", block: "end" });
     }
   }, [mensagens, usersTyping]);
+
+  // Sempre que as mensagens forem atualizadas neste detalhe, atualiza o
+  // contador armazenado para sinalizar que o usuário já leu até essa quantidade.
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem("groupMessageCounts");
+      const parsed = stored ? JSON.parse(stored) : {};
+      const current = mensagens.length ?? 0;
+      parsed[grupo.id_grupo] = current;
+      localStorage.setItem("groupMessageCounts", JSON.stringify(parsed));
+      window.dispatchEvent(
+        new CustomEvent("groupMessageCountsUpdated", {
+          detail: { id: grupo.id_grupo, count: current },
+        })
+      );
+    } catch (e) {
+      // ignore
+    }
+  }, [mensagens]);
 
   const [headerHeight, setHeaderHeight] = useState(0);
   useEffect(() => {

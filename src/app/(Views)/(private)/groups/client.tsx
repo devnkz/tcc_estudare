@@ -88,6 +88,51 @@ const GroupsPage: React.FC<GroupsPageProps> = ({
     }
   }, []);
 
+  // Atualiza contagens quando outra aba/componente altera o storage ou quando
+  // o groupDetail dispara o evento customizado. Isso garante que o badge
+  // desapareça imediatamente quando o grupo for aberto.
+  useEffect(() => {
+    function onStorage(e: StorageEvent) {
+      if (e.key === "groupMessageCounts") {
+        try {
+          const parsed = e.newValue ? JSON.parse(e.newValue) : {};
+          setLastMessageCount(parsed);
+        } catch (err) {
+          console.error(
+            "Erro ao parsear groupMessageCounts storage event",
+            err
+          );
+        }
+      }
+    }
+
+    function onCustom(e: Event) {
+      try {
+        const detail = (e as CustomEvent).detail as {
+          id: string;
+          count: number;
+        };
+        if (!detail) return;
+        setLastMessageCount((prev) => ({ ...prev, [detail.id]: detail.count }));
+      } catch (err) {
+        // ignore
+      }
+    }
+
+    window.addEventListener("storage", onStorage);
+    window.addEventListener(
+      "groupMessageCountsUpdated",
+      onCustom as EventListener
+    );
+    return () => {
+      window.removeEventListener("storage", onStorage);
+      window.removeEventListener(
+        "groupMessageCountsUpdated",
+        onCustom as EventListener
+      );
+    };
+  }, []);
+
   // close card menus by clicking outside
   useEffect(() => {
     function onDocClick(e: MouseEvent) {

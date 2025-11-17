@@ -125,12 +125,45 @@ export default function CadastroUsuario() {
         setMensagem({ tipo: "erro", texto: errMsg });
         push({ kind: "error", message: errMsg });
       } else {
-        const errorData = await res.json().catch(() => ({}));
-        const serverMsg = errorData?.message || "Erro ao cadastrar usuário.";
+        let errorData: any = null;
+        let rawText = "";
+        try {
+          rawText = await res.text();
+          try {
+            errorData = rawText ? JSON.parse(rawText) : null;
+          } catch (e) {
+            errorData = null;
+          }
+        } catch (e) {
+          rawText = "";
+        }
+
+        const serverMsg =
+          (errorData && (errorData.message || errorData.error)) ||
+          rawText ||
+          `Erro ao cadastrar usuário. (status ${res.status})`;
+
         setMensagem({ tipo: "erro", texto: serverMsg });
         push({ kind: "error", message: serverMsg });
-        console.error("Erro ao cadastrar usuário:", errorData);
-        console.log("Resposta do servidor:", data);
+
+        // Log detailed info to help debugging when server returns unexpected body
+        try {
+          const headersObj: Record<string, string> = {};
+          res.headers.forEach((v, k) => (headersObj[k] = v));
+
+          console.error("Erro ao cadastrar usuário:", {
+            status: res.status,
+            headers: headersObj,
+            parsedBody: errorData,
+            rawText,
+          });
+        } catch (logErr) {
+          console.error("Erro ao cadastrar usuário (log fallback):", {
+            status: res.status,
+            body: errorData || rawText,
+          });
+        }
+        console.log("Request payload:", data);
       }
     } catch (error) {
       console.error("Erro ao cadastrar usuário:", error);

@@ -37,10 +37,32 @@ export default function UsuarioClientPage({
   const [logoutOpen, setLogoutOpen] = useState(false);
   const [leaving, setLeaving] = useState(false);
   const [headerHeight, setHeaderHeight] = useState(0);
-  const { data: usuario_data } = useGetUser(
-    initialUser.id_usuario,
-    initialUser
-  );
+  const userId = initialUser?.id_usuario;
+
+  const { data: usuario_data, isError } = useGetUser(userId, initialUser);
+
+  // If initialUser is not present, clear token and redirect to login
+  useEffect(() => {
+    if (!initialUser) {
+      try {
+        deleteToken();
+      } catch (e) {
+        // ignore
+      }
+      router.push("/Auth/Login");
+    }
+  }, [initialUser, router]);
+
+  // If fetching user fails (invalid token / user missing), redirect to login
+  useEffect(() => {
+    if (isError) {
+      try {
+        deleteToken();
+      } catch (e) {}
+      router.push("/Auth/Login");
+    }
+  }, [isError, router]);
+
   if (!usuario_data) return null;
 
   const cred = usuario_data.credibilidade_usuario;

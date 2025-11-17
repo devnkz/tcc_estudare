@@ -7,6 +7,7 @@ import { Controller, useForm } from "react-hook-form";
 import { useToast } from "@/components/ui/animatedToast";
 import { motion, AnimatePresence } from "framer-motion";
 import { checkEmail } from "@/services/userService";
+import { CheckCircleIcon, XCircleIcon } from "@heroicons/react/24/outline";
 
 import {
   Select,
@@ -50,6 +51,9 @@ export function SignUpUserModal({
   tipousuarios,
   onFeedback,
 }: Props) {
+  const [selectedTipoLabel, setSelectedTipoLabel] = React.useState<
+    string | null
+  >(null);
   const isEtecEmail = (email: string) => /@etec\.sp\.gov\.br$/i.test(email);
   const [badFields, setBadFields] = React.useState<{
     nome?: boolean;
@@ -84,6 +88,27 @@ export function SignUpUserModal({
       fkIdTipoUsuario: "",
     },
   });
+
+  const getTipoLabel = (id?: string | null) => {
+    if (!id) return "";
+    const item = (tipousuarios || []).find((t: any) => {
+      const rawId =
+        t.id_tipoUsuario ??
+        t.id_tipousuario ??
+        t.id_tipo_usuario ??
+        t.id ??
+        t.pkId_tipoUsuario;
+      return String(rawId) === String(id);
+    });
+    const rawLabel = (
+      item?.nomeTipoUsuario ??
+      item?.nome_tipousuario ??
+      item?.nome ??
+      item?.descricao ??
+      ""
+    ).toString();
+    return simplifyTipo(rawLabel);
+  };
 
   const { mutate, isPending } = useCreateUser();
   const { push } = useToast();
@@ -125,6 +150,20 @@ export function SignUpUserModal({
         onFeedback?.("error", msg);
       },
     });
+  };
+
+  const simplifyTipo = (label: string) => {
+    if (!label) return "";
+    const l = label.toLowerCase();
+    if (l.includes("aluno") || l.includes("estud")) return "Aluno";
+    if (l.includes("prof") || l.includes("teacher")) return "Professor";
+    if (
+      l.includes("admin") ||
+      l.includes("administrador") ||
+      l.includes("administrator")
+    )
+      return "Admin";
+    return label;
   };
 
   const debouncedCheckEmail = React.useMemo(
@@ -302,103 +341,6 @@ export function SignUpUserModal({
             )}
           />
 
-          {/* EMAIL */}
-          <Controller
-            name="email_usuario"
-            control={control}
-            rules={{
-              required: "O e-mail é obrigatório.",
-              pattern: { value: /^\S+@\S+\.\S+$/, message: "E-mail inválido." },
-              validate: (v: string) =>
-                isEtecEmail(v) ||
-                "É necessário utilizar um e‑mail institucional da ETEC (@etec.sp.gov.br).",
-            }}
-            render={({ field }) => (
-              <motion.div
-                initial={{ opacity: 0, y: -4 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="space-y-1"
-              >
-                <Input
-                  {...field}
-                  autoComplete="off"
-                  label="E-mail institucional (@etec.sp.gov.br)"
-                  placeholder="email@exemplo.com"
-                  error={
-                    !!(errors as any).email_usuario ||
-                    emailState.exists ||
-                    !!emailState.error
-                  }
-                  onChange={(e) => {
-                    field.onChange(e);
-                    const val = e.target.value;
-                    setEmailState((prev) => ({ ...prev, touched: true }));
-                    // domínio obrigatório da ETEC
-                    if (val && !isEtecEmail(val)) {
-                      setEmailState((prev) => ({
-                        ...prev,
-                        error:
-                          "É necessário utilizar um e‑mail institucional da ETEC (@etec.sp.gov.br).",
-                      }));
-                      return;
-                    }
-                    // limpa erro de domínio antes de checar existência
-                    setEmailState((prev) => ({ ...prev, error: undefined }));
-                    debouncedCheckEmail(val);
-                  }}
-                />
-                <AnimatePresence>
-                  {!(errors as any).email_usuario &&
-                    emailState.touched &&
-                    emailState.checking && (
-                      <motion.p
-                        initial={{ opacity: 0, height: 0 }}
-                        animate={{ opacity: 1, height: "auto" }}
-                        exit={{ opacity: 0, height: 0 }}
-                        className="text-sm text-zinc-600"
-                      >
-                        Verificando e-mail...
-                      </motion.p>
-                    )}
-                  {!(errors as any).email_usuario &&
-                    emailState.touched &&
-                    emailState.error && (
-                      <motion.p
-                        initial={{ opacity: 0, height: 0 }}
-                        animate={{ opacity: 1, height: "auto" }}
-                        exit={{ opacity: 0, height: 0 }}
-                        className="text-sm text-red-600"
-                      >
-                        {emailState.error}
-                      </motion.p>
-                    )}
-                  {!(errors as any).email_usuario &&
-                    emailState.touched &&
-                    emailState.exists && (
-                      <motion.p
-                        initial={{ opacity: 0, height: 0 }}
-                        animate={{ opacity: 1, height: "auto" }}
-                        exit={{ opacity: 0, height: 0 }}
-                        className="text-sm text-red-600"
-                      >
-                        E-mail já cadastrado.
-                      </motion.p>
-                    )}
-                  {(errors as any).email_usuario && (
-                    <motion.p
-                      initial={{ opacity: 0, height: 0 }}
-                      animate={{ opacity: 1, height: "auto" }}
-                      exit={{ opacity: 0, height: 0 }}
-                      className="text-sm text-red-600"
-                    >
-                      {(errors as any).email_usuario?.message}
-                    </motion.p>
-                  )}
-                </AnimatePresence>
-              </motion.div>
-            )}
-          />
-
           {/* APELIDO */}
           <Controller
             name="apelido_usuario"
@@ -519,6 +461,140 @@ export function SignUpUserModal({
             )}
           />
 
+          {/* EMAIL */}
+          <Controller
+            name="email_usuario"
+            control={control}
+            rules={{
+              required: "O e-mail é obrigatório.",
+              pattern: { value: /^\S+@\S+\.\S+$/, message: "E-mail inválido." },
+              validate: (v: string) =>
+                isEtecEmail(v) ||
+                "É necessário utilizar um e‑mail institucional da ETEC (@etec.sp.gov.br).",
+            }}
+            render={({ field }) => (
+              <motion.div
+                initial={{ opacity: 0, y: -4 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="space-y-1"
+              >
+                <Input
+                  {...field}
+                  autoComplete="off"
+                  label="E-mail institucional (@etec.sp.gov.br)"
+                  placeholder="email@etec.sp.gov.br"
+                  error={
+                    !!(errors as any).email_usuario ||
+                    emailState.exists ||
+                    !!emailState.error
+                  }
+                  rightSlot={
+                    !(errors as any).email_usuario && emailState.touched ? (
+                      emailState.checking ? (
+                        <svg
+                          className="animate-spin h-5 w-5 text-zinc-500"
+                          xmlns="http://www.w3.org/2000/svg"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                        >
+                          <circle
+                            className="opacity-25"
+                            cx="12"
+                            cy="12"
+                            r="10"
+                            stroke="currentColor"
+                            strokeWidth="4"
+                          ></circle>
+                          <path
+                            className="opacity-75"
+                            fill="currentColor"
+                            d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
+                          ></path>
+                        </svg>
+                      ) : emailState.exists || emailState.error ? (
+                        <XCircleIcon className="h-5 w-5 text-red-500" />
+                      ) : (
+                        <CheckCircleIcon className="h-5 w-5 text-emerald-500" />
+                      )
+                    ) : null
+                  }
+                  onChange={(e) => {
+                    // only update value while typing; do not trigger availability check yet
+                    field.onChange(e);
+                    // clear previous domain error while editing
+                    setEmailState((prev) => ({ ...prev, error: undefined }));
+                  }}
+                  onBlur={(e) => {
+                    field.onBlur();
+                    const val = (e.target as HTMLInputElement).value;
+                    setEmailState((prev) => ({ ...prev, touched: true }));
+                    // perform availability check only when there is an @ and domain is ETEC
+                    if (val && val.includes("@") && isEtecEmail(val)) {
+                      debouncedCheckEmail(val);
+                      return;
+                    }
+                    // if has @ but not ETEC domain, show domain error
+                    if (val && val.includes("@") && !isEtecEmail(val)) {
+                      setEmailState((prev) => ({
+                        ...prev,
+                        error:
+                          "É necessário utilizar um e‑mail institucional da ETEC (@etec.sp.gov.br).",
+                      }));
+                    }
+                  }}
+                />
+                <AnimatePresence>
+                  {!(errors as any).email_usuario &&
+                    emailState.touched &&
+                    emailState.checking && (
+                      <motion.p
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: "auto" }}
+                        exit={{ opacity: 0, height: 0 }}
+                        className="text-sm text-zinc-600"
+                      >
+                        Verificando e-mail...
+                      </motion.p>
+                    )}
+                  {!(errors as any).email_usuario &&
+                    emailState.touched &&
+                    emailState.error && (
+                      <motion.p
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: "auto" }}
+                        exit={{ opacity: 0, height: 0 }}
+                        className="text-sm text-red-600"
+                      >
+                        {emailState.error}
+                      </motion.p>
+                    )}
+                  {!(errors as any).email_usuario &&
+                    emailState.touched &&
+                    emailState.exists && (
+                      <motion.p
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: "auto" }}
+                        exit={{ opacity: 0, height: 0 }}
+                        className="text-sm text-red-600"
+                      >
+                        E-mail já cadastrado.
+                      </motion.p>
+                    )}
+                  {(errors as any).email_usuario && (
+                    <motion.p
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: "auto" }}
+                      exit={{ opacity: 0, height: 0 }}
+                      className="text-sm text-red-600"
+                    >
+                      {(errors as any).email_usuario?.message}
+                    </motion.p>
+                  )}
+                </AnimatePresence>
+              </motion.div>
+            )}
+          />
+
           {/* SENHA */}
           <Controller
             name="senha_usuario"
@@ -570,9 +646,14 @@ export function SignUpUserModal({
                 animate={{ opacity: 1, y: 0 }}
                 className="space-y-1"
               >
-                <Select onValueChange={field.onChange} value={field.value}>
+                <Select
+                  onValueChange={(val) => {
+                    field.onChange(val);
+                  }}
+                  value={field.value}
+                >
                   <SelectTrigger className="w-full bg-zinc-200 rounded-sm hover:border-purple-600 cursor-pointer transform-gpu hover:-translate-y-0.5">
-                    <SelectValue placeholder="Selecione o tipo de usuário" />
+                    <SelectValue placeholder="Selecione o tipo aqui" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectGroup>
@@ -580,6 +661,15 @@ export function SignUpUserModal({
                       {tipousuarios && tipousuarios.length > 0 ? (
                         tipousuarios
                           .map((item: any) => {
+                            // support both object items and raw id strings
+                            if (typeof item === "string") {
+                              const id = item;
+                              return (
+                                <SelectItem key={id} value={id}>
+                                  {simplifyTipo(item)}
+                                </SelectItem>
+                              );
+                            }
                             const rawId =
                               item.id_tipoUsuario ??
                               item.id_tipousuario ??
@@ -591,13 +681,14 @@ export function SignUpUserModal({
                             if (!id) return null;
                             const label =
                               item.nomeTipoUsuario ??
+                              item.nome_tipousuario ??
                               item.nome_tipoUsuario ??
                               item.nome ??
                               item.descricao ??
                               `Tipo ${id}`;
                             return (
                               <SelectItem key={id} value={id}>
-                                {label}
+                                {simplifyTipo(String(label))}
                               </SelectItem>
                             );
                           })

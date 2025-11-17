@@ -10,9 +10,9 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { Resposta } from "@/types/resposta";
 import { useUpdateResposta } from "@/hooks/resposta/useUpdate";
-import { useState, useEffect, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { motion } from "framer-motion";
-import { Info, Loader2, CheckCircle2, XCircle } from "lucide-react";
+import { Info, XCircle } from "lucide-react";
 import badWordsJSON from "@/utils/badWordsPT.json";
 import { ActionButton } from "@/components/ui/actionButton";
 
@@ -36,7 +36,6 @@ export default function ModalUpdateResponse({
   const [conteudoUpdate, setConteudoUpdate] = useState(resposta.resposta);
   const [error, setError] = useState<string>("");
   const [success, setSuccess] = useState(false);
-  const [checking, setChecking] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const [internalIsOpen, setInternalIsOpen] = useState(false);
@@ -87,13 +86,6 @@ export default function ModalUpdateResponse({
   }
 
   const hasBadWord = hasBadWordText(conteudoUpdate);
-
-  // Debounce para animação de checking
-  useEffect(() => {
-    setChecking(true);
-    const t = setTimeout(() => setChecking(false), 450);
-    return () => clearTimeout(t);
-  }, [conteudoUpdate]);
 
   // Auto-resize do textarea
   useEffect(() => {
@@ -157,7 +149,13 @@ export default function ModalUpdateResponse({
           </button>
         </DialogTrigger>
       )}
-      <DialogContent className="z-[100] w-[calc(100vw-2rem)] sm:w-auto max-w-sm sm:max-w-md md:max-w-lg rounded-2xl p-6 sm:p-8 bg-white dark:bg-slate-900">
+      <DialogContent
+        // ensure overlay created by this inner dialog sits above the question modal
+        // but below the edit modal content
+        overlayClassName="z-[210]"
+        contentClassName="z-[220] w-[calc(100vw-2rem)] sm:w-auto max-w-sm sm:max-w-md md:max-w-lg"
+        className="rounded-2xl p-6 sm:p-8 bg-white dark:bg-slate-900"
+      >
         <DialogHeader>
           <DialogTitle className="text-xl sm:text-2xl font-extrabold bg-gradient-to-r from-purple-600 to-fuchsia-600 bg-clip-text text-transparent">
             Editar sua resposta
@@ -210,12 +208,8 @@ export default function ModalUpdateResponse({
               />
               {/* Status icon */}
               <div className="absolute right-3 top-3">
-                {checking ? (
-                  <Loader2 className="h-4 w-4 animate-spin text-zinc-500" />
-                ) : conteudoUpdate.trim() && !hasBadWord ? (
-                  <CheckCircle2 className="h-4 w-4 text-emerald-600 animate-in fade-in" />
-                ) : hasBadWord ? (
-                  <XCircle className="h-4 w-4 text-red-600 animate-in fade-in" />
+                {hasBadWord ? (
+                  <XCircle className="h-4 w-4 text-red-600" />
                 ) : null}
               </div>
             </div>
@@ -254,7 +248,6 @@ export default function ModalUpdateResponse({
               isLoading={isPending}
               isSuccess={success}
               disabled={!isDirty || hasBadWord || !conteudoUpdate.trim()}
-              enableRipplePulse
             />
           </div>
         </div>

@@ -59,7 +59,7 @@ export default async function HomePage() {
               <div className="text-3xl font-semibold text-gray-700 justify-center">
                 <PerguntasIndex id_usuario={decoded.id} />
               </div>
-              <p className="text-l text-gray-500 mt-6 mb-4">
+              <p className="text-l text-gray-500 mb-4">
                 Que tal fazer uma pergunta?
               </p>
               <a

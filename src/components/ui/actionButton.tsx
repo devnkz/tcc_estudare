@@ -61,31 +61,15 @@ export function ActionButton({
       )}
       <span className="relative flex items-center gap-2">
         <span>{textIdle}</span>
-        <AnimatePresence mode="wait" initial={false}>
-          {isLoading ? (
-            <motion.span
-              key="loading"
-              initial={{ opacity: 0, x: 6 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -6 }}
-              transition={{ duration: 0.15 }}
-              className="flex"
-            >
-              <Loader2 className="h-4 w-4 animate-spin" />
-            </motion.span>
-          ) : isSuccess ? (
-            <motion.span
-              key="success"
-              initial={{ scale: 0.6, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ type: "spring", stiffness: 400, damping: 25 }}
-              className="flex items-center justify-center h-5 w-5 rounded-full bg-white/90 text-emerald-700"
-            >
-              <Check className="h-3.5 w-3.5" />
-            </motion.span>
-          ) : null}
-        </AnimatePresence>
+        {isLoading ? (
+          <span className="flex">
+            <Loader2 className="h-4 w-4 animate-spin" />
+          </span>
+        ) : isSuccess ? (
+          <span className="flex items-center justify-center h-5 w-5 rounded-full bg-white/90 text-emerald-700">
+            <Check className="h-3.5 w-3.5" />
+          </span>
+        ) : null}
       </span>
       {children}
     </button>

@@ -11,17 +11,15 @@ export default function RootLayoutDashboard({
 }: {
   children: React.ReactNode;
 }) {
-  const [createKey, setCreateKey] = useState<
-    null | "curso" | "componente" | "usuario"
-  >(null);
+  const [createKey, setCreateKey] = useState<string | null>(null);
   const [auditNonce, setAuditNonce] = useState<number>(0);
 
   return (
     <div className={`${inter.className} w-full min-h-screen overflow-x-hidden`}>
       <SidebarDashboard
-        onCreateCurso={() => setCreateKey("curso")}
-        onCreateComponente={() => setCreateKey("componente")}
-        onCreateUsuario={() => setCreateKey("usuario")}
+        onCreateCurso={() => setCreateKey(`curso:${Date.now()}`)}
+        onCreateComponente={() => setCreateKey(`componente:${Date.now()}`)}
+        onCreateUsuario={() => setCreateKey(`usuario:${Date.now()}`)}
         onOpenAudit={() => setAuditNonce((n) => n + 1)}
       />
       <main className="md:ml-[68px] min-h-screen overflow-x-hidden pt-6 px-6 md:px-8 lg:px-12 xl:px-16 pb-10 md:mr-6 lg:mr-8 xl:mr-12">

@@ -1,5 +1,8 @@
 "use client";
 
+// Ensure axios interceptors are registered on client bundle
+import "../lib/api";
+
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useState } from "react";
 

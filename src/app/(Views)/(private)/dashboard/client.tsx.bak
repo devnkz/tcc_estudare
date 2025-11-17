@@ -1,7 +1,6 @@
 "use client";
+
 import { useEffect, useMemo, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { fetchRespostas } from "@/services/respostaService";
 import {
   Plus,
   FileWarning,
@@ -14,8 +13,6 @@ import {
   Search,
   ArrowLeft,
   ArrowRight,
-  Loader2,
-  Check,
   Archive,
   Gavel,
   Filter as FilterIcon,
@@ -44,10 +41,6 @@ import { Grupo } from "@/types/grupo";
 import { PenalidadeModal } from "./Create-modals/penalidade";
 import { useToast } from "@/components/ui/animatedToast";
 import { jwtDecode } from "jwt-decode";
-interface DecodedToken {
-  id_usuario?: string;
-  tipo_usuario?: string;
-}
 import { isAdmin, isAdminEmail } from "@/lib/roles";
 import { ActionButton } from "@/components/ui/actionButton";
 import { filtrarTexto } from "@/utils/filterText";
@@ -58,126 +51,255 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+
+interface DecodedToken {
+  id_usuario?: string;
+  tipo_usuario?: string; // vindo do token backend
+  [key: string]: any;
+}
+
+// substitui lista de IDs: agora apenas administradores
+
 export default function DashboardPage({
-  cursos = [],
-  componentes = [],
-  users = [],
-  perguntas = [],
-  respostas = [],
-  grupos = [],
-  denuncias = [],
-  tipousuario = [],
-}: any) {
+  tipousuario,
+  cursos,
+  denuncias,
+  componentes,
+  users,
+  perguntas,
+  respostas,
+  grupos,
+}: {
+  tipousuario: any[];
+  cursos: Curso[];
+  denuncias: Denuncia[];
+  componentes: Componente[];
+  users: User[];
+  perguntas: Pergunta[];
+  respostas: Resposta[];
+  grupos: Grupo[];
+}) {
+  // --- Auditoria local (reintroduzido após refatoração) ---
+  type AuditEntry = {
+    id: string;
+    ts: number;
+    action: string;
+    entity: string;
+    entityId: string;
+    details?: string;
+  };
+  const [auditLog, setAuditLog] = useState<AuditEntry[]>([]);
+  const [openAudit, setOpenAudit] = useState(false);
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem("auditLog");
+      if (raw) setAuditLog(JSON.parse(raw));
+    } catch {}
+  }, []);
+  const pushAudit = (entry: Omit<AuditEntry, "id" | "ts">) => {
+    setAuditLog((prev) => {
+      const next = [
+        { id: crypto.randomUUID(), ts: Date.now(), ...entry },
+        ...prev,
+      ].slice(0, 200);
+      try {
+        localStorage.setItem("auditLog", JSON.stringify(next));
+      } catch {}
+      return next;
+    });
+  };
   const [openDialog, setOpenDialog] = useState<
     null | "curso" | "componente" | "usuario"
   >(null);
+
+  // Integração com SidebarDashboard (via atributo data-create-key no wrapper do layout)
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const wrapper = document.getElementById("dashboard-root-wrapper");
+    if (!wrapper) return;
+    const applyCreate = (val: string | null) => {
+      if (!val) return;
+      if (val === "curso" || val === "componente" || val === "usuario") {
+        setOpenDialog(val);
+        // limpa o sinal para evitar abrir novamente
+        wrapper.setAttribute("data-create-key", "");
+      }
+    };
+    const applyAudit = (nonce: string | null) => {
+      if (!nonce) return;
+      // abre modal de auditoria quando atributo muda
+      setOpenAudit(true);
+      wrapper.setAttribute("data-open-audit", "");
+    };
+    // estado inicial
+    applyCreate(wrapper.getAttribute("data-create-key"));
+    applyAudit(wrapper.getAttribute("data-open-audit"));
+    const mo = new MutationObserver((muts) => {
+      for (const m of muts) {
+        if (m.type === "attributes" && m.attributeName === "data-create-key") {
+          applyCreate(wrapper.getAttribute("data-create-key"));
+        }
+        if (m.type === "attributes" && m.attributeName === "data-open-audit") {
+          applyAudit(wrapper.getAttribute("data-open-audit"));
+        }
+      }
+    });
+    mo.observe(wrapper, { attributes: true });
+    return () => mo.disconnect();
+  }, []);
+
+  // estado para penalidade
   const [openPenalidade, setOpenPenalidade] = useState(false);
   const [selectedDenuncia, setSelectedDenuncia] = useState<Denuncia | null>(
     null
   );
   const { push } = useToast();
 
-  const [cursosState, setCursosState] = useState<Curso[]>(cursos || []);
-  const [componentesState, setComponentesState] = useState<Componente[]>(
-    componentes || []
-  );
-  const [usersState, setUsersState] = useState<User[]>(users || []);
-  const [perguntasState, setPerguntasState] = useState<Pergunta[]>(
-    perguntas || []
-  );
-  const [respostasState, setRespostasState] = useState<Resposta[]>(
-    respostas || []
-  );
-  const [gruposState, setGruposState] = useState<Grupo[]>(grupos || []);
-  const [denunciasState, setDenunciasState] = useState<Denuncia[]>(
-    denuncias || []
-  );
-  // keep respostas in sync with other parts of the app using react-query
-  const respostasQuery = useQuery<Resposta[]>({
-    queryKey: ["respostas"],
-    queryFn: fetchRespostas,
-    initialData: respostas || [],
-  });
-
-  useEffect(() => {
-    if (respostasQuery.data) setRespostasState(respostasQuery.data);
-  }, [respostasQuery.data]);
-
-  // filtros para seção de denúncias (declarados próximo ao estado de denuncias)
-  const [filtroStatus, setFiltroStatus] = useState<string>("");
-
-  const reporterName = useMemo(() => {
-    if (!selectedDenuncia) return "Você";
-    const denUser = (selectedDenuncia as any).usuario;
-    let reporter: any = denUser;
-    if (!reporter || !reporter.nome_usuario) {
-      const possibleIds = [
-        (selectedDenuncia as any).fkId_usuario,
-        (selectedDenuncia as any).fkId_usuario_denunciante,
-        (selectedDenuncia as any).fkId_usuario_criador,
-        (selectedDenuncia as any).fkId_usuario_conteudo,
-        (selectedDenuncia as any).fkId_usuarioCriador,
-      ];
-      const id = possibleIds.find(Boolean);
-      if (id) {
-        reporter = usersState.find((u) => String(u.id_usuario) === String(id));
-      }
-    }
-    return reporter
-      ? `${reporter.nome_usuario ?? reporter.apelido_usuario}${
-          reporter.apelido_usuario && reporter.nome_usuario
-            ? ` (${reporter.apelido_usuario})`
-            : ""
-        }`
-      : "Você";
-  }, [selectedDenuncia, usersState]);
-
-  const victimName = useMemo(() => {
-    if (!selectedDenuncia) return "—";
-    const possibleVictimIds = [
-      (selectedDenuncia as any).fkId_usuario_conteudo,
-      (selectedDenuncia as any).fkId_usuario_conteudo_usuario,
-      (selectedDenuncia as any).fkId_usuarioCriador,
-      (selectedDenuncia as any).fkId_usuario_conteudo_criador,
-      (selectedDenuncia as any).fkId_usuario,
-    ];
-    const victimId = possibleVictimIds.find(Boolean);
-    let victim: any = null;
-    if (victimId)
-      victim = usersState.find(
-        (u) => String(u.id_usuario) === String(victimId)
-      );
-    return victim
-      ? `${victim.nome_usuario ?? victim.apelido_usuario}${
-          victim.apelido_usuario && victim.nome_usuario
-            ? ` (${victim.apelido_usuario})`
-            : ""
-        }`
-      : (selectedDenuncia as any).tipo_conteudo ?? "—";
-  }, [selectedDenuncia, usersState]);
-
-  // local audit log for simple session auditing
-  const [auditLog, setAuditLog] = useState<any[]>([]);
-  useEffect(() => {
-    try {
-      const raw = localStorage.getItem("auditLog");
-      if (raw) setAuditLog(JSON.parse(raw));
-    } catch (e) {}
-  }, []);
-  const pushAudit = (entry: any) => {
-    setAuditLog((prev) => {
-      const next = [entry, ...prev].slice(0, 500);
-      try {
-        localStorage.setItem("auditLog", JSON.stringify(next));
-      } catch (e) {}
+  // local states for optimistic UI updates
+  const [cursosState, setCursosState] = useState<Curso[]>(cursos);
+  const [componentesState, setComponentesState] =
+    useState<Componente[]>(componentes);
+  const [usersState, setUsersState] = useState<User[]>(users);
+  const [perguntasState, setPerguntasState] = useState<Pergunta[]>(perguntas);
+  const [respostasState, setRespostasState] = useState<Resposta[]>(respostas);
+  const [gruposState, setGruposState] = useState<Grupo[]>(grupos);
+  const [denunciasState, setDenunciasState] = useState<Denuncia[]>(denuncias);
+  // edição popups
+  const [editCurso, setEditCurso] = useState<Curso | null>(null);
+  const [editComponente, setEditComponente] = useState<Componente | null>(null);
+  const [editGrupo, setEditGrupo] = useState<Grupo | null>(null);
+  const [savingEdit, setSavingEdit] = useState(false);
+  const [savingSuccess, setSavingSuccess] = useState(false);
+  // grupos membros collapse
+  const [openGroupIds, setOpenGroupIds] = useState<Set<string>>(new Set());
+  const toggleGroupOpen = (id: string) => {
+    setOpenGroupIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
       return next;
     });
   };
+  // filtros de denuncias
+  const [filtroStatus, setFiltroStatus] = useState("");
+  const [filtroNivel, setFiltroNivel] = useState("");
+  const [filtroUsuario, setFiltroUsuario] = useState("");
 
-  const [conteudoRevisado, setConteudoRevisado] = useState<null | {
-    tipo?: string;
-    texto?: string;
-  }>(null);
+  // confirm dialog state
+  const [confirmData, setConfirmData] = useState<{
+    open: boolean;
+    action:
+      | "deleteCurso"
+      | "deleteComponente"
+      | "deletePergunta"
+      | "deleteResposta"
+      | "deleteUser"
+      | "deleteGrupo";
+    id: string;
+    nome: string;
+    force?: boolean;
+    message?: string;
+  } | null>(null);
+
+  // edit user modal state
+  const [editUser, setEditUser] = useState<User | null>(null);
+  const [editUserLoading, setEditUserLoading] = useState(false);
+  const [editUserSuccess, setEditUserSuccess] = useState(false);
+  const [badNomeUser, setBadNomeUser] = useState(false);
+  const [badApelidoUser, setBadApelidoUser] = useState(false);
+  const [emailStateEdit, setEmailStateEdit] = useState<{
+    checking: boolean;
+    exists: boolean;
+    touched: boolean;
+    error?: string;
+    initial?: string;
+  }>({ checking: false, exists: false, touched: false, initial: undefined });
+  const debouncedCheckEmailEdit = useMemo(
+    () =>
+      debounce(async (value: string) => {
+        if (!value || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(value)) {
+          setEmailStateEdit((prev) => ({
+            ...prev,
+            checking: false,
+            exists: false,
+            error: value ? "Formato de email inválido" : "",
+          }));
+          return;
+        }
+        try {
+          setEmailStateEdit((prev) => ({
+            ...prev,
+            checking: true,
+            error: undefined,
+          }));
+          const { checkEmail } = await import("@/services/userService");
+          const res = await checkEmail(value);
+          setEmailStateEdit((prev) => ({
+            ...prev,
+            checking: false,
+            exists: res.exists,
+          }));
+        } catch (e: any) {
+          setEmailStateEdit((prev) => ({
+            ...prev,
+            checking: false,
+            error: "Falha ao validar email",
+          }));
+        }
+      }, 450),
+    []
+  );
+
+  // Derivar denúncias filtradas (reconstruído após refatoração)
+  const denunciasSorted = useMemo(() => {
+    return [...denunciasState].sort((a, b) => {
+      const aNome = a.usuario?.nome_usuario || "";
+      const bNome = b.usuario?.nome_usuario || "";
+      return aNome.localeCompare(bNome, "pt-BR");
+    });
+  }, [denunciasState]);
+
+  const denunciasFiltradas = useMemo(() => {
+    return denunciasSorted.filter((den) => {
+      if (filtroStatus && den.status !== filtroStatus) return false;
+      if (filtroNivel) {
+        const min = Number(filtroNivel);
+        if (!isNaN(min) && den.nivel_denuncia < min) return false;
+      }
+      if (filtroUsuario) {
+        const searchTerm = filtroUsuario.toLowerCase();
+        const nome = den.usuario.nome_usuario.toLowerCase();
+        const apelido = (den.usuario.apelido_usuario || "").toLowerCase();
+        if (!nome.includes(searchTerm) && !apelido.includes(searchTerm)) {
+          return false;
+        }
+      }
+      return true;
+    });
+  }, [denunciasSorted, filtroStatus, filtroNivel, filtroUsuario]);
+
+  // Ordenações alfabéticas para exibição/consulta
+  const cursosSorted = useMemo(
+    () =>
+      [...cursosState].sort((a, b) =>
+        a.nome_curso.localeCompare(b.nome_curso, "pt-BR")
+      ),
+    [cursosState]
+  );
+  const componentesSorted = useMemo(
+    () =>
+      [...componentesState].sort((a, b) =>
+        a.nome_componente.localeCompare(b.nome_componente, "pt-BR")
+      ),
+    [componentesState]
+  );
+  const usuariosSorted = useMemo(
+    () =>
+      [...usersState].sort((a, b) =>
+        a.nome_usuario.localeCompare(b.nome_usuario, "pt-BR")
+      ),
+    [usersState]
+  );
   const perguntasSorted = useMemo(
     () =>
       [...perguntasState].sort((a, b) =>
@@ -206,145 +328,11 @@ export default function DashboardPage({
     [gruposState]
   );
 
-  // Derived sorted lists used in multiple places
-  const cursosSorted = useMemo(
-    () =>
-      [...cursosState].sort((a, b) =>
-        a.nome_curso.localeCompare(b.nome_curso, "pt-BR")
-      ),
-    [cursosState]
-  );
-  const componentesSorted = useMemo(
-    () =>
-      [...componentesState].sort((a, b) =>
-        a.nome_componente.localeCompare(b.nome_componente, "pt-BR")
-      ),
-    [componentesState]
-  );
-  const usuariosSorted = useMemo(
-    () =>
-      [...usersState].sort((a, b) =>
-        a.nome_usuario.localeCompare(b.nome_usuario, "pt-BR")
-      ),
-    [usersState]
-  );
-
-  // modal/drawer flags
-  const [openAnalise, setOpenAnalise] = useState(false);
-  const [openAudit, setOpenAudit] = useState(false);
-  // action states for analysis modal buttons
-  const [arquivarLoading, setArquivarLoading] = useState(false);
-  const [arquivarSuccess, setArquivarSuccess] = useState(false);
-  const [penalidadeLoading, setPenalidadeLoading] = useState(false);
-  const [penalidadeSuccess, setPenalidadeSuccess] = useState(false);
-  const [penalidadeUsuarioNome, setPenalidadeUsuarioNome] = useState<
-    string | undefined
-  >(undefined);
-
-  // Filtragem simples de denúncias (placeholder — preserva comportamento while we keep filters minimal)
-  const [filtroTipoDenuncia, setFiltroTipoDenuncia] = useState<string>("");
-  const [filtroDenunciaQuery, setFiltroDenunciaQuery] = useState<string>("");
-  const tipoDenunciaExistentes = useMemo(
-    () =>
-      Array.from(
-        new Set(
-          denunciasState
-            .map((d: any) => (d.tipo_denuncia || "").toString())
-            .filter(Boolean)
-        )
-      ),
-    [denunciasState]
-  );
-
-  const denunciasFiltradas = useMemo(() => {
-    const q = (filtroDenunciaQuery || "").toString().trim().toLowerCase();
-    let list = [...denunciasState];
-
-    // apply basic filters from section controls
-    if (filtroStatus) {
-      list = list.filter((d: any) => String(d.status) === String(filtroStatus));
-    }
-    // filtroNivel and filtroUsuario removed per UX request
-    if (filtroTipoDenuncia) {
-      list = list.filter((d: any) => {
-        const tipo = (
-          d.tipo_denuncia ||
-          d.tipo_conteudo ||
-          d.tipo ||
-          ""
-        ).toString();
-        return String(tipo) === String(filtroTipoDenuncia);
-      });
-    }
-
-    if (q) {
-      list = list.filter((d: any) => {
-        // Build the same title text used in the card: "Nova denúncia de ${nome} ${apelido}"
-        // Prefer nested `usuario` object, otherwise try common fk id fields to lookup in usersState
-        const denUser = d.usuario;
-        let reporter: any = denUser;
-        if (!reporter || !reporter.nome_usuario) {
-          const possibleIds = [
-            d.fkId_usuario,
-            d.fkId_usuario_denunciante,
-            d.fkId_usuario_criador,
-            d.fkId_usuario_conteudo,
-            d.fkId_usuarioCriador,
-          ];
-          const id = possibleIds.find(Boolean);
-          if (id) {
-            reporter = usersState.find(
-              (u: any) => String(u.id_usuario) === String(id)
-            );
-          }
-        }
-
-        const nome = (
-          reporter?.nome_usuario ??
-          reporter?.apelido_usuario ??
-          "—"
-        ).toString();
-        const apelido = reporter?.apelido_usuario
-          ? `(${reporter.apelido_usuario})`
-          : "";
-        const title = `Nova denúncia de ${nome} ${apelido}`.toLowerCase();
-        return title.includes(q);
-      });
-    }
-
-    // Sort: pendentes first, then by dataCriacao_denuncia (order of arrival: oldest first)
-    list.sort((a: any, b: any) => {
-      const priority = (s: string) => (s === "pendente" ? 0 : 1);
-      const pa = priority(a.status || "");
-      const pb = priority(b.status || "");
-      if (pa !== pb) return pa - pb;
-      const da = a.dataCriacao_denuncia
-        ? new Date(a.dataCriacao_denuncia).getTime()
-        : 0;
-      const db = b.dataCriacao_denuncia
-        ? new Date(b.dataCriacao_denuncia).getTime()
-        : 0;
-      return da - db;
-    });
-
-    return list;
-  }, [
-    denunciasState,
-    filtroStatus,
-    filtroTipoDenuncia,
-    filtroDenunciaQuery,
-    perguntasState,
-    respostasState,
-    usersState,
-  ]);
-
   // ---------------- GLOBAL SEARCH BAR -----------------
   const [searchQuery, setSearchQuery] = useState("");
   const [searchDomain, setSearchDomain] = useState<
-    "usuarios" | "grupos" | "cursos" | "componentes" | "perguntas" | "respostas"
+    "usuarios" | "grupos" | "cursos" | "componentes" | "perguntas"
   >("usuarios");
-  const [onlyMyPerguntas, setOnlyMyPerguntas] = useState(false);
-  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [searchTipoUsuario, setSearchTipoUsuario] = useState<string>("");
   const [searchCursoFiltro, setSearchCursoFiltro] = useState<string>("");
   const [searchPage, setSearchPage] = useState(1);
@@ -369,29 +357,6 @@ export default function DashboardPage({
     return (nome || "").toString();
   };
 
-  // read current user id from token cookie (client-side)
-  useEffect(() => {
-    try {
-      const token = document.cookie
-        .split(";")
-        .map((c) => c.trim())
-        .find((c) => c.startsWith("token="))
-        ?.split("=")[1];
-      if (token) {
-        try {
-          const decoded: any = jwtDecode(token as string) as DecodedToken;
-          setCurrentUserId(decoded?.id_usuario || null);
-        } catch (e) {
-          setCurrentUserId(null);
-        }
-      } else {
-        setCurrentUserId(null);
-      }
-    } catch (e) {
-      setCurrentUserId(null);
-    }
-  }, []);
-
   const filteredSearchResults = useMemo(() => {
     const q = searchQuery.trim().toLowerCase();
     if (!q) return [] as any[];
@@ -414,6 +379,10 @@ export default function DashboardPage({
         return gruposSorted.filter((g) =>
           g.nome_grupo.toLowerCase().includes(q)
         );
+      case "cursos":
+        return cursosSorted.filter((c) =>
+          c.nome_curso.toLowerCase().includes(q)
+        );
       case "componentes":
         return componentesSorted.filter((c) => {
           const nomeMatch = c.nome_componente.toLowerCase().includes(q);
@@ -422,34 +391,9 @@ export default function DashboardPage({
           return nomeMatch && cursoMatch;
         });
       case "perguntas":
-        return perguntasSorted.filter((p) => {
-          const matchesQuery = p.pergunta.toLowerCase().includes(q);
-          if (!matchesQuery) return false;
-          if (onlyMyPerguntas) {
-            const ownerId = p.fkId_usuario || p.usuario?.id_usuario;
-            return String(ownerId) === String(currentUserId);
-          }
-          return true;
-        });
-      case "respostas":
-        return respostasSorted.filter((r) => {
-          const text = (r.resposta || "").toString().toLowerCase();
-          const author = (
-            r.usuario?.nome_usuario ||
-            r.usuario?.apelido_usuario ||
-            ""
-          )
-            .toString()
-            .toLowerCase();
-          const pergunta = perguntasState.find(
-            (p) => String(p.id_pergunta) === String(r.fkId_pergunta)
-          );
-          const perguntaText = pergunta ? pergunta.pergunta.toLowerCase() : "";
-          return (
-            text.includes(q) || author.includes(q) || perguntaText.includes(q)
-          );
-        });
-
+        return perguntasSorted.filter((p) =>
+          p.pergunta.toLowerCase().includes(q)
+        );
       default:
         return [];
     }
@@ -462,8 +406,6 @@ export default function DashboardPage({
     cursosSorted,
     componentesSorted,
     perguntasSorted,
-    onlyMyPerguntas,
-    currentUserId,
   ]);
 
   useEffect(() => {
@@ -544,9 +486,7 @@ export default function DashboardPage({
     "manage-grupos",
     "manage-usuarios",
   ];
-
   const [activeSection, setActiveSection] = useState<string>("dashboard-root");
-
   useEffect(() => {
     const observer = new IntersectionObserver(
       (entries) => {
@@ -563,69 +503,6 @@ export default function DashboardPage({
       if (el) observer.observe(el);
     });
     return () => observer.disconnect();
-  }, []);
-
-  // Support opening certain UI from anchor links in the side menu (e.g. #audit, #novo-curso)
-  useEffect(() => {
-    const handleHash = () => {
-      try {
-        const h = (window.location.hash || "").replace("#", "");
-        if (!h) return;
-        if (h === "audit") setOpenAudit(true);
-        if (h === "novo-curso") setOpenDialog("curso");
-        if (h === "novo-componente") setOpenDialog("componente");
-        if (h === "novo-usuario") setOpenDialog("usuario");
-      } catch (e) {}
-    };
-    handleHash();
-    window.addEventListener("hashchange", handleHash);
-    return () => window.removeEventListener("hashchange", handleHash);
-  }, []);
-
-  // Observe layout signals (`data-open-audit` and `data-create-key`) to support sidebar callbacks
-  useEffect(() => {
-    try {
-      const wrapper = document.getElementById("dashboard-root-wrapper");
-      if (!wrapper) return;
-      const mo = new MutationObserver((records) => {
-        for (const r of records) {
-          if (r.type === "attributes") {
-            const attr = r.attributeName;
-            if (attr === "data-open-audit") {
-              setOpenAudit(true);
-              break;
-            }
-            if (attr === "data-create-key") {
-              try {
-                const val = wrapper.getAttribute("data-create-key") || "";
-                if (val) {
-                  const key = String(val).split(":")[0];
-                  if (
-                    key === "curso" ||
-                    key === "componente" ||
-                    key === "usuario"
-                  ) {
-                    setOpenDialog(key as any);
-                    // clear the attribute so subsequent changes are detected
-                    wrapper.setAttribute("data-create-key", "");
-                  }
-                }
-              } catch (e) {
-                // ignore
-              }
-              break;
-            }
-          }
-        }
-      });
-      mo.observe(wrapper, {
-        attributes: true,
-        attributeFilter: ["data-open-audit", "data-create-key"],
-      });
-      return () => mo.disconnect();
-    } catch (e) {
-      // ignore
-    }
   }, []);
   const handleGlobalRefresh = async () => {
     try {
@@ -677,94 +554,6 @@ export default function DashboardPage({
   // função de submissão da penalidade (stub)
   const handleSubmitPenalidade = (data: any) => {
     // lógica de envio se necessário
-  };
-
-  // Edit states for entities (cursos, componentes, grupos, users)
-  const [editCurso, setEditCurso] = useState<Curso | null>(null);
-  const [editComponente, setEditComponente] = useState<Componente | null>(null);
-  const [editGrupo, setEditGrupo] = useState<Grupo | null>(null);
-  const [editUser, setEditUser] = useState<User | null>(null);
-  const [savingEdit, setSavingEdit] = useState(false);
-  const [savingSuccess, setSavingSuccess] = useState(false);
-
-  // Edit user helpers
-  const [editUserLoading, setEditUserLoading] = useState(false);
-  const [editUserSuccess, setEditUserSuccess] = useState(false);
-  const [badNomeUser, setBadNomeUser] = useState(false);
-  const [badApelidoUser, setBadApelidoUser] = useState(false);
-  const [emailStateEdit, setEmailStateEdit] = useState<{
-    checking: boolean;
-    exists: boolean;
-    touched: boolean;
-    error?: string;
-    initial?: string;
-  }>({ checking: false, exists: false, touched: false, initial: "" });
-
-  const debouncedCheckEmailEdit = useMemo(
-    () =>
-      debounce(async (value: string) => {
-        if (!value || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(value)) {
-          setEmailStateEdit((prev) => ({
-            ...prev,
-            checking: false,
-            exists: false,
-            error: value ? "Formato de email inválido" : "",
-          }));
-          return;
-        }
-        try {
-          setEmailStateEdit((prev) => ({
-            ...prev,
-            checking: true,
-            error: undefined,
-          }));
-          const m = await import("@/services/userService");
-          const res = await m.checkEmail(value);
-          setEmailStateEdit((prev) => ({
-            ...prev,
-            checking: false,
-            exists: res.exists,
-          }));
-        } catch (e: any) {
-          setEmailStateEdit((prev) => ({
-            ...prev,
-            checking: false,
-            error: "Falha ao validar email",
-          }));
-        }
-      }, 450),
-    []
-  );
-
-  useEffect(() => {
-    if (editUser)
-      setEmailStateEdit((prev) => ({
-        ...prev,
-        initial: editUser.email_usuario,
-      }));
-    else setEmailStateEdit((prev) => ({ ...prev, initial: "" }));
-  }, [editUser]);
-
-  type ConfirmData = {
-    open: boolean;
-    action: string;
-    id: string | number;
-    nome?: string;
-    message?: string;
-    force?: boolean;
-  } | null;
-  const [confirmData, setConfirmData] = useState<ConfirmData>(null);
-  // group expand state
-  const [openGroupIds, setOpenGroupIds] = useState<Set<string | number>>(
-    new Set()
-  );
-  const toggleGroupOpen = (id: string | number) => {
-    setOpenGroupIds((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
-    });
   };
 
   // RETORNO PRINCIPAL
@@ -824,7 +613,6 @@ export default function DashboardPage({
                   <option value="cursos">Cursos</option>
                   <option value="componentes">Componentes</option>
                   <option value="perguntas">Perguntas</option>
-                  <option value="respostas">Respostas</option>
                 </select>
                 <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 text-xs">
                   ▼
@@ -845,8 +633,8 @@ export default function DashboardPage({
                   >
                     <option value="">Todos</option>
                     {tipoUsuariosDisponiveis.map((t) => (
-                      <option key={String(t)} value={String(t)}>
-                        {String(t)}
+                      <option key={t} value={t}>
+                        {t}
                       </option>
                     ))}
                   </select>
@@ -868,7 +656,7 @@ export default function DashboardPage({
                     onChange={(e) => setSearchCursoFiltro(e.target.value)}
                   >
                     <option value="">Todos</option>
-                    {cursos.map((curso: any) => (
+                    {cursos.map((curso) => (
                       <option key={curso.id_curso} value={curso.id_curso}>
                         {curso.nome_curso}
                       </option>
@@ -878,16 +666,6 @@ export default function DashboardPage({
                     ▼
                   </span>
                 </div>
-              </div>
-            )}
-            {searchDomain === "perguntas"}
-            {searchDomain === "respostas" && (
-              <div className="w-full sm:w-60 flex items-center gap-2">
-                <label className="inline-flex items-center gap-2 text-sm">
-                  <span className="text-[12px] text-zinc-700">
-                    Buscar em respostas
-                  </span>
-                </label>
               </div>
             )}
           </div>
@@ -985,17 +763,6 @@ export default function DashboardPage({
                           <span className="font-medium text-zinc-800">
                             {highlight(item.pergunta, searchQuery)}
                           </span>
-                        )}
-                        {searchDomain === "respostas" && (
-                          <>
-                            <span className="font-medium text-zinc-800">
-                              {highlight(item.resposta, searchQuery)}
-                            </span>
-                            <span className="text-xs text-zinc-600">
-                              {item.usuario?.nome_usuario ||
-                                item.usuario?.apelido_usuario}
-                            </span>
-                          </>
                         )}
                       </div>
                       <div className="flex gap-2">
@@ -1123,81 +890,61 @@ export default function DashboardPage({
       </section>
 
       <section id="manage-denuncias" className="space-y-4 scroll-mt-24">
-        <h2 className="text-2xl font-bold">Denúncias</h2>
         {/* Filtros de denúncias - padronizado com a search bar */}
         <div className="rounded-2xl border border-purple-200/60 bg-white/80 backdrop-blur p-5 shadow-sm overflow-hidden">
           <div className="flex flex-col gap-4 lg:flex-row lg:flex-wrap">
-            {/* Barra de busca/filtragem local para Denúncias (mais próxima da seção) */}
-            <div className="w-full flex flex-col gap-3 lg:flex-row lg:flex-wrap lg:items-center">
-              <div className="flex-1 min-w-0">
-                <label className="text-[11px] font-semibold tracking-wide text-zinc-500 uppercase">
-                  Buscar denúncias
-                </label>
-                <div className="relative">
-                  <input
-                    className="w-full rounded-xl border border-zinc-200 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-300"
-                    placeholder="Pesquisar por usuário que denunciou..."
-                    value={filtroDenunciaQuery}
-                    onChange={(e) => setFiltroDenunciaQuery(e.target.value)}
-                  />
-                </div>
-              </div>
-
-              <div className="hidden lg:flex items-stretch" aria-hidden="true">
-                <div className="w-px bg-gradient-to-b from-transparent via-zinc-200 to-transparent" />
-              </div>
-
-              <div className="flex gap-4 items-center mt-2 lg:mt-0">
-                <div className="w-48 flex flex-col gap-1">
-                  <label className="text-[11px] font-semibold tracking-wide text-zinc-500 uppercase">
-                    Status
-                  </label>
-                  <div className="relative">
-                    <select
-                      className="w-full rounded-xl border border-zinc-200 bg-white px-3 py-2 text-sm cursor-pointer focus:outline-none focus:ring-2 focus:ring-purple-300 pr-8 appearance-none"
-                      value={filtroStatus}
-                      onChange={(e) => setFiltroStatus(e.target.value)}
-                    >
-                      <option value="">Todos</option>
-                      <option value="pendente">Pendente</option>
-                      <option value="resolvida">Resolvida</option>
-                      <option value="arquivada">Arquivada</option>
-                    </select>
-                    <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 text-xs">
-                      ▼
-                    </span>
-                  </div>
-                </div>
-
-                <div className="w-60 flex flex-col gap-1">
-                  <label className="text-[11px] font-semibold tracking-wide text-zinc-500 uppercase">
-                    Motivo
-                  </label>
-                  <div className="relative">
-                    <select
-                      className="w-full rounded-xl border border-zinc-200 bg-white px-3 py-2 text-sm cursor-pointer focus:outline-none focus:ring-2 focus:ring-purple-300 pr-8 appearance-none"
-                      value={filtroTipoDenuncia}
-                      onChange={(e) => setFiltroTipoDenuncia(e.target.value)}
-                    >
-                      <option value="">Todos</option>
-                      {tipoDenunciaExistentes.map((t: any) => (
-                        <option key={String(t)} value={String(t)}>
-                          {String(t)}
-                        </option>
-                      ))}
-                    </select>
-                    <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 text-xs">
-                      ▼
-                    </span>
-                  </div>
-                </div>
+            {/* Status */}
+            <div className="w-full sm:w-60 flex flex-col gap-1">
+              <label className="text-[11px] font-semibold tracking-wide text-zinc-500 uppercase">
+                Status
+              </label>
+              <div className="relative">
+                <select
+                  className="w-full rounded-xl border border-zinc-200 bg-white px-3 py-2 text-sm cursor-pointer focus:outline-none focus:ring-2 focus:ring-purple-300 pr-8 appearance-none"
+                  value={filtroStatus}
+                  onChange={(e) => setFiltroStatus(e.target.value)}
+                >
+                  <option value="">Todos</option>
+                  <option value="pendente">Pendente</option>
+                  <option value="em_analise">Em análise</option>
+                  <option value="resolvida">Resolvida</option>
+                  <option value="arquivada">Arquivada</option>
+                </select>
+                <FilterIcon className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-400" />
               </div>
             </div>
-
-            {/* Nível mínimo and Usuário removed per request */}
+            {/* Nível mínimo */}
+            <div className="w-full sm:w-48 flex flex-col gap-1">
+              <label className="text-[11px] font-semibold tracking-wide text-zinc-500 uppercase">
+                Nível mínimo
+              </label>
+              <input
+                type="number"
+                min={0}
+                max={3}
+                className="w-full rounded-xl border border-zinc-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-300"
+                value={filtroNivel}
+                placeholder="1 - 3"
+                onChange={(e) => setFiltroNivel(e.target.value)}
+              />
+            </div>
+            {/* Usuário */}
+            <div className="flex-1 min-w-0 flex flex-col gap-1">
+              <label className="text-[11px] font-semibold tracking-wide text-zinc-500 uppercase">
+                Usuário
+              </label>
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-400" />
+                <input
+                  className="w-full rounded-xl border border-zinc-200 bg-white pl-9 pr-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-300"
+                  placeholder="Nome ou apelido do usuário"
+                  value={filtroUsuario}
+                  onChange={(e) => setFiltroUsuario(e.target.value)}
+                />
+              </div>
+            </div>
           </div>
         </div>
-
         {denunciasFiltradas.length === 0 && (
           <div className="p-8 border border-dashed rounded-2xl text-center text-sm text-zinc-500 bg-white/70">
             Nenhuma denúncia pendente encontrada.
@@ -1205,8 +952,6 @@ export default function DashboardPage({
         )}
         {denunciasFiltradas.map((denuncia) => {
           const nivel = denuncia.nivel_denuncia;
-          const rawStatus = (denuncia as any).status || "pendente";
-          const keyStatus = rawStatus === "em_analise" ? "pendente" : rawStatus;
 
           let nivelLabel = "";
           let nivelColor = "";
@@ -1230,114 +975,202 @@ export default function DashboardPage({
               <div className="absolute inset-0 rounded-2xl pointer-events-none opacity-0 group-hover:opacity-100 transition">
                 <div className="h-full w-full rounded-2xl bg-gradient-to-br from-purple-500/5 via-transparent to-pink-500/10" />
               </div>
-              <div className="flex items-center justify-between w-full">
-                {(() => {
-                  // Resolve reporter: prefer nested `usuario`, else try to find in usersState
-                  const denUser = (denuncia as any).usuario;
-                  let reporter = denUser;
-                  if (!reporter || !reporter.nome_usuario) {
-                    // try common fk fields which may contain reporter id
-                    const possibleIds = [
-                      (denuncia as any).fkId_usuario,
-                      (denuncia as any).fkId_usuario_denunciante,
-                      (denuncia as any).fkId_usuario_criador,
-                      (denuncia as any).fkId_usuario_conteudo,
-                      (denuncia as any).fkId_usuarioCriador,
-                    ];
-                    const id = possibleIds.find(Boolean);
-                    if (id) {
-                      reporter = usersState.find(
-                        (u) => String(u.id_usuario) === String(id)
-                      );
-                    }
-                  }
-
-                  const nome =
-                    reporter?.nome_usuario ?? reporter?.apelido_usuario ?? "—";
-                  const apelido = reporter?.apelido_usuario
-                    ? `(${reporter.apelido_usuario})`
-                    : "";
-                  return (
-                    <div className="flex items-center gap-3 min-w-0">
-                      <div className="flex flex-col min-w-0">
-                        <span className="text-sm font-semibold text-zinc-800 truncate">
-                          {`Nova denúncia de ${nome} ${apelido}`}
-                        </span>
-                      </div>
-                    </div>
-                  );
-                })()}
-
-                <div className="flex items-center gap-4">
-                  {/* Status badge */}
-                  {(() => {
-                    const key = keyStatus;
-                    let cls = "bg-yellow-100 text-yellow-800";
-                    if (key === "pendente")
-                      cls = "bg-yellow-100 text-yellow-800";
-                    else if (key === "resolvida")
-                      cls = "bg-green-100 text-green-800";
-                    else if (key === "arquivada")
-                      cls = "bg-zinc-100 text-zinc-700";
-                    const label =
-                      key === "pendente"
-                        ? "Pendente"
-                        : key === "resolvida"
-                        ? "Resolvida"
-                        : key === "arquivada"
-                        ? "Arquivada"
-                        : String(key).replace(/_/g, " ");
-                    return (
-                      <span
-                        className={`text-sm px-3 py-1 rounded-full font-medium ${cls}`}
-                      >
-                        {label}
+              <div className="flex flex-col gap-1 text-sm break-words">
+                <span className="text-zinc-500">
+                  Nova denúncia de{" "}
+                  <span className="font-semibold text-zinc-800">
+                    {denuncia.usuario?.nome_usuario}
+                    {denuncia.usuario?.apelido_usuario && (
+                      <span className="font-normal text-zinc-600">
+                        {" "}
+                        ({denuncia.usuario.apelido_usuario})
                       </span>
-                    );
-                  })()}
-
-                  <span className="text-sm px-3 py-1 rounded-full bg-rose-100 text-rose-700 font-medium">
-                    {String(
-                      (denuncia as any).tipo_denuncia ??
-                        denuncia.tipo_conteudo ??
-                        "—"
-                    ).toUpperCase()}
+                    )}
                   </span>
+                </span>
+                <span className="text-xs text-zinc-500 ml-2">
+                  Autor da pergunta
+                </span>
+                <span className="text-zinc-600 text-sm">
+                  Credibilidade do usuário:{" "}
+                  <span className="font-semibold">
+                    {denuncia.usuario?.credibilidade_usuario ||
+                      "(credibilidade não disponível)"}
+                  </span>
+                </span>
+                <span className="text-xs text-zinc-500 ml-2">
+                  Autor da resposta
+                </span>
+                <span className="text-zinc-600 text-sm">
+                  Tipo de conteudo denunciado:{" "}
+                  <span className="font-semibold">
+                    {denuncia.tipo_conteudo}
+                  </span>
+                </span>
+                <span className="text-sm text-zinc-500">
+                  {new Date(denuncia.dataCriacao_denuncia).toLocaleString()}
+                </span>
+                <span className="text-zinc-600 italic break-words">
+                  Motivo: {denuncia.descricao}
+                </span>
+              </div>
+
+              <div className="flex flex-col gap-2">
+                <div className="flex flex-wrap gap-2">
+                  <span
+                    className={`text-sm px-3 py-1 rounded-full font-medium ${
+                      denuncia.status === "pendente"
+                        ? "bg-yellow-100 text-yellow-700"
+                        : denuncia.status === "resolvida"
+                        ? "bg-green-100 text-green-700"
+                        : "bg-zinc-100 text-zinc-700"
+                    }`}
+                  >
+                    {denuncia.status}
+                  </span>
+
+                  <span
+                    className={`text-sm px-3 py-1 rounded-full font-semibold ${nivelColor}`}
+                  >
+                    {nivelLabel} ({nivel})
+                  </span>
+                </div>
+
+                <div className="flex gap-2 mt-1 flex-wrap">
                   <button
-                    className="px-3 py-1 rounded-lg cursor-pointer bg-gradient-to-r from-purple-600 to-violet-600 text-white text-sm"
+                    className="inline-flex items-center gap-1 cursor-pointer px-3 py-1 text-sm rounded-lg bg-purple-200 text-purple-800 hover:bg-purple-300 transition-colors shadow-sm transform-gpu hover:-translate-y-0.5"
+                    onClick={() => {
+                      const tipo = denuncia.tipo_conteudo;
+                      const id =
+                        denuncia.fkId_conteudo_denunciado ||
+                        denuncia.id_denuncia;
+                      const url = `/home?tipo_conteudo=${tipo}&id_conteudo=${id}`;
+                      window.open(url, "_blank");
+                    }}
+                  >
+                    <Search className="w-4 h-4" /> Visualizar
+                  </button>
+
+                  <button
+                    className="inline-flex items-center gap-1 cursor-pointer px-3 py-1 text-sm rounded-lg bg-red-200 text-red-800 hover:bg-red-300 transition-colors shadow-sm transform-gpu hover:-translate-y-0.5"
                     onClick={() => {
                       setSelectedDenuncia(denuncia);
-                      setOpenAnalise(true);
+                      setOpenPenalidade(true);
+                    }}
+                  >
+                    <Gavel className="w-4 h-4" /> Penalidade
+                  </button>
 
-                      const p = perguntasState.find(
-                        (pq) =>
-                          String(pq.id_pergunta) ===
-                          String(denuncia.fkId_conteudo_denunciado)
-                      );
-                      const r = respostasState.find(
-                        (rs) =>
-                          String(rs.id_resposta) ===
-                          String(denuncia.fkId_conteudo_denunciado)
-                      );
-
-                      if (p) {
-                        setConteudoRevisado({
-                          tipo: "Pergunta",
-                          texto: p.pergunta,
+                  <button
+                    className="inline-flex items-center gap-1 cursor-pointer px-3 py-1 text-sm rounded-lg bg-green-200 text-green-800 hover:bg-green-300 transition-colors shadow-sm transform-gpu hover:-translate-y-0.5"
+                    onClick={async () => {
+                      try {
+                        const [{ updateDenuncia }, { createNotificacao }] =
+                          await Promise.all([
+                            import("@/services/denuncia"),
+                            import("@/services/notificacao"),
+                          ]);
+                        const updated = await updateDenuncia(
+                          denuncia.id_denuncia,
+                          {
+                            fkId_usuario: denuncia.usuario.id_usuario,
+                            fkId_conteudo_denunciado:
+                              denuncia.fkId_conteudo_denunciado,
+                            nivel_denuncia: denuncia.nivel_denuncia,
+                            status: "resolvida",
+                            resultado:
+                              "Sua denúncia foi analisada e concluída. Obrigado por cooperar com o Estudare.",
+                          }
+                        );
+                        setDenunciasState((prev) =>
+                          prev.map((d) =>
+                            d.id_denuncia === updated.id_denuncia ? updated : d
+                          )
+                        );
+                        await createNotificacao({
+                          fkId_usuario: denuncia.usuario.id_usuario,
+                          titulo: "Denúncia concluída",
+                          mensagem:
+                            "Sua denúncia foi analisada e concluída. Obrigado por cooperar com o Estudare.",
+                          tipo: "denuncia",
                         });
-                      } else if (r) {
-                        setConteudoRevisado({
-                          tipo: "Resposta",
-                          texto: r.resposta,
+                        push({
+                          kind: "success",
+                          message: "Denúncia concluída.",
                         });
-                      } else {
-                        setConteudoRevisado(null);
+                        pushAudit({
+                          action: "update",
+                          entity: "denuncia",
+                          entityId: denuncia.id_denuncia,
+                          details: "status=resolvida",
+                        });
+                      } catch (e: any) {
+                        push({
+                          kind: "error",
+                          message:
+                            e?.response?.data?.message ||
+                            "Falha ao concluir denúncia.",
+                        });
                       }
                     }}
                   >
-                    {keyStatus === "arquivada"
-                      ? "Ver Denúnica"
-                      : "Analisar Denúncia"}
+                    Concluir
+                  </button>
+
+                  <button
+                    className="inline-flex items-center gap-1 cursor-pointer px-3 py-1 text-sm rounded-lg bg-zinc-200 text-zinc-800 hover:bg-zinc-300 transition-colors shadow-sm transform-gpu hover:-translate-y-0.5"
+                    onClick={async () => {
+                      try {
+                        const [{ updateDenuncia }, { createNotificacao }] =
+                          await Promise.all([
+                            import("@/services/denuncia"),
+                            import("@/services/notificacao"),
+                          ]);
+                        const updated = await updateDenuncia(
+                          denuncia.id_denuncia,
+                          {
+                            fkId_usuario: denuncia.usuario.id_usuario,
+                            fkId_conteudo_denunciado:
+                              denuncia.fkId_conteudo_denunciado,
+                            nivel_denuncia: denuncia.nivel_denuncia,
+                            status: "arquivada",
+                            resultado:
+                              "Sua denúncia foi analisada e arquivada, pois não haviam provas concretas.",
+                          }
+                        );
+                        setDenunciasState((prev) =>
+                          prev.map((d) =>
+                            d.id_denuncia === updated.id_denuncia ? updated : d
+                          )
+                        );
+                        await createNotificacao({
+                          fkId_usuario: denuncia.usuario.id_usuario,
+                          titulo: "Denúncia arquivada",
+                          mensagem:
+                            "Sua denúncia foi analisada e arquivada, pois não haviam provas concretas.",
+                          tipo: "denuncia",
+                        });
+                        push({
+                          kind: "success",
+                          message: "Denúncia arquivada.",
+                        });
+                        pushAudit({
+                          action: "update",
+                          entity: "denuncia",
+                          entityId: denuncia.id_denuncia,
+                          details: "status=arquivada",
+                        });
+                      } catch (e: any) {
+                        push({
+                          kind: "error",
+                          message:
+                            e?.response?.data?.message ||
+                            "Falha ao arquivar denúncia.",
+                        });
+                      }
+                    }}
+                  >
+                    <Archive className="w-4 h-4" /> Arquivar
                   </button>
                 </div>
               </div>
@@ -1350,7 +1183,7 @@ export default function DashboardPage({
       <section id="manage-cursos" className="space-y-2 scroll-mt-24">
         <h2 className="text-2xl font-bold">Cursos</h2>
         <div className="overflow-hidden rounded-xl border border-zinc-200 bg-white">
-          <div className="divide-y">
+          <div className="p-4 space-y-3">
             {refreshingAll && (
               <div className="px-4 py-3 flex justify-between items-center">
                 <div className="h-4 w-40 rounded bg-zinc-200 animate-pulse" />
@@ -1548,94 +1381,65 @@ export default function DashboardPage({
                 <div className="h-3 w-40 rounded bg-zinc-100 animate-pulse" />
               </div>
             )}
-
             {!refreshingAll &&
-              perguntasSorted.slice(0, 8).map((p) => {
-                const author = (p as any).usuario;
-                let resolvedAuthor: any = author;
-                if (
-                  !resolvedAuthor ||
-                  (!resolvedAuthor.nome_usuario &&
-                    !resolvedAuthor.apelido_usuario)
-                ) {
-                  const possibleIds = [
-                    (p as any).fkId_usuario,
-                    (p as any).fkId_usuario_criador,
-                    (p as any).fkId_usuario_conteudo_usuario,
-                    (p as any).usuario?.id_usuario,
-                  ];
-                  const aid = possibleIds.find(Boolean);
-                  if (aid) {
-                    resolvedAuthor = usersState.find(
-                      (u) => String(u.id_usuario) === String(aid)
-                    );
-                  }
-                }
-
-                const displayAuthorName = resolvedAuthor
-                  ? (resolvedAuthor.nome_usuario ||
-                      resolvedAuthor.apelido_usuario ||
-                      "—") +
-                    (resolvedAuthor.nome_usuario &&
-                    resolvedAuthor.apelido_usuario
-                      ? ` (${resolvedAuthor.apelido_usuario})`
-                      : "")
-                  : "—";
-
-                return (
-                  <div
-                    key={p.id_pergunta}
-                    className="rounded-lg border border-zinc-100 bg-white p-4 flex items-start justify-between text-sm shadow-sm"
-                  >
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className="text-sm font-medium text-zinc-800">
-                          {displayAuthorName}
-                          <span className="text-xs px-2 py-0.5 rounded-full bg-purple-100 text-purple-700 font-semibold ml-2">
-                            Autor da pergunta
-                          </span>
+              perguntasSorted.slice(0, 8).map((p) => (
+                <div
+                  key={p.id_pergunta}
+                  className="rounded-lg border border-zinc-100 bg-white p-4 flex items-start justify-between text-sm shadow-sm"
+                >
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="text-sm text-zinc-700 font-medium">
+                        {p.usuario?.nome_usuario}
+                      </span>
+                      <span className="text-xs text-zinc-500 ml-2">
+                        Autor da pergunta
+                      </span>
+                      {p.usuario?.apelido_usuario && (
+                        <span className="text-xs text-purple-600">
+                          {p.usuario.apelido_usuario}
                         </span>
-                        <span className="ml-2 text-xs text-zinc-400">
-                          {p.dataCriacao_pergunta
-                            ? new Date(p.dataCriacao_pergunta).toLocaleString(
-                                "pt-BR"
-                              )
-                            : ""}
-                        </span>
-                      </div>
-
-                      <p className="font-medium text-zinc-800">{p.pergunta}</p>
-
-                      <div className="text-sm text-zinc-600 mt-1">
-                        {p.componente?.nome_componente} • {p.curso?.nome_curso}
-                      </div>
+                      )}
+                      <span className="ml-2 text-xs text-zinc-400">
+                        {p.dataCriacao_pergunta
+                          ? new Date(p.dataCriacao_pergunta).toLocaleString(
+                              "pt-BR"
+                            )
+                          : ""}
+                      </span>
                     </div>
-                    <div className="flex flex-col items-end gap-2 ml-4">
-                      <a
-                        className="cursor-pointer px-3 py-1 text-sm rounded-lg bg-purple-200 text-purple-800 hover:bg-purple-300 transform-gpu hover:-translate-y-0.5"
-                        href={`/home?tipo_conteudo=Pergunta&id_conteudo=${p.id_pergunta}`}
-                        target="_blank"
-                        rel="noreferrer"
-                      >
-                        Visualizar
-                      </a>
-                      <button
-                        className="cursor-pointer px-3 py-1 text-sm rounded-lg bg-red-200 text-red-800 hover:bg-red-300 transform-gpu hover:-translate-y-0.5"
-                        onClick={async () => {
-                          setConfirmData({
-                            open: true,
-                            action: "deletePergunta",
-                            id: p.id_pergunta,
-                            nome: p.pergunta,
-                          });
-                        }}
-                      >
-                        Excluir
-                      </button>
+
+                    <p className="font-medium text-zinc-800">{p.pergunta}</p>
+
+                    <div className="text-sm text-zinc-600 mt-1">
+                      {p.componente?.nome_componente} • {p.curso?.nome_curso}
                     </div>
                   </div>
-                );
-              })}
+                  <div className="flex flex-col items-end gap-2 ml-4">
+                    <a
+                      className="cursor-pointer px-3 py-1 text-sm rounded-lg bg-purple-200 text-purple-800 hover:bg-purple-300 transform-gpu hover:-translate-y-0.5"
+                      href={`/home?tipo_conteudo=Pergunta&id_conteudo=${p.id_pergunta}`}
+                      target="_blank"
+                      rel="noreferrer"
+                    >
+                      Visualizar
+                    </a>
+                    <button
+                      className="cursor-pointer px-3 py-1 text-sm rounded-lg bg-red-200 text-red-800 hover:bg-red-300 transform-gpu hover:-translate-y-0.5"
+                      onClick={async () => {
+                        setConfirmData({
+                          open: true,
+                          action: "deletePergunta",
+                          id: p.id_pergunta,
+                          nome: p.pergunta,
+                        });
+                      }}
+                    >
+                      Excluir
+                    </button>
+                  </div>
+                </div>
+              ))}
           </div>
         </div>
       </section>
@@ -1656,10 +1460,6 @@ export default function DashboardPage({
                 const pergunta = perguntasState.find(
                   (pq) => pq.id_pergunta === r.fkId_pergunta
                 );
-                const perguntaAuthor =
-                  (pergunta as any)?.usuario || (pergunta as any)?.usuarios;
-                const respostaAuthor =
-                  (r as any).usuario || (r as any).usuarios;
                 return (
                   <div
                     key={r.id_resposta}
@@ -1668,35 +1468,16 @@ export default function DashboardPage({
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-1">
                         <span className="text-sm text-zinc-700 font-medium">
-                          {(() => {
-                            const name =
-                              perguntaAuthor?.nome_usuario ||
-                              perguntaAuthor?.apelido_usuario ||
-                              "—";
-                            const tipo =
-                              (perguntaAuthor as any)?.tipoUsuario
-                                ?.nome_tipousuario ||
-                              getTipoNome(
-                                (perguntaAuthor as any)?.fkIdTipoUsuario ||
-                                  (perguntaAuthor as any)?.fkId_tipoUsuario ||
-                                  (perguntaAuthor as any)?.fkId_tipo_usuario
-                              );
-                            return (
-                              <>
-                                {name}
-                                {perguntaAuthor?.apelido_usuario &&
-                                  perguntaAuthor?.nome_usuario && (
-                                    <span className="text-sm text-zinc-600 ml-1">
-                                      ({perguntaAuthor.apelido_usuario})
-                                    </span>
-                                  )}
-                                <span className="text-xs px-2 py-0.5 rounded-full bg-purple-100 text-purple-700 font-semibold ml-2">
-                                  Autor da pergunta
-                                </span>
-                              </>
-                            );
-                          })()}
+                          {pergunta?.usuario?.nome_usuario}
                         </span>
+                        <span className="text-xs text-zinc-500 ml-2">
+                          Autor da pergunta
+                        </span>
+                        {pergunta?.usuario?.apelido_usuario && (
+                          <span className="text-xs text-purple-600">
+                            {pergunta.usuario.apelido_usuario}
+                          </span>
+                        )}
                         <span className="ml-2 text-xs text-zinc-400">
                           {pergunta?.dataCriacao_pergunta
                             ? new Date(
@@ -1717,36 +1498,17 @@ export default function DashboardPage({
 
                       <div className="flex items-center gap-2 mt-3 mb-1">
                         <span className="text-sm text-zinc-700 font-medium">
-                          {(() => {
-                            const name =
-                              respostaAuthor?.nome_usuario ||
-                              respostaAuthor?.apelido_usuario ||
-                              "(Autor da resposta não disponível)";
-                            const tipo =
-                              (respostaAuthor as any)?.tipoUsuario
-                                ?.nome_tipousuario ||
-                              getTipoNome(
-                                (respostaAuthor as any)?.fkIdTipoUsuario ||
-                                  (respostaAuthor as any)?.fkId_tipoUsuario ||
-                                  (respostaAuthor as any)?.fkId_tipo_usuario
-                              );
-                            return (
-                              <>
-                                {name}
-                                {respostaAuthor?.apelido_usuario &&
-                                  respostaAuthor?.nome_usuario && (
-                                    <span className="text-sm text-zinc-600 ml-1">
-                                      ({respostaAuthor.apelido_usuario})
-                                    </span>
-                                  )}
-                                <span className="text-xs px-2 py-0.5 rounded-full bg-purple-100 text-purple-700 font-semibold ml-2">
-                                  Autor da resposta
-                                </span>
-                              </>
-                            );
-                          })()}
+                          {r.usuario?.nome_usuario ||
+                            "(Autor da resposta não disponível)"}
                         </span>
-
+                        <span className="text-xs text-zinc-500 ml-2">
+                          Autor da resposta
+                        </span>
+                        {r.usuario?.apelido_usuario && (
+                          <span className="text-xs text-purple-600">
+                            {r.usuario.apelido_usuario}
+                          </span>
+                        )}
                         <span className="ml-2 text-xs text-zinc-400">
                           {r.dataCriacao_resposta
                             ? new Date(r.dataCriacao_resposta).toLocaleString(
@@ -1944,361 +1706,6 @@ export default function DashboardPage({
         </section>
       )}
 
-      {/* Modal de análise da denúncia (substitui Drawer) */}
-      {selectedDenuncia && (
-        <Dialog
-          open={openAnalise}
-          onOpenChange={(v) => {
-            if (!v) {
-              setOpenAnalise(false);
-              setSelectedDenuncia(null);
-            } else setOpenAnalise(true);
-          }}
-        >
-          <DialogContent className="max-w-lg rounded-2xl border border-zinc-100 bg-white shadow-xl">
-            <DialogHeader className="items-start">
-              <DialogTitle className="text-2xl font-extrabold text-rose-600">
-                Analisar Denúncia
-              </DialogTitle>
-              <div className="text-sm text-zinc-500 mt-1">
-                Data da denúncia:{" "}
-                {new Date(
-                  selectedDenuncia.dataCriacao_denuncia
-                ).toLocaleString()}
-              </div>
-            </DialogHeader>
-
-            {/* Top cards: Quem denunciou (blue) + Denunciado (red) */}
-            {/* compute normalized status for modal (used to hide action buttons for archived reports) */}
-            {(() => {
-              const modalRawStatus =
-                (selectedDenuncia as any).status || "pendente";
-              // normalize 'em_analise' -> 'pendente'
-              (selectedDenuncia as any).__modalKeyStatus =
-                modalRawStatus === "em_analise" ? "pendente" : modalRawStatus;
-              return null;
-            })()}
-            {(() => {
-              const denUser = (selectedDenuncia as any).usuario;
-              let reporter: any = denUser;
-              if (!reporter || !reporter.nome_usuario) {
-                const possibleIds = [
-                  (selectedDenuncia as any).fkId_usuario,
-                  (selectedDenuncia as any).fkId_usuario_denunciante,
-                  (selectedDenuncia as any).fkId_usuario_criador,
-                  (selectedDenuncia as any).fkId_usuario_conteudo,
-                  (selectedDenuncia as any).fkId_usuarioCriador,
-                ];
-                const id = possibleIds.find(Boolean);
-                if (id) {
-                  reporter = usersState.find(
-                    (u) => String(u.id_usuario) === String(id)
-                  );
-                }
-              }
-              const reporterName = reporter
-                ? `${reporter.nome_usuario ?? reporter.apelido_usuario}${
-                    reporter.apelido_usuario && reporter.nome_usuario
-                      ? ` (${reporter.apelido_usuario})`
-                      : ""
-                  }`
-                : "—";
-
-              const possibleVictimIds = [
-                (selectedDenuncia as any).fkId_usuario_conteudo,
-                (selectedDenuncia as any).fkId_usuario_conteudo_usuario,
-                (selectedDenuncia as any).fkId_usuarioCriador,
-                (selectedDenuncia as any).fkId_usuario_conteudo_criador,
-                (selectedDenuncia as any).fkId_usuario,
-              ];
-              const victimId = possibleVictimIds.find(Boolean);
-              let victim: any = null;
-              if (victimId)
-                victim = usersState.find(
-                  (u) => String(u.id_usuario) === String(victimId)
-                );
-              const victimName = victim
-                ? `${victim.nome_usuario ?? victim.apelido_usuario}${
-                    victim.apelido_usuario && victim.nome_usuario
-                      ? ` (${victim.apelido_usuario})`
-                      : ""
-                  }`
-                : selectedDenuncia.tipo_conteudo ?? "—";
-
-              return (
-                <>
-                  <div className="mt-4 grid grid-cols-2 gap-3">
-                    <div className="rounded-lg border border-blue-100 bg-blue-50/60 p-3 flex flex-col gap-1">
-                      <div className="text-xs text-blue-700 font-semibold">
-                        Quem denunciou
-                      </div>
-                      <div className="text-sm text-blue-800 mt-1">
-                        {reporterName}
-                      </div>
-                    </div>
-
-                    <div className="rounded-lg border border-red-100 bg-red-50/60 p-3 flex flex-col gap-1">
-                      <div className="text-xs text-rose-700 font-semibold">
-                        Denunciado
-                      </div>
-                      <div className="text-sm text-rose-700 mt-1">
-                        {victimName}
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="mt-3 text-sm text-zinc-600">
-                    Denúncia realizada por{" "}
-                    <span className="text-blue-600 font-semibold">
-                      {reporterName}
-                    </span>{" "}
-                    contra{" "}
-                    <span className="text-rose-600 font-semibold">
-                      {victimName}
-                    </span>
-                    .
-                  </div>
-                </>
-              );
-            })()}
-
-            {/* Details form-like area */}
-            <div className="mt-4 space-y-4">
-              <div className="rounded-lg border border-zinc-100 bg-gray-50 p-3">
-                <div className="flex items-center justify-between">
-                  <div className="text-xs text-zinc-500 uppercase tracking-wide">
-                    Motivo
-                  </div>
-                  {(() => {
-                    const nivel = Number(selectedDenuncia.nivel_denuncia ?? 0);
-                    const badgeClass =
-                      nivel <= 1
-                        ? "bg-blue-100 text-blue-700"
-                        : nivel <= 2
-                        ? "bg-orange-100 text-orange-700"
-                        : "bg-red-100 text-red-700";
-                    return (
-                      <div
-                        className={`text-xs font-semibold px-2 py-1 rounded-full ${badgeClass}`}
-                      >
-                        Nível {nivel || "—"}
-                      </div>
-                    );
-                  })()}
-                </div>
-                <div className="text-sm font-semibold mt-2">
-                  {String(
-                    (selectedDenuncia as any).tipo_denuncia ??
-                      selectedDenuncia.tipo_conteudo ??
-                      "—"
-                  ).toUpperCase()}
-                </div>
-              </div>
-
-              <div className="rounded-lg border border-zinc-100 bg-gray-50 p-3">
-                <div className="text-xs text-zinc-500 uppercase tracking-wide">
-                  Nota de quem denunciou
-                </div>
-                <div className="text-sm mt-1 break-words">
-                  {selectedDenuncia.descricao || "(sem nota)"}
-                </div>
-              </div>
-
-              <div className="rounded-lg border border-zinc-100 bg-gray-50 p-3">
-                <div className="text-xs text-zinc-500 uppercase tracking-wide">
-                  O que foi revisado
-                </div>
-                <div className="text-sm font-semibold mt-1">
-                  {(selectedDenuncia as any)?.revisadoTipo ||
-                    conteudoRevisado?.tipo ||
-                    (selectedDenuncia as any).tipo_conteudo}
-                </div>
-              </div>
-
-              <div className="rounded-lg border border-zinc-100 bg-white p-3">
-                <div className="text-xs text-zinc-500 uppercase tracking-wide">
-                  Item denunciado
-                </div>
-                <div className="mt-2 p-3 bg-white rounded border text-sm max-w-prose mx-auto">
-                  {(selectedDenuncia as any)?.item_denunciado ||
-                    conteudoRevisado?.texto ||
-                    "(conteúdo não disponível)"}
-                </div>
-              </div>
-            </div>
-
-            <div className="mt-6 flex items-center justify-end gap-4">
-              {/* hide action buttons for already-archived denúncias */}
-              {((selectedDenuncia as any).__modalKeyStatus ||
-                (selectedDenuncia as any).status ||
-                "pendente") !== "arquivada" && (
-                <div className="flex items-center gap-3">
-                  <button
-                    className={`relative inline-flex items-center justify-center rounded-lg bg-zinc-200 text-zinc-800 hover:bg-zinc-300 text-sm px-4 py-2 transition ${
-                      arquivarLoading || arquivarSuccess
-                        ? "opacity-70 cursor-not-allowed"
-                        : "cursor-pointer"
-                    }`}
-                    disabled={arquivarLoading || arquivarSuccess}
-                    onClick={async () => {
-                      if (arquivarLoading || arquivarSuccess) return;
-                      setArquivarLoading(true);
-                      try {
-                        const [{ updateDenuncia }, { createNotificacao }] =
-                          await Promise.all([
-                            import("@/services/denuncia"),
-                            import("@/services/notificacao"),
-                          ]);
-                        const updated = await updateDenuncia(
-                          selectedDenuncia.id_denuncia,
-                          {
-                            fkId_usuario: selectedDenuncia.usuario?.id_usuario,
-                            fkId_conteudo_denunciado:
-                              selectedDenuncia.fkId_conteudo_denunciado,
-                            nivel_denuncia: selectedDenuncia.nivel_denuncia,
-                            status: "arquivada",
-                            resultado:
-                              "Por falta de provas concretas, não aplicamos nenhuma ação contra o usuário - converse com o suporte caso tenhamos feito algum erro.",
-                          }
-                        );
-                        setDenunciasState((prev) =>
-                          prev.map((d) =>
-                            d.id_denuncia === updated.id_denuncia ? updated : d
-                          )
-                        );
-                        const targetUserId =
-                          selectedDenuncia?.usuario?.id_usuario ??
-                          (selectedDenuncia as any)?.usuarios?.id_usuario ??
-                          (selectedDenuncia as any)?.fkId_usuario ??
-                          (selectedDenuncia as any)?.fkId_usuario_conteudo ??
-                          (selectedDenuncia as any)
-                            ?.fkId_usuario_conteudo_usuario ??
-                          (selectedDenuncia as any)?.fkId_usuarioCriador ??
-                          (selectedDenuncia as any)
-                            ?.fkId_usuario_conteudo_criador;
-
-                        if (targetUserId) {
-                          await createNotificacao({
-                            fkId_usuario: targetUserId,
-                            titulo: "Denúncia arquivada",
-                            mensagem:
-                              "Por falta de provas concretas, não aplicamos nenhuma ação contra o usuário - converse com o suporte caso tenhamos feito algum erro.",
-                            tipo: "denuncia",
-                            fkId_denuncia: selectedDenuncia.id_denuncia,
-                            fkId_conteudo_denunciado:
-                              selectedDenuncia.fkId_conteudo_denunciado,
-                            tipo_denuncia:
-                              (selectedDenuncia as any).tipo_denuncia ??
-                              selectedDenuncia.tipo_conteudo,
-                            nivel_denuncia: selectedDenuncia.nivel_denuncia,
-                            revisao:
-                              "Por falta de provas concretas, não aplicamos nenhuma ação contra o usuário - converse com o suporte caso tenhamos feito algum erro.",
-                            dataRevisao: new Date().toISOString(),
-                            item_denunciado:
-                              conteudoRevisado?.texto ?? undefined,
-                            denunciadoNome: victimName,
-                            fkId_usuario_conteudo:
-                              selectedDenuncia.fkId_usuario_conteudo,
-                          });
-                        }
-                        push({
-                          kind: "success",
-                          message: "Denúncia arquivada.",
-                        });
-                        pushAudit({
-                          action: "update",
-                          entity: "denuncia",
-                          entityId: selectedDenuncia.id_denuncia,
-                          details: "status=arquivada (via modal)",
-                        });
-                        setArquivarSuccess(true);
-                        setTimeout(() => {
-                          setArquivarLoading(false);
-                          setOpenAnalise(false);
-                          setSelectedDenuncia(null);
-                          setArquivarSuccess(false);
-                        }, 900);
-                      } catch (e: any) {
-                        console.error("Erro ao arquivar denúncia:", e);
-                        // attempt to surface backend message if present
-                        const serverMessage =
-                          e?.response?.data?.message || e?.message;
-                        push({
-                          kind: "error",
-                          message:
-                            serverMessage || "Falha ao arquivar denúncia.",
-                        });
-                        setArquivarLoading(false);
-                      }
-                    }}
-                  >
-                    {arquivarLoading ? (
-                      <span className="flex items-center gap-2">
-                        <span className="h-4 w-4 animate-spin rounded-full border-2 border-zinc-300 border-t-zinc-700" />
-                        Arquivando...
-                      </span>
-                    ) : arquivarSuccess ? (
-                      <span className="flex items-center gap-2 text-emerald-700">
-                        <Check className="h-4 w-4" /> Arquivado
-                      </span>
-                    ) : (
-                      "Arquivar Denúncia"
-                    )}
-                  </button>
-
-                  <button
-                    className={`relative inline-flex items-center justify-center rounded-lg bg-gradient-to-r from-red-600 to-rose-600 px-4 py-2 text-white text-sm hover:from-red-500 hover:to-rose-500 transition ${
-                      penalidadeLoading
-                        ? "opacity-70 cursor-not-allowed"
-                        : "cursor-pointer"
-                    }`}
-                    disabled={penalidadeLoading}
-                    onClick={() => {
-                      if (penalidadeLoading) return;
-                      setPenalidadeLoading(true);
-                      // resolve victim name to pass to PenalidadeModal
-                      const possible = [
-                        (selectedDenuncia as any).fkId_usuario_conteudo,
-                        (selectedDenuncia as any).fkId_usuario_conteudo_usuario,
-                        (selectedDenuncia as any).fkId_usuarioCriador,
-                        (selectedDenuncia as any).fkId_usuario_conteudo_criador,
-                        (selectedDenuncia as any).fkId_usuario,
-                      ];
-                      const id = possible.find(Boolean);
-                      let victim: any = null;
-                      if (id)
-                        victim = usersState.find(
-                          (u) => String(u.id_usuario) === String(id)
-                        );
-                      const name = victim
-                        ? victim.nome_usuario ?? victim.apelido_usuario
-                        : undefined;
-                      setPenalidadeUsuarioNome(name);
-                      setTimeout(() => {
-                        setPenalidadeLoading(false);
-                        setOpenAnalise(false);
-                        setOpenPenalidade(true);
-                        setPenalidadeSuccess(true);
-                        setTimeout(() => setPenalidadeSuccess(false), 800);
-                      }, 450);
-                    }}
-                  >
-                    {penalidadeLoading ? (
-                      <span className="flex items-center gap-2">
-                        <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" />{" "}
-                        Aplicando...
-                      </span>
-                    ) : (
-                      "Aplicar Penalidade"
-                    )}
-                  </button>
-                </div>
-              )}
-            </div>
-          </DialogContent>
-        </Dialog>
-      )}
-
       {/* Gerenciar usuários */}
       <section id="manage-usuarios" className="space-y-2 scroll-mt-24">
         <h2 className="text-2xl font-bold">Usuários</h2>
@@ -2320,21 +1727,19 @@ export default function DashboardPage({
                   className="flex items-center justify-between px-4 py-3 hover:bg-zinc-50"
                 >
                   <div className="flex flex-col">
-                    <span className="text-sm font-medium text-zinc-800">
+                    <span className="text-sm font-medium text-zinc-800 flex items-center gap-2">
                       {u.nome_usuario}
-                      {u.apelido_usuario && u.nome_usuario && (
-                        <span className="text-sm text-zinc-600 ml-1">
-                          ({u.apelido_usuario})
-                        </span>
-                      )}
                       {u.tipoUsuario && (
-                        <span className="text-xs px-2 py-0.5 rounded-full bg-purple-100 text-purple-700 font-normal ml-2">
+                        <span className="text-xs px-2 py-0.5 rounded-full bg-purple-100 text-purple-700 font-normal">
                           {u.tipoUsuario.nome_tipousuario}
                         </span>
                       )}
                     </span>
                     <span className="text-sm text-zinc-600">
                       {u.email_usuario}
+                    </span>
+                    <span className="text-xs text-purple-600">
+                      {u.apelido_usuario}
                     </span>
                   </div>
                   <div className="flex gap-2">
@@ -2387,7 +1792,7 @@ export default function DashboardPage({
           setOpenDialog={setOpenPenalidade}
           fkId_usuario={selectedDenuncia.fkId_usuario_conteudo}
           fkId_denuncia={selectedDenuncia.id_denuncia}
-          usuarioNome={penalidadeUsuarioNome}
+          usuarioNome={selectedDenuncia.usuario?.nome_usuario}
           denunciaNivel={selectedDenuncia.nivel_denuncia}
           onFeedback={(type, msg) => {
             if (type === "success") {
@@ -2402,7 +1807,7 @@ export default function DashboardPage({
                   const updated = await updateDenuncia(
                     selectedDenuncia.id_denuncia,
                     {
-                      fkId_usuario: selectedDenuncia.usuario?.id_usuario,
+                      fkId_usuario: selectedDenuncia.usuario.id_usuario,
                       fkId_conteudo_denunciado:
                         selectedDenuncia.fkId_conteudo_denunciado,
                       nivel_denuncia: selectedDenuncia.nivel_denuncia,
@@ -2416,38 +1821,13 @@ export default function DashboardPage({
                       d.id_denuncia === updated.id_denuncia ? updated : d
                     )
                   );
-                  const targetUserId =
-                    selectedDenuncia?.usuario?.id_usuario ??
-                    (selectedDenuncia as any)?.usuarios?.id_usuario ??
-                    (selectedDenuncia as any)?.fkId_usuario ??
-                    (selectedDenuncia as any)?.fkId_usuario_conteudo ??
-                    (selectedDenuncia as any)?.fkId_usuario_conteudo_usuario ??
-                    (selectedDenuncia as any)?.fkId_usuarioCriador ??
-                    (selectedDenuncia as any)?.fkId_usuario_conteudo_criador;
-
-                  if (targetUserId) {
-                    await createNotificacao({
-                      fkId_usuario: targetUserId,
-                      titulo: "Denúncia resolvida",
-                      mensagem:
-                        "Sua denúncia foi analisada e o usuário sofreu penalidade. Obrigado por cooperar com o Estudare.",
-                      tipo: "denuncia",
-                      fkId_denuncia: selectedDenuncia.id_denuncia,
-                      fkId_conteudo_denunciado:
-                        selectedDenuncia.fkId_conteudo_denunciado,
-                      tipo_denuncia:
-                        (selectedDenuncia as any).tipo_denuncia ??
-                        selectedDenuncia.tipo_conteudo,
-                      nivel_denuncia: selectedDenuncia.nivel_denuncia,
-                      revisao:
-                        "Sua denúncia foi analisada e o usuário sofreu penalidade. Obrigado por cooperar com o Estudare.",
-                      dataRevisao: new Date().toISOString(),
-                      item_denunciado: conteudoRevisado?.texto ?? undefined,
-                      denunciadoNome: victimName,
-                      fkId_usuario_conteudo:
-                        selectedDenuncia.fkId_usuario_conteudo,
-                    });
-                  }
+                  await createNotificacao({
+                    fkId_usuario: selectedDenuncia.usuario.id_usuario,
+                    titulo: "Denúncia resolvida",
+                    mensagem:
+                      "Sua denúncia foi analisada e o usuário sofreu penalidade. Obrigado por cooperar com o Estudare.",
+                    tipo: "denuncia",
+                  });
                   push({
                     kind: "success",
                     message: msg || "Penalidade aplicada e denúncia concluída.",
@@ -2529,7 +1909,7 @@ export default function DashboardPage({
 
                         try {
                           const result = await deleteCurso(
-                            String(confirmData.id),
+                            confirmData.id,
                             confirmData.force || false
                           );
 
@@ -2551,7 +1931,7 @@ export default function DashboardPage({
                           pushAudit({
                             action: "delete",
                             entity: "curso",
-                            entityId: String(confirmData.id),
+                            entityId: confirmData.id,
                             details: confirmData.nome,
                           });
                         } catch (err: any) {
@@ -2587,7 +1967,7 @@ export default function DashboardPage({
 
                         try {
                           const result = await deleteComponente(
-                            String(confirmData.id),
+                            confirmData.id,
                             confirmData.force || false
                           );
 
@@ -2609,7 +1989,7 @@ export default function DashboardPage({
                           pushAudit({
                             action: "delete",
                             entity: "componente",
-                            entityId: String(confirmData.id),
+                            entityId: confirmData.id,
                             details: confirmData.nome,
                           });
                         } catch (err: any) {
@@ -2654,10 +2034,7 @@ export default function DashboardPage({
                         const { deletePergunta } = await import(
                           "@/services/perguntaService"
                         );
-                        await deletePergunta(
-                          String(confirmData.id),
-                          token || ""
-                        );
+                        await deletePergunta(confirmData.id, token || "");
                         setPerguntasState((prev) =>
                           prev.filter((p) => p.id_pergunta !== confirmData.id)
                         );
@@ -2668,7 +2045,7 @@ export default function DashboardPage({
                         pushAudit({
                           action: "delete",
                           entity: "pergunta",
-                          entityId: String(confirmData.id),
+                          entityId: confirmData.id,
                           details: confirmData.nome,
                         });
                       } else if (confirmData.action === "deleteResposta") {
@@ -2680,10 +2057,7 @@ export default function DashboardPage({
                         const { deleteResposta } = await import(
                           "@/services/respostaService"
                         );
-                        await deleteResposta(
-                          String(confirmData.id),
-                          token || ""
-                        );
+                        await deleteResposta(confirmData.id, token || "");
                         setRespostasState((prev) =>
                           prev.filter((r) => r.id_resposta !== confirmData.id)
                         );
@@ -2694,14 +2068,14 @@ export default function DashboardPage({
                         pushAudit({
                           action: "delete",
                           entity: "resposta",
-                          entityId: String(confirmData.id),
+                          entityId: confirmData.id,
                           details: confirmData.nome,
                         });
                       } else if (confirmData.action === "deleteUser") {
                         const { deleteUser } = await import(
                           "@/services/userService"
                         );
-                        await deleteUser(String(confirmData.id));
+                        await deleteUser(confirmData.id);
                         setUsersState((prev) =>
                           prev.filter((u) => u.id_usuario !== confirmData.id)
                         );
@@ -2709,14 +2083,14 @@ export default function DashboardPage({
                         pushAudit({
                           action: "delete",
                           entity: "usuario",
-                          entityId: String(confirmData.id),
+                          entityId: confirmData.id,
                           details: confirmData.nome,
                         });
                       } else if (confirmData.action === "deleteGrupo") {
                         const { deleteGrupo } = await import(
                           "@/services/grupos/grupoService"
                         );
-                        await deleteGrupo(String(confirmData.id));
+                        await deleteGrupo(confirmData.id);
                         setGruposState((prev) =>
                           prev.filter((g) => g.id_grupo !== confirmData.id)
                         );
@@ -2724,7 +2098,7 @@ export default function DashboardPage({
                         pushAudit({
                           action: "delete",
                           entity: "grupo",
-                          entityId: String(confirmData.id),
+                          entityId: confirmData.id,
                           details: confirmData.nome,
                         });
                       }
@@ -3142,9 +2516,9 @@ export default function DashboardPage({
                   Nenhum registro ainda.
                 </div>
               )}
-              {auditLog.map((entry, _i) => (
+              {auditLog.map((entry) => (
                 <div
-                  key={entry?.id ?? `audit-${entry?.ts ?? 0}-${_i}`}
+                  key={entry.id}
                   className="group relative px-4 py-3 rounded-xl border border-zinc-200/70 bg-white/70 backdrop-blur-sm shadow-sm hover:shadow-md transition flex items-center justify-between"
                 >
                   <div className="flex flex-col">

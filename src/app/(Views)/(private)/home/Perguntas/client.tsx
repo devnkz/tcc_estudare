@@ -1,11 +1,5 @@
 "use client";
 
-// ===============================================================
-// PerguntasClientPage (Client Component)
-// Corrige estrutura quebrada: havia JSX solto fora do componente,
-// faltavam imports e a função/export. Restaurado abaixo.
-// ===============================================================
-
 import { useState, useRef, useEffect, useMemo } from "react";
 import { CreateRespostaData, Resposta } from "@/types/resposta";
 import { Pergunta } from "@/types/pergunta";
@@ -25,12 +19,13 @@ import ModalUpdateResponse from "./modalUpdateResponse";
 import ModalCreateDenuncia from "./modalCreateReport";
 import { GlowingEffect } from "@/components/ui/glowing-effect";
 import { LiquidButton } from "@/components/ui/liquid-glass-button";
-import { UserCircleIcon } from "@heroicons/react/24/solid";
+// use `User` from lucide-react to keep icon set consistent
 
 import { Inter } from "next/font/google";
 import Image from "next/image";
 import { AnimatePresence, motion } from "framer-motion";
-import { Search, BookOpen, Puzzle, X, ChevronDown } from "lucide-react";
+import { Search, BookOpen, Puzzle, X, ChevronDown, User } from "lucide-react";
+import { UserCircleIcon } from "@heroicons/react/24/solid";
 import { BsThreeDotsVertical, BsReply, BsClock } from "react-icons/bs";
 import {
   DropdownMenu,
@@ -92,10 +87,14 @@ export function PerguntasClientPage({
   // filtros (curso, componente)
   const [filterCursoId, setFilterCursoId] = useState<string>("");
   const [filterComponenteId, setFilterComponenteId] = useState<string>("");
-  // busca por texto
-  const [textQuery, setTextQuery] = useState("");
-  // valor imediato do input (para debounce)
-  const [inputText, setInputText] = useState("");
+  // filtro para exibir/ocultar perguntas do usuário atual
+  const [filterMode, setFilterMode] = useState<"all" | "onlyMine" | "hideMine">(
+    "all"
+  );
+
+  // texto de busca: `inputText` é o valor imediato do input; `textQuery` é o valor debounced usado para filtrar
+  const [inputText, setInputText] = useState<string>("");
+  const [textQuery, setTextQuery] = useState<string>("");
 
   const selectedCursoName = useMemo(() => {
     return (
@@ -112,6 +111,13 @@ export function PerguntasClientPage({
     );
   }, [componentesQuery.data, filterComponenteId]);
 
+  // componentes filtrados pelo curso selecionado (se houver)
+  const componentesFiltrados = useMemo(() => {
+    const all = componentesQuery.data || [];
+    if (!filterCursoId) return all;
+    return all.filter((c: Componente) => c.curso?.id_curso === filterCursoId);
+  }, [componentesQuery.data, filterCursoId]);
+
   const filteredPerguntas = useMemo(() => {
     const base = (perguntas || []).filter((p) => {
       const byCurso =
@@ -121,10 +127,37 @@ export function PerguntasClientPage({
         p.componente?.nome_componente === selectedComponenteName;
       return byCurso && byComp;
     });
-    if (!textQuery?.trim()) return base;
-    const q = textQuery.trim().toLowerCase();
-    return base.filter((p) => p.pergunta.toLowerCase().includes(q));
-  }, [perguntas, selectedCursoName, selectedComponenteName, textQuery]);
+
+    // First apply text filtering (if any)
+    const q = textQuery?.trim().toLowerCase();
+    let textFiltered = base;
+    if (q) {
+      textFiltered = base.filter((p) => p.pergunta.toLowerCase().includes(q));
+    }
+
+    // Then apply ownership filter regardless of text
+    if (filterMode === "onlyMine") {
+      return textFiltered.filter((p) => {
+        const ownerId = p.fkId_usuario || p.usuario?.id_usuario;
+        return String(ownerId) === String(id_usuario);
+      });
+    }
+    if (filterMode === "hideMine") {
+      return textFiltered.filter((p) => {
+        const ownerId = p.fkId_usuario || p.usuario?.id_usuario;
+        return String(ownerId) !== String(id_usuario);
+      });
+    }
+
+    return textFiltered;
+  }, [
+    perguntas,
+    selectedCursoName,
+    selectedComponenteName,
+    textQuery,
+    filterMode,
+    id_usuario,
+  ]);
 
   const [responderId, setResponderId] = useState<string | null>(null);
   const [resposta, setResposta] = useState("");
@@ -297,7 +330,8 @@ export function PerguntasClientPage({
     setOrDelete("componente", filterComponenteId);
     const next = params.toString();
     if (next !== current) {
-      router.replace(`${pathname}${next ? `?${next}` : ""}`); // keep scroll
+      // use scroll: false to avoid jumping to top when updating query params
+      router.replace(`${pathname}${next ? `?${next}` : ""}`, { scroll: false });
     }
   }, [
     textQuery,
@@ -315,7 +349,7 @@ export function PerguntasClientPage({
       {/* Busca e filtros (estilo similar ao dashboard) */}
       <div className="w-full rounded-2xl border border-zinc-200 bg-white p-4 pl-5 shadow-sm space-y-3">
         {/* Layout ajustado: alinha busca e selects em linha no desktop, evita quebra de label */}
-        <div className="grid grid-cols-1 md:grid-cols-[auto_auto_auto_1fr] lg:grid-cols-[auto_auto_auto_1fr] gap-3 md:items-center">
+        <div className="grid grid-cols-1 md:grid-cols-[1fr_1fr_1fr_auto] lg:grid-cols-[1fr_1fr_1fr_auto] gap-3 md:items-center">
           {/* Busca por texto */}
           <div className="relative md:w-[240px] lg:w-[260px]">
             <Search className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-400" />
@@ -328,39 +362,143 @@ export function PerguntasClientPage({
           </div>
 
           {/* Select Curso */}
-          <div className="relative md:w-[240px] lg:w-[260px]">
-            <BookOpen className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-400" />
-            <ChevronDown className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-400" />
-            <select
-              className="w-full h-11 appearance-none cursor-pointer text-sm pl-9 pr-10 rounded-full border border-zinc-200 bg-white text-zinc-800 shadow-sm hover:shadow-md focus:outline-none focus:ring-2 focus:ring-purple-500/40 focus:border-purple-500 transition"
-              value={filterCursoId}
-              onChange={(e) => setFilterCursoId(e.target.value)}
-            >
-              <option value="">Todos os cursos</option>
-              {cursosQuery.data?.map((c: Curso) => (
-                <option key={c.id_curso} value={c.id_curso}>
-                  {c.nome_curso}
-                </option>
-              ))}
-            </select>
+          <div className="relative w-full min-w-0">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button
+                  type="button"
+                  aria-haspopup="menu"
+                  aria-expanded="false"
+                  className="w-full h-11 flex items-center justify-between gap-2 text-sm rounded-full border border-zinc-200 bg-white text-zinc-800 shadow-sm hover:shadow-md px-3 focus:outline-none focus:ring-2 focus:ring-purple-500/40 focus:border-purple-500 transition cursor-pointer overflow-hidden"
+                >
+                  <div className="flex items-center gap-2 min-w-0">
+                    <BookOpen className="h-4 w-4 text-zinc-600 flex-shrink-0" />
+                    <span className="truncate min-w-0">
+                      {filterCursoId ? selectedCursoName : "Cursos"}
+                    </span>
+                  </div>
+                  <ChevronDown className="h-4 w-4 text-zinc-400 flex-shrink-0" />
+                </button>
+              </DropdownMenuTrigger>
+
+              <DropdownMenuContent align="start" className="w-64">
+                <DropdownMenuLabel>Cursos</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  onClick={() => {
+                    setFilterCursoId("");
+                    setFilterComponenteId("");
+                  }}
+                >
+                  Todos os Cursos
+                </DropdownMenuItem>
+                {cursosQuery.data?.map((c: Curso) => (
+                  <DropdownMenuItem
+                    key={c.id_curso}
+                    onClick={() => {
+                      setFilterCursoId(c.id_curso);
+                      // clear componente if it doesn't belong to the selected course
+                      if (filterComponenteId) {
+                        const comp = componentesQuery.data?.find(
+                          (cmp: Componente) =>
+                            cmp.id_componente === filterComponenteId
+                        );
+                        if (comp && comp.curso?.id_curso !== c.id_curso)
+                          setFilterComponenteId("");
+                      }
+                    }}
+                  >
+                    {c.nome_curso}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
 
           {/* Select Componente */}
-          <div className="relative md:w-[240px] lg:w-[260px]">
-            <Puzzle className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-400" />
-            <ChevronDown className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-400" />
-            <select
-              className="w-full h-11 appearance-none cursor-pointer text-sm pl-9 pr-10 rounded-full border border-zinc-200 bg-white text-zinc-800 shadow-sm hover:shadow-md focus:outline-none focus:ring-2 focus:ring-purple-500/40 focus:border-purple-500 transition"
-              value={filterComponenteId}
-              onChange={(e) => setFilterComponenteId(e.target.value)}
-            >
-              <option value="">Todos os componentes</option>
-              {componentesQuery.data?.map((c: Componente) => (
-                <option key={c.id_componente} value={c.id_componente}>
-                  {c.nome_componente}
-                </option>
-              ))}
-            </select>
+          <div className="relative w-full min-w-0">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button
+                  type="button"
+                  aria-haspopup="menu"
+                  aria-expanded="false"
+                  className="w-full h-11 flex items-center justify-between gap-2 text-sm rounded-full border border-zinc-200 bg-white text-zinc-800 shadow-sm hover:shadow-md px-3 focus:outline-none focus:ring-2 focus:ring-purple-500/40 focus:border-purple-500 transition cursor-pointer overflow-hidden"
+                >
+                  <div className="flex items-center gap-2 min-w-0">
+                    <Puzzle className="h-4 w-4 text-zinc-600 flex-shrink-0" />
+                    <span className="truncate min-w-0">
+                      {filterComponenteId
+                        ? selectedComponenteName
+                        : "Componentes"}
+                    </span>
+                  </div>
+                  <ChevronDown className="h-4 w-4 text-zinc-400 flex-shrink-0" />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start" className="w-64">
+                <DropdownMenuLabel>Componentes</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  onClick={() => {
+                    setFilterComponenteId("");
+                  }}
+                >
+                  Todos os Componentes
+                </DropdownMenuItem>
+                {componentesFiltrados.map((c: Componente) => (
+                  <DropdownMenuItem
+                    key={c.id_componente}
+                    onClick={() => {
+                      setFilterComponenteId(c.id_componente);
+                      // ensure curso is set to the componente's course
+                      const cursoId = c.curso?.id_curso;
+                      if (cursoId && cursoId !== filterCursoId)
+                        setFilterCursoId(cursoId);
+                    }}
+                  >
+                    {c.nome_componente}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+          {/* Filtro (moved to end for layout symmetry) */}
+          <div className="relative w-full md:w-[150px] lg:w-[180px]">
+            <label className="sr-only">Filtro de perguntas</label>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button
+                  type="button"
+                  className="w-full h-11 flex items-center justify-between gap-2 text-sm rounded-full border border-zinc-200 bg-white text-zinc-800 shadow-sm hover:shadow-md px-3 focus:outline-none focus:ring-2 focus:ring-purple-500/40 focus:border-purple-500 transition cursor-pointer overflow-hidden"
+                  aria-haspopup="menu"
+                  aria-expanded="false"
+                >
+                  <div className="flex items-center gap-2 min-w-0">
+                    <User className="h-4 w-4 text-zinc-600 flex-shrink-0" />
+                    <span className="truncate min-w-0">
+                      {filterMode === "all" && "Filtrar: Todas"}
+                      {filterMode === "onlyMine" && "Filtrar: Apenas minhas"}
+                      {filterMode === "hideMine" && "Filtrar: Sem minhas"}
+                    </span>
+                  </div>
+                  <ChevronDown className="h-4 w-4 text-zinc-400 flex-shrink-0" />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-52">
+                <DropdownMenuLabel>Filtrar perguntas</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => setFilterMode("all")}>
+                  Todas as perguntas
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setFilterMode("onlyMine")}>
+                  Apenas minhas perguntas
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setFilterMode("hideMine")}>
+                  Ocultar minhas perguntas
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </div>
 
@@ -393,6 +531,18 @@ export function PerguntasClientPage({
                   onClick={() => setTextQuery("")}
                   className="ml-1 hover:text-zinc-800 cursor-pointer"
                   aria-label="Remover filtro de texto"
+                >
+                  <X className="h-3.5 w-3.5" />
+                </button>
+              </span>
+            )}
+            {filterMode !== "all" && (
+              <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-zinc-100 border border-zinc-200">
+                {filterMode === "onlyMine" ? "Apenas minhas" : "Sem minhas"}
+                <button
+                  onClick={() => setFilterMode("all")}
+                  className="ml-1 hover:text-zinc-800 cursor-pointer"
+                  aria-label="Remover filtro de usuário"
                 >
                   <X className="h-3.5 w-3.5" />
                 </button>
@@ -502,8 +652,18 @@ export function PerguntasClientPage({
             const respostasPergunta = respostas.filter(
               (r) => r.fkId_pergunta === pergunta.id_pergunta
             );
+            // normalize author shape: backend sometimes returns `usuario` or `usuarios`
+            const author = (pergunta as any).usuario ??
+              (pergunta as any).usuarios ?? {
+                id_usuario: "",
+                nome_usuario: "Usuário removido",
+                apelido_usuario: "",
+                foto_perfil: null,
+              };
             const minhaResposta = respostasPergunta.find(
-              (r) => r.usuario.id_usuario === id_usuario
+              (r) =>
+                ((r as any).usuario ?? (r as any).usuarios)?.id_usuario ===
+                id_usuario
             );
             const jaRespondida = !!minhaResposta;
             const temResposta = respostasPergunta.length > 0;
@@ -547,10 +707,10 @@ export function PerguntasClientPage({
                   {/* Header */}
                   <div className="flex items-start justify-between gap-3 mb-4">
                     <div className="flex items-start gap-3 min-w-0 flex-1">
-                      {pergunta.usuario?.foto_perfil ? (
+                      {author.foto_perfil ? (
                         <img
-                          src={pergunta.usuario.foto_perfil}
-                          alt={pergunta.usuario.nome_usuario || "avatar"}
+                          src={author.foto_perfil}
+                          alt={author.nome_usuario || "avatar"}
                           className="w-10 h-10 rounded-full object-cover shadow-sm flex-shrink-0"
                         />
                       ) : (
@@ -558,8 +718,7 @@ export function PerguntasClientPage({
                       )}
                       <div className="flex flex-col min-w-0 flex-1 items-start">
                         <span className="text-sm font-semibold text-zinc-800 break-words text-left w-full">
-                          {pergunta.usuario.nome_usuario} (
-                          {pergunta.usuario.apelido_usuario})
+                          {author.nome_usuario} ({author.apelido_usuario})
                         </span>
                         <span className="text-[11px] text-zinc-500 flex items-center gap-1 text-left">
                           <BsClock className="w-3.5 h-3.5" />{" "}
@@ -582,7 +741,7 @@ export function PerguntasClientPage({
                       <DropdownMenuContent className="z-[120]">
                         <DropdownMenuLabel>Ações</DropdownMenuLabel>
                         <DropdownMenuSeparator />
-                        {id_usuario === pergunta.usuario.id_usuario && (
+                        {id_usuario === author.id_usuario && (
                           <DropdownMenuItem
                             onClick={() => {
                               setOpenPergunta(null); // Fecha modal de ver respostas
@@ -593,7 +752,7 @@ export function PerguntasClientPage({
                             Editar
                           </DropdownMenuItem>
                         )}
-                        {id_usuario === pergunta.usuario.id_usuario && (
+                        {id_usuario === author.id_usuario && (
                           <DropdownMenuItem
                             onClick={() => handleDelete(pergunta.id_pergunta)}
                             className="cursor-pointer text-red-600"
@@ -601,7 +760,7 @@ export function PerguntasClientPage({
                             Excluir
                           </DropdownMenuItem>
                         )}
-                        {id_usuario !== pergunta.usuario.id_usuario && (
+                        {id_usuario !== author.id_usuario && (
                           <DropdownMenuItem
                             onClick={() => {
                               setOpenPergunta(pergunta);
@@ -612,7 +771,7 @@ export function PerguntasClientPage({
                             Responder
                           </DropdownMenuItem>
                         )}
-                        {id_usuario !== pergunta.usuario.id_usuario && (
+                        {id_usuario !== author.id_usuario && (
                           <DropdownMenuItem
                             onClick={() =>
                               toggleModalDenuncia(pergunta.id_pergunta)
@@ -655,8 +814,7 @@ export function PerguntasClientPage({
 
                   {/* Actions - botões sempre no final do card */}
                   <div className="flex flex-col gap-2 items-center w-full">
-                    {id_usuario !== pergunta.usuario.id_usuario &&
-                    !jaRespondida ? (
+                    {id_usuario !== author.id_usuario && !jaRespondida ? (
                       <LiquidButton
                         size="default"
                         className="w-full flex items-center justify-center gap-1.5 px-3 py-2.5 text-sm font-semibold bg-gradient-to-r from-purple-600 to-purple-500 text-white hover:from-purple-700 hover:to-purple-600 shadow-md hover:shadow-lg rounded-2xl"
@@ -696,7 +854,7 @@ export function PerguntasClientPage({
                   <ModalCreateDenuncia
                     id_conteudo={pergunta.id_pergunta}
                     id_usuario={id_usuario}
-                    fkId_usuario_conteudo={pergunta.usuario.id_usuario}
+                    fkId_usuario_conteudo={author.id_usuario}
                     tipo_conteudo="Pergunta"
                     isOpen={!!modalDenunciaOpen[pergunta.id_pergunta]}
                     onOpenChange={(open) =>
@@ -740,30 +898,56 @@ export function PerguntasClientPage({
               <div className="relative w-full max-w-2xl rounded-[28px] border border-zinc-200 bg-white/80 backdrop-blur-xl shadow-2xl">
                 <div className="absolute inset-0 rounded-[28px] pointer-events-none bg-gradient-to-br from-purple-500/8 via-transparent to-pink-500/10" />
                 <div className="relative p-6 sm:p-7 space-y-4">
+                  {/** openAuthor available for downstream checks **/}
+                  {(() => {
+                    const maybe = (openPergunta as any) ?? {};
+                    (maybe as any).openAuthor = maybe.usuario ??
+                      maybe.usuarios ?? {
+                        id_usuario: "",
+                        nome_usuario: "Usuário removido",
+                        apelido_usuario: "",
+                        foto_perfil: null,
+                      };
+                    return null;
+                  })()}
                   {/* Header */}
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex items-center gap-3">
-                      {openPergunta.usuario?.foto_perfil ? (
-                        <img
-                          src={openPergunta.usuario.foto_perfil}
-                          alt={openPergunta.usuario.nome_usuario || "avatar"}
-                          className="w-9 h-9 rounded-full object-cover shadow-sm"
-                        />
-                      ) : (
-                        <UserCircleIcon className="w-9 h-9 text-purple-400" />
-                      )}
-                      <div className="leading-tight">
-                        <div className="font-semibold text-sm text-gray-900">
-                          {openPergunta.usuario.nome_usuario}{" "}
-                          <span className="text-zinc-500">
-                            ({openPergunta.usuario.apelido_usuario})
-                          </span>
-                        </div>
-                        <div className="text-[11px] uppercase tracking-wide text-zinc-500">
-                          {openPergunta.curso?.nome_curso} •{" "}
-                          {openPergunta.componente?.nome_componente}
-                        </div>
-                      </div>
+                      {/** normalize openPergunta author shape **/}
+                      {(() => {
+                        const openAuthor = (openPergunta as any)?.usuario ??
+                          (openPergunta as any)?.usuarios ?? {
+                            id_usuario: "",
+                            nome_usuario: "Usuário removido",
+                            apelido_usuario: "",
+                            foto_perfil: null,
+                          };
+                        return (
+                          <>
+                            {openAuthor.foto_perfil ? (
+                              <img
+                                src={openAuthor.foto_perfil}
+                                alt={openAuthor.nome_usuario || "avatar"}
+                                className="w-9 h-9 rounded-full object-cover shadow-sm"
+                              />
+                            ) : (
+                              <UserCircleIcon className="w-9 h-9 text-purple-400" />
+                            )}
+                            <div className="leading-tight">
+                              <div className="font-semibold text-sm text-gray-900">
+                                {openAuthor.nome_usuario}{" "}
+                                <span className="text-zinc-500">
+                                  ({openAuthor.apelido_usuario})
+                                </span>
+                              </div>
+                              <div className="text-[11px] uppercase tracking-wide text-zinc-500">
+                                {openPergunta.curso?.nome_curso} •{" "}
+                                {openPergunta.componente?.nome_componente}
+                              </div>
+                            </div>
+                          </>
+                        );
+                      })()}
                     </div>
                     <button
                       className="text-sm text-zinc-500 hover:text-zinc-800 cursor-pointer"
@@ -785,118 +969,128 @@ export function PerguntasClientPage({
                       .filter(
                         (r) => r.fkId_pergunta === openPergunta.id_pergunta
                       )
-                      .map((r) => (
-                        <div
-                          key={r.id_resposta}
-                          ref={(el) =>
-                            void (respostasRefs.current[r.id_resposta] = el)
-                          }
-                          className="group/resposta border border-zinc-200 bg-white/80 backdrop-blur rounded-2xl p-3 flex items-start gap-3 hover:shadow-sm transition"
-                        >
-                          {r.usuario?.foto_perfil ? (
-                            <img
-                              src={r.usuario.foto_perfil}
-                              alt={r.usuario.nome_usuario || "avatar"}
-                              className="w-9 h-9 rounded-full object-cover"
-                            />
-                          ) : (
-                            <UserCircleIcon className="w-9 h-9 text-purple-400" />
-                          )}
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-start justify-between gap-2">
-                              <div className="flex flex-col">
-                                <p className="font-semibold text-sm text-zinc-800 truncate">
-                                  {r.usuario.nome_usuario} (
-                                  {r.usuario.apelido_usuario})
-                                </p>
-                                <span className="text-[11px] text-zinc-500 flex items-center gap-1">
-                                  <BsClock className="w-3 h-3" />
-                                  {r.dataCriacao_resposta
-                                    ? timeAgo(r.dataCriacao_resposta)
-                                    : "agora"}
-                                  {wasEdited(
-                                    r.dataCriacao_resposta,
-                                    r.dataAtualizacao_resposta
-                                  ) && (
-                                    <span className="ml-1 text-zinc-400">
-                                      • editado
-                                    </span>
-                                  )}
-                                </span>
+                      .map((r) => {
+                        const rAuthor = (r as any).usuario ??
+                          (r as any).usuarios ?? {
+                            id_usuario: "",
+                            nome_usuario: "Usuário removido",
+                            apelido_usuario: "",
+                            foto_perfil: null,
+                          };
+                        return (
+                          <div
+                            key={r.id_resposta}
+                            ref={(el) =>
+                              void (respostasRefs.current[r.id_resposta] = el)
+                            }
+                            className="group/resposta border border-zinc-200 bg-white/80 backdrop-blur rounded-2xl p-3 flex items-start gap-3 hover:shadow-sm transition"
+                          >
+                            {rAuthor.foto_perfil ? (
+                              <img
+                                src={rAuthor.foto_perfil}
+                                alt={rAuthor.nome_usuario || "avatar"}
+                                className="w-9 h-9 rounded-full object-cover"
+                              />
+                            ) : (
+                              <UserCircleIcon className="w-9 h-9 text-purple-400" />
+                            )}
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-start justify-between gap-2">
+                                <div className="flex flex-col">
+                                  <p className="font-semibold text-sm text-zinc-800 truncate">
+                                    {rAuthor.nome_usuario} (
+                                    {rAuthor.apelido_usuario})
+                                  </p>
+                                  <span className="text-[11px] text-zinc-500 flex items-center gap-1">
+                                    <BsClock className="w-3 h-3" />
+                                    {r.dataCriacao_resposta
+                                      ? timeAgo(r.dataCriacao_resposta)
+                                      : "agora"}
+                                    {wasEdited(
+                                      r.dataCriacao_resposta,
+                                      r.dataAtualizacao_resposta
+                                    ) && (
+                                      <span className="ml-1 text-zinc-400">
+                                        • editado
+                                      </span>
+                                    )}
+                                  </span>
+                                </div>
+                                <DropdownMenu>
+                                  <DropdownMenuTrigger className="opacity-80 hover:opacity-100 p-2 rounded-md hover:bg-zinc-100 transition cursor-pointer">
+                                    <BsThreeDotsVertical className="w-4 h-4 text-zinc-600" />
+                                  </DropdownMenuTrigger>
+                                  <DropdownMenuContent className="z-[120]">
+                                    {id_usuario === rAuthor.id_usuario && (
+                                      <DropdownMenuItem
+                                        className="cursor-pointer"
+                                        onClick={() => {
+                                          setEditRespostaId(r.id_resposta);
+                                        }}
+                                      >
+                                        Editar
+                                      </DropdownMenuItem>
+                                    )}
+                                    {(id_usuario === rAuthor.id_usuario ||
+                                      id_usuario ===
+                                        (openPergunta as any).openAuthor
+                                          ?.id_usuario) && (
+                                      <DropdownMenuItem
+                                        className="cursor-pointer text-red-600"
+                                        onClick={() =>
+                                          handleDeleteResposta(r.id_resposta)
+                                        }
+                                      >
+                                        Excluir
+                                      </DropdownMenuItem>
+                                    )}
+                                    {id_usuario !== rAuthor.id_usuario && (
+                                      <DropdownMenuItem
+                                        className="cursor-pointer text-red-500"
+                                        onClick={() =>
+                                          toggleModalDenuncia(r.id_resposta)
+                                        }
+                                      >
+                                        Denunciar
+                                      </DropdownMenuItem>
+                                    )}
+                                  </DropdownMenuContent>
+                                </DropdownMenu>
                               </div>
-                              <DropdownMenu>
-                                <DropdownMenuTrigger className="opacity-80 hover:opacity-100 p-2 rounded-md hover:bg-zinc-100 transition cursor-pointer">
-                                  <BsThreeDotsVertical className="w-4 h-4 text-zinc-600" />
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent className="z-[120]">
-                                  {id_usuario === r.usuario.id_usuario && (
-                                    <DropdownMenuItem
-                                      className="cursor-pointer"
-                                      onClick={() => {
-                                        setEditRespostaId(r.id_resposta);
-                                      }}
-                                    >
-                                      Editar
-                                    </DropdownMenuItem>
-                                  )}
-                                  {(id_usuario === r.usuario.id_usuario ||
-                                    id_usuario ===
-                                      openPergunta.usuario.id_usuario) && (
-                                    <DropdownMenuItem
-                                      className="cursor-pointer text-red-600"
-                                      onClick={() =>
-                                        handleDeleteResposta(r.id_resposta)
-                                      }
-                                    >
-                                      Excluir
-                                    </DropdownMenuItem>
-                                  )}
-                                  {id_usuario !== r.usuario.id_usuario && (
-                                    <DropdownMenuItem
-                                      className="cursor-pointer text-red-500"
-                                      onClick={() =>
-                                        toggleModalDenuncia(r.id_resposta)
-                                      }
-                                    >
-                                      Denunciar
-                                    </DropdownMenuItem>
-                                  )}
-                                </DropdownMenuContent>
-                              </DropdownMenu>
+                              <p className="mt-1 text-sm text-zinc-700 leading-relaxed whitespace-pre-wrap break-words">
+                                {r.resposta}
+                              </p>
+
+                              {/* Modal de editar resposta - controlado por estado */}
+                              <ModalUpdateResponse
+                                resposta={r}
+                                isOpen={editRespostaId === r.id_resposta}
+                                onOpenChange={(open) => {
+                                  if (!open) setEditRespostaId(null);
+                                }}
+                                onSuccess={() => {
+                                  setEditRespostaId(null);
+                                  triggerAlert("Resposta atualizada");
+                                }}
+                              />
+
+                              <ModalCreateDenuncia
+                                id_conteudo={r.id_resposta}
+                                id_usuario={id_usuario}
+                                fkId_usuario_conteudo={rAuthor.id_usuario}
+                                tipo_conteudo="Resposta"
+                                isOpen={!!modalDenunciaOpen[r.id_resposta]}
+                                onOpenChange={(open) =>
+                                  setModalDenunciaOpen((prev) => ({
+                                    ...prev,
+                                    [r.id_resposta]: open,
+                                  }))
+                                }
+                              />
                             </div>
-                            <p className="mt-1 text-sm text-zinc-700 leading-relaxed whitespace-pre-wrap break-words">
-                              {r.resposta}
-                            </p>
-
-                            {/* Modal de editar resposta - controlado por estado */}
-                            <ModalUpdateResponse
-                              resposta={r}
-                              isOpen={editRespostaId === r.id_resposta}
-                              onOpenChange={(open) => {
-                                if (!open) setEditRespostaId(null);
-                              }}
-                              onSuccess={() => {
-                                setEditRespostaId(null);
-                                triggerAlert("Resposta atualizada");
-                              }}
-                            />
-
-                            <ModalCreateDenuncia
-                              id_conteudo={r.id_resposta}
-                              id_usuario={id_usuario}
-                              fkId_usuario_conteudo={r.usuario.id_usuario}
-                              tipo_conteudo="Resposta"
-                              isOpen={!!modalDenunciaOpen[r.id_resposta]}
-                              onOpenChange={(open) =>
-                                setModalDenunciaOpen((prev) => ({
-                                  ...prev,
-                                  [r.id_resposta]: open,
-                                }))
-                              }
-                            />
                           </div>
-                        </div>
-                      ))}
+                        );
+                      })}
                     {respostas.filter(
                       (r) => r.fkId_pergunta === openPergunta.id_pergunta
                     ).length === 0 && (
@@ -910,10 +1104,12 @@ export function PerguntasClientPage({
                     const jaRespondi = respostas.some(
                       (r) =>
                         r.fkId_pergunta === openPergunta.id_pergunta &&
-                        r.usuario.id_usuario === id_usuario
+                        ((r as any).usuario ?? (r as any).usuarios)
+                          ?.id_usuario === id_usuario
                     );
                     const souDono =
-                      openPergunta.usuario.id_usuario === id_usuario;
+                      (openPergunta as any).openAuthor?.id_usuario ===
+                      id_usuario;
                     if (jaRespondi || souDono) {
                       return (
                         <div className="rounded-2xl border border-zinc-200 bg-white/70 backdrop-blur p-4 text-sm text-zinc-600 flex items-center justify-between">
@@ -940,23 +1136,28 @@ export function PerguntasClientPage({
                       <div className="flex flex-col gap-2">
                         <div className="rounded-2xl border border-zinc-200 bg-white p-3 sm:p-4 shadow-sm">
                           <div className="flex items-center gap-3">
-                            <input
-                              ref={respostaInputRef}
-                              type="text"
+                            <textarea
+                              rows={1}
+                              ref={respostaInputRef as any}
                               value={
                                 responderId === openPergunta.id_pergunta
                                   ? resposta
                                   : ""
                               }
                               onChange={(e) => {
-                                if (e.target.value.length <= 191) {
-                                  setResposta(e.target.value);
+                                const v = e.target.value;
+                                if (v.length <= 191) {
+                                  setResposta(v);
                                   setRespostaError(""); // Limpa erro ao digitar
                                 }
+                                // auto-resize
+                                const el = e.target as HTMLTextAreaElement;
+                                el.style.height = "auto";
+                                el.style.height = `${el.scrollHeight}px`;
                               }}
                               maxLength={191}
                               placeholder="Escreva sua resposta..."
-                              className="flex-1 bg-transparent outline-none placeholder:text-zinc-400 text-sm sm:text-base text-zinc-900"
+                              className="flex-1 bg-transparent outline-none placeholder:text-zinc-400 text-sm sm:text-base text-zinc-900 min-h-[32px] max-h-28 overflow-y-auto resize-none leading-relaxed whitespace-pre-wrap break-words"
                               disabled={createResposta.isPending}
                               onFocus={() =>
                                 setResponderId(openPergunta.id_pergunta)
@@ -980,25 +1181,26 @@ export function PerguntasClientPage({
                                 : "Enviar"}
                             </button>
                           </div>
-                          {/* Contador de caracteres */}
-                          <div className="flex justify-between items-center mt-2">
-                            <div>
-                              {respostaError && (
-                                <p className="text-red-600 text-sm font-medium">
-                                  {respostaError}
-                                </p>
-                              )}
-                            </div>
-                            <p
-                              className={`text-xs ${
-                                resposta.length >= 191
-                                  ? "text-red-600 font-semibold"
-                                  : "text-zinc-500"
-                              }`}
-                            >
-                              {resposta.length}/191
-                            </p>
+                          {/* Error message stays inside the rounded box */}
+                          <div className="mt-2">
+                            {respostaError && (
+                              <p className="text-red-600 text-sm font-medium">
+                                {respostaError}
+                              </p>
+                            )}
                           </div>
+                        </div>
+                        {/* Counter moved outside the rounded box, aligned to the right at modal end */}
+                        <div className="mt-2 flex justify-end">
+                          <p
+                            className={`text-xs ${
+                              resposta.length >= 191
+                                ? "text-red-600 font-semibold"
+                                : "text-zinc-500"
+                            }`}
+                          >
+                            {resposta.length}/191
+                          </p>
                         </div>
                       </div>
                     );

@@ -22,7 +22,7 @@ import { useForm, Controller } from "react-hook-form";
 import { CreateDenunciaData } from "@/types/denuncia";
 import { useState, useEffect, useRef, useMemo } from "react";
 import { motion } from "framer-motion";
-import { Loader2, CheckCircle2, XCircle } from "lucide-react";
+import { CheckCircle2, XCircle } from "lucide-react";
 import badWordsJSON from "@/utils/badWordsPT.json";
 import { checkDenuncia } from "@/services/denuncia";
 import { useToast } from "@/components/ui/animatedToast";
@@ -56,9 +56,10 @@ export default function ModalCreateDenuncia({
     formState: { errors },
   } = useForm<CreateDenunciaData>();
 
+  const tipoDenunciaSelected = watch("tipo_denuncia");
+
   const [submitError, setSubmitError] = useState<string>("");
   const [success, setSuccess] = useState(false);
-  const [checking, setChecking] = useState(false);
   const [alreadyReported, setAlreadyReported] = useState(false);
   const descricaoText = watch("descricao") || "";
 
@@ -121,16 +122,7 @@ export default function ModalCreateDenuncia({
     [descricaoText, badSet]
   );
 
-  // Debounced checking animation
-  useEffect(() => {
-    if (!descricaoText.trim()) {
-      setChecking(false);
-      return;
-    }
-    setChecking(true);
-    const timer = setTimeout(() => setChecking(false), 450);
-    return () => clearTimeout(timer);
-  }, [descricaoText]);
+  // (no checking animation) status icon will only show when badwords detected
 
   const onSubmit = (data: CreateDenunciaData) => {
     if (alreadyReported) {
@@ -218,10 +210,105 @@ export default function ModalCreateDenuncia({
         )}
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
+          {/* Tipos de denúncia (substitui seleção de nível) - moved above description */}
+          <div className="space-y-2">
+            <Label className="text-sm font-semibold text-red-700">
+              Tipo de Denúncia *
+            </Label>
+            <div className="flex flex-wrap gap-2">
+              {[
+                { key: "ameaca", label: "Ameaça / Incitação à Violência" },
+                { key: "assedio", label: "Assédio" },
+                {
+                  key: "desinformacao",
+                  label: "Conteúdo Falso / Desinformação",
+                },
+                {
+                  key: "conteudo_sensivel",
+                  label: "Conteúdo Sensível / Chocante",
+                },
+                { key: "fraude", label: "Fraude / Golpe" },
+                {
+                  key: "impersonificacao",
+                  label: "Impersonificação / Falsa Identidade",
+                },
+                { key: "nazismo", label: "Nazismo" },
+                { key: "pornografia", label: "Pornografia" },
+                { key: "racismo", label: "Racismo" },
+                { key: "spam", label: "Spam" },
+                {
+                  key: "violacao_ip",
+                  label: "Violação de Propriedade Intelectual",
+                },
+                { key: "xenofobia", label: "Xenofobia" },
+                { key: "outro", label: "Outro" },
+              ].map((t) => {
+                const selected = watch("tipo_denuncia") === t.key;
+                return (
+                  <button
+                    key={t.key}
+                    type="button"
+                    onClick={() => {
+                      // map tipos to nivel_denuncia (1 = baixo, 2 = médio, 3 = alto)
+                      const mapNivel: Record<string, number> = {
+                        racismo: 3,
+                        xenofobia: 3,
+                        nazismo: 3,
+                        assedio: 3,
+                        discurso_odio: 3,
+                        spam: 1,
+                        pornografia: 3,
+                        desinformacao: 2,
+                        ameaca: 3,
+                        fraude: 3,
+                        violacao_ip: 2,
+                        impersonificacao: 3,
+                        conteudo_sensivel: 3,
+                        outro: 1,
+                      };
+                      const nivel = mapNivel[t.key] ?? 1;
+                      setValue("nivel_denuncia", nivel, {
+                        shouldValidate: true,
+                      });
+                      setValue("tipo_denuncia", t.key);
+                    }}
+                    className={`px-3 py-1.5 rounded-full border text-sm font-medium transition cursor-pointer ${
+                      selected
+                        ? "bg-red-50 text-red-700 border-red-300"
+                        : "bg-white text-zinc-700 border-zinc-200 hover:shadow-sm"
+                    }`}
+                  >
+                    {t.label}
+                  </button>
+                );
+              })}
+            </div>
+            {/* required type message */}
+            {!tipoDenunciaSelected && (
+              <p className="text-xs text-red-600 mt-1">
+                É obrigatório selecionar <strong>UM</strong> tipo de denúncia.
+              </p>
+            )}
+            {/* Descrição contextual para 'spam' */}
+            {watch("tipo_denuncia") === "spam" && (
+              <p className="text-xs text-zinc-600 mt-1">
+                Spam / Mensagens indesejadas: conteúdo repetitivo, publicidade
+                não solicitada ou mensagens com links maliciosos/convites.
+              </p>
+            )}
+            {/* hidden field to hold selected tipo for UI/state and send to backend */}
+            <input type="hidden" {...register("tipo_denuncia" as any)} />
+            {errors.nivel_denuncia && (
+              <p className="text-[11px] text-red-600">
+                {errors.nivel_denuncia.message}
+              </p>
+            )}
+          </div>
+
           {/* Textarea com badwords */}
           <div className="space-y-2">
             <Label className="text-sm font-semibold text-red-700">
-              Descrição da Denúncia
+              Descrição da Denúncia *
             </Label>
             <div className="relative">
               <Textarea
@@ -247,14 +334,10 @@ export default function ModalCreateDenuncia({
                   whiteSpace: "pre-wrap",
                 }}
               />
-              {/* Status icon */}
+              {/* Status icon: only show X when bad words present */}
               <div className="absolute right-3 top-3">
-                {checking ? (
-                  <Loader2 className="h-4 w-4 animate-spin text-zinc-500" />
-                ) : descricaoText.trim() && !hasBadWord ? (
-                  <CheckCircle2 className="h-4 w-4 text-emerald-600 animate-in fade-in" />
-                ) : hasBadWord ? (
-                  <XCircle className="h-4 w-4 text-red-600 animate-in fade-in" />
+                {hasBadWord ? (
+                  <XCircle className="h-4 w-4 text-red-600" />
                 ) : null}
               </div>
             </div>
@@ -276,49 +359,6 @@ export default function ModalCreateDenuncia({
                 {descricaoText.length}/191
               </p>
             </div>
-          </div>
-
-          {/* Select de nível */}
-          <div className="space-y-2">
-            <Label className="text-sm font-semibold text-red-700">
-              Nível de Gravidade *
-            </Label>
-            <Controller
-              name="nivel_denuncia"
-              control={control}
-              rules={{ required: "Selecione o nível da denúncia" }}
-              render={({ field }) => (
-                <Select
-                  onValueChange={(value) => field.onChange(Number(value))}
-                  value={field.value ? String(field.value) : ""}
-                >
-                  <SelectTrigger
-                    className={`w-full rounded-lg border transition-all duration-300 ${
-                      field.value
-                        ? "border-red-500 bg-red-50 text-red-900"
-                        : "border-red-200 bg-white hover:border-red-400"
-                    }`}
-                  >
-                    <SelectValue placeholder="Selecione o nível de gravidade" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectGroup>
-                      <SelectLabel>Nível de Gravidade</SelectLabel>
-                      {niveis.map((n) => (
-                        <SelectItem key={n.value} value={String(n.value)}>
-                          {n.label}
-                        </SelectItem>
-                      ))}
-                    </SelectGroup>
-                  </SelectContent>
-                </Select>
-              )}
-            />
-            {errors.nivel_denuncia && (
-              <p className="text-[11px] text-red-600">
-                {errors.nivel_denuncia.message}
-              </p>
-            )}
           </div>
 
           {submitError && (
@@ -343,6 +383,7 @@ export default function ModalCreateDenuncia({
                 isPending ||
                 hasBadWord ||
                 !descricaoText.trim() ||
+                !tipoDenunciaSelected ||
                 success ||
                 alreadyReported
               }

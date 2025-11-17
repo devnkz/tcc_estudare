@@ -21,6 +21,7 @@ import { useCreatePenalidade } from "@/hooks/penalidade/useCreate";
 import { useToast } from "@/components/ui/animatedToast";
 import { CreatePenalidadeData } from "@/types/penalidade";
 import { isBefore, startOfDay, startOfToday } from "date-fns";
+import { fetchUsersId } from "@/services/userService";
 
 type Props = {
   openDialog: boolean;
@@ -60,6 +61,32 @@ export function PenalidadeModal({
       descricao: "",
     },
   });
+
+  const [userName, setUserName] = React.useState<string | null>(
+    usuarioNome ?? null
+  );
+
+  React.useEffect(() => {
+    let mounted = true;
+    if (!usuarioNome && fkId_usuario) {
+      // try to fetch user name by id
+      fetchUsersId(fkId_usuario)
+        .then((u) => {
+          if (!mounted) return;
+          const name = u?.nome_usuario || u?.apelido_usuario || null;
+          setUserName(name);
+        })
+        .catch(() => {
+          if (!mounted) return;
+          setUserName(null);
+        });
+    } else {
+      setUserName(usuarioNome ?? null);
+    }
+    return () => {
+      mounted = false;
+    };
+  }, [fkId_usuario, usuarioNome]);
 
   const onSubmit = (data: CreatePenalidadeData) => {
     // garante que o valor seja Date antes de converter
@@ -166,7 +193,7 @@ export function PenalidadeModal({
               Usuário
             </span>
             <span className="text-red-600/80 truncate">
-              {usuarioNome || fkId_usuario}
+              {userName ?? usuarioNome ?? fkId_usuario}
             </span>
           </div>
           <div className="rounded-lg border border-rose-100 bg-rose-50/60 p-3 flex flex-col gap-1">

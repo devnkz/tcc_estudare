@@ -5,6 +5,16 @@ export interface CreateNotificacaoData {
   titulo: string;
   mensagem: string;
   tipo: string; // e.g., "denuncia"
+  // optional denuncia-related fields (sent to backend)
+  fkId_denuncia?: string;
+  fkId_conteudo_denunciado?: string;
+  tipo_denuncia?: string;
+  nivel_denuncia?: number;
+  revisao?: string;
+  dataRevisao?: string | Date;
+  item_denunciado?: string;
+  denunciadoNome?: string;
+  fkId_usuario_conteudo?: string;
 }
 
 export async function createNotificacao(data: CreateNotificacaoData) {

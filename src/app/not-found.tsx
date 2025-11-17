@@ -3,6 +3,8 @@
 import { Inter } from "next/font/google";
 import { HeaderDesktopNaoAutenticado } from "../components/layout/header";
 import { FaceFrownIcon, ArrowLeftIcon } from "@heroicons/react/24/solid";
+import { InteractiveHoverButton } from "@/components/ui/interactive-hover-button";
+import { InteractiveHoverButtonSecondary } from "@/components/ui/interactive-hover-button-secondary";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import Footer from "@/components/layout/footer";
@@ -14,48 +16,35 @@ export default function NotFoundPage() {
   const router = useRouter();
 
   return (
-    <div className="w-full h-screen bg-white flex flex-col justify-between items-center">
-      <main className="p-9 w-full lg:max-w-[1300px] flex flex-col lg:flex-row justify-between items-center h-dvh gap-10 mt-10 mb-25">
-        {/* Texto */}
-        <div className="w-full lg:w-3/5 flex flex-col items-start gap-4">
-          <h1
-            className={`${interbold.className} text-purple-500 text-7xl mb-2 leading-20`}
-          >
-            Opa... parece que você se perdeu!
-          </h1>
-          <p className={`${interregular.className} text-zinc-600 text-xl`}>
-            Parece que essa página não existe... ou foi abduzida por
-            alienígenas. Mas calma! Você pode voltar para a segurança da nossa
-            página inicial.
-          </p>
+    <div className="w-full min-h-screen bg-white flex flex-col justify-center items-center p-6">
+      <main className="w-full max-w-3xl text-center mx-auto">
+        <h1 className={`${interbold.className} text-purple-600 text-6xl mb-4`}>
+          Ops — página não encontrada
+        </h1>
 
-          <div className="flex gap-3 mt-4">
-            <button
-              onClick={() => router.push("/home")}
-              className="bg-purple-500 p-4 rounded-md text-white font-bold flex gap-2 justify-center items-center hover:bg-purple-700 transition-all duration-500 cursor-pointer"
-            >
-              <ArrowLeftIcon className="h-5 w-5" />
-              Voltar ao início
-            </button>
-            <button
-              onClick={() => router.push("/about")}
-              className="bg-zinc-300 p-4 text-black rounded-lg hover:bg-zinc-400 transition-all duration-500"
-            >
-              Saiba mais
-            </button>
-          </div>
-        </div>
+        <p className={`${interregular.className} text-zinc-600 text-lg mb-6`}>
+          A página que você procurou não existe ou foi movida. <br />
+          <span className="whitespace-nowrap">Não foi sua culpa</span> — vamos
+          ajudá-lo a voltar ao caminho.
+        </p>
 
-        {/* Imagem */}
-        <div>
-          <Image
-            src="/imagens/paper_13543798.png"
-            height={400}
-            width={400}
-            alt="Ilustração de página não encontrada"
-            style={{ objectFit: "contain" }}
+        <div className="flex flex-col sm:flex-row gap-3 mt-4 w-full sm:w-auto justify-center">
+          <InteractiveHoverButton
+            onClick={() => router.push("/")}
+            text="Ir para a landing"
+            className="bg-purple-600 text-white border-purple-600 w-full sm:w-auto px-7 py-4"
+          />
+
+          <InteractiveHoverButtonSecondary
+            onClick={() => router.push("/home")}
+            text="Ir para meu painel"
+            className="w-full sm:w-auto"
           />
         </div>
+
+        <p className={`${interregular.className} text-zinc-400 text-sm mt-6`}>
+          Se acha que isso é um erro do sistema, entre em contato com o suporte.
+        </p>
       </main>
     </div>
   );

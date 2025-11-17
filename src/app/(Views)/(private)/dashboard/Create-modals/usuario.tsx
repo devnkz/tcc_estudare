@@ -679,7 +679,6 @@ export function SignUpUserModal({
                               item.pkId_tipoUsuario;
                             const id = rawId ? String(rawId) : "";
                             if (!id) return null;
-<<<<<<< HEAD
                             const label =
                               item.nomeTipoUsuario ??
                               item.nome_tipousuario ??
@@ -690,11 +689,6 @@ export function SignUpUserModal({
                             return (
                               <SelectItem key={id} value={id}>
                                 {simplifyTipo(String(label))}
-=======
-                            return (
-                              <SelectItem key={id} value={id}>
-                                {item.nome_tipousuario}
->>>>>>> 65206b16d5047b866d1bf61f9f4bb62a0e12aef7
                               </SelectItem>
                             );
                           })

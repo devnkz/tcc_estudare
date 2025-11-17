@@ -59,6 +59,18 @@ function NotificationItem({
     }
   }
 
+  // mark as read on the server but do not remove from the UI immediately
+  async function markAsReadOnly() {
+    try {
+      await axios.put(
+        `${process.env.NEXT_PUBLIC_API_URL}/notificacao/${n.id_notificacao}`,
+        { lida: true }
+      );
+    } catch (e) {
+      console.error("Falha ao marcar como lida (sem remover)", e);
+    }
+  }
+
   const tipo = (n.tipo || "").toLowerCase();
 
   const tipoColor =
@@ -192,7 +204,11 @@ function NotificationItem({
         {/* absolute positioned action button in bottom-right */}
         <div className="absolute right-4 bottom-4">
           <button
-            onClick={markAsRead}
+            onClick={() => {
+              onOpen?.(n);
+              // mark as read on server, but keep the item visible until user closes modal
+              markAsReadOnly();
+            }}
             className="px-3 py-1 rounded-md bg-violet-600 text-white text-sm cursor-pointer hover:bg-violet-700 transition flex items-center gap-2"
           >
             <EyeIcon className="w-4 h-4 text-white" />

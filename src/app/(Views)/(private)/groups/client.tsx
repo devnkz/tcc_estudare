@@ -641,12 +641,12 @@ const GroupsPage: React.FC<GroupsPageProps> = ({
                         Membros
                       </span>
                       <div className="flex -space-x-2">
-                        {group.membros?.slice(0, 5).map((membro) => (
+                        {group.membro?.slice(0, 5).map((membro) => (
                           <div key={membro.id_membro} className="relative">
-                            {membro.usuario?.foto_perfil ? (
+                            {membro.usuarios?.foto_perfil ? (
                               <img
-                                src={membro.usuario.foto_perfil}
-                                alt={membro.usuario.nome_usuario}
+                                src={membro.usuarios.foto_perfil}
+                                alt={membro.usuarios.nome_usuario}
                                 className="w-8 h-8 rounded-full object-cover border-2 border-white"
                               />
                             ) : (

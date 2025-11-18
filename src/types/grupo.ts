@@ -5,13 +5,13 @@ export interface Membro {
   id_membro: string;
   grupoId: string;
   userId: string;
-  usuario: User;
+  usuarios: User;
 }
 
 export interface Grupo {
   id_grupo: string;
   nome_grupo: string;
-  membros?: Membro[];
+  membro?: Membro[];
   usuario: {
     nome_usuario: string;
   }

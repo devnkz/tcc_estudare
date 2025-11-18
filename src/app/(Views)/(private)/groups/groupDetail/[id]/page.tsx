@@ -15,7 +15,7 @@ interface GrupoDetailPageProps {
 export default async function GrupoDetailPage({
   params,
 }: GrupoDetailPageProps) {
-  const { id } = params;
+  const { id } = await params;
 
   let grupo: any = null;
   try {

@@ -1481,9 +1481,9 @@ export default function DashboardPage({
                         ▶
                       </span>
                       {g.nome_grupo}
-                      {g.membros && (
+                      {g.membro && (
                         <span className="text-xs text-purple-600">
-                          ({g.membros.length} membros)
+                          ({g.membro.length} membros)
                         </span>
                       )}
                     </button>
@@ -1509,20 +1509,20 @@ export default function DashboardPage({
                       </button>
                     </div>
                   </div>
-                  {openGroupIds.has(g.id_grupo) && g.membros && (
+                  {openGroupIds.has(g.id_grupo) && g.membro && (
                     <div className="mt-3 ml-5 space-y-1">
-                      {g.membros.length === 0 && (
+                      {g.membro.length === 0 && (
                         <div className="text-sm text-zinc-600">
                           Sem membros.
                         </div>
                       )}
-                      {g.membros.map((m) => (
+                      {g.membro.map((m) => (
                         <div
                           key={m.id_membro}
                           className="flex items-center justify-between pr-4"
                         >
                           <span className="text-sm text-zinc-700">
-                            {m.usuario?.nome_usuario || m.userId}
+                            {m.usuarios?.nome_usuario || m.userId}
                           </span>
                           <span className="text-xs text-zinc-400">
                             {m.id_membro.slice(0, 8)}

@@ -26,6 +26,8 @@ Back-end:
 
 DATABASE_URL="mysql://root:@localhost:3306/bd_tcc"
 JWT_SECRET=meuSegredo123@!
+RESEND_API_KEY=re_jThLaGqP_LZz7XWPZ7dT7TETpMq1bTMsd
+RESEND_FROM_EMAIL=suporte@etecestudare.top
 
 importar o banco de dados esta nos arquivos do backend
 

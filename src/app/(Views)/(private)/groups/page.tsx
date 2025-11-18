@@ -3,6 +3,7 @@ import { fetchUsers } from "@/services/userService";
 import { fetchGruposByUser } from "@/services/grupos/BuscarGruposDoUsuarioLogado";
 import { jwtDecode } from "jwt-decode";
 import { cookies } from "next/headers";
+import { user } from "@heroui/react";
 
 interface JWTPayload {
   id: string;
@@ -25,12 +26,12 @@ export default async function IndexGroups() {
   let users = await fetchUsers();
   const grupos = await fetchGruposByUser();
 
-  // 🔹 Remove o usuário logado do array de usuários
   if (userId) {
     users = users.filter((user) => user.id_usuario !== userId);
   }
 
   console.log("Grupos do usuário logado:", grupos);
+  console.log(users);
 
   return (
     <GroupsPage

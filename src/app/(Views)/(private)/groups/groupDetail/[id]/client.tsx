@@ -207,8 +207,8 @@ export default function ClientGrupoDetail({
     });
   };
   const handleAddMembers = () => {
-    const existingUserIds = (grupoData?.membros || []).map(
-      (m: Membro) => m.usuario.id_usuario
+    const existingUserIds = (grupoData?.membro || []).map(
+      (m: Membro) => m.usuarios.id_usuario
     );
     const toAdd = selectedUserIds.filter((id) => !existingUserIds.includes(id));
     if (toAdd.length === 0) {
@@ -579,8 +579,8 @@ export default function ClientGrupoDetail({
                   )}
                 </h1>
                 <p className="text-sm text-gray-600 mt-0.5">
-                  {(grupoData?.membros || []).length}{" "}
-                  {(grupoData?.membros || []).length === 1
+                  {(grupoData?.membro || []).length}{" "}
+                  {(grupoData?.membro || []).length === 1
                     ? "membro"
                     : "membros"}
                 </p>
@@ -993,8 +993,8 @@ export default function ClientGrupoDetail({
                 items={users
                   .filter(
                     (u) =>
-                      !(grupoData?.membros || []).some(
-                        (m: Membro) => m.usuario.id_usuario === u.id_usuario
+                      !(grupoData?.membro || []).some(
+                        (m: Membro) => m.usuarios.id_usuario === u.id_usuario
                       )
                   )
                   .map((u) => ({ id: u.id_usuario, ...u }))}
@@ -1048,26 +1048,26 @@ export default function ClientGrupoDetail({
             {/* Card dos Membros (com criador no topo) */}
             <div className="bg-white rounded-2xl border border-purple-100 shadow-sm p-5">
               <h2 className="text-sm font-bold text-gray-900 mb-3">
-                Membros ({(grupoData?.membros || []).length})
+                Membros ({(grupoData?.membro || []).length})
               </h2>
               {(() => {
                 // Pega todos os membros exceto o criador
-                const otherMembers = (grupoData?.membros || []).filter(
-                  (m) => m.usuario.id_usuario !== grupo.fkId_usuario
+                const otherMembers = (grupoData?.membro || []).filter(
+                  (m) => m.usuarios.id_usuario !== grupo.fkId_usuario
                 );
 
                 // Ordena os outros membros
                 const sortedOthers = otherMembers.sort((a, b) =>
-                  a.usuario.apelido_usuario.localeCompare(
-                    b.usuario.apelido_usuario,
+                  a.usuarios.apelido_usuario.localeCompare(
+                    b.usuarios.apelido_usuario,
                     "pt-BR",
                     { sensitivity: "base" }
                   )
                 );
 
                 // Cria array com criador primeiro
-                const creatorMember = (grupoData?.membros || []).find(
-                  (m) => m.usuario.id_usuario === grupo.fkId_usuario
+                const creatorMember = (grupoData?.membro || []).find(
+                  (m) => m.usuarios.id_usuario === grupo.fkId_usuario
                 );
 
                 const allMembersSorted = creatorMember
@@ -1085,7 +1085,7 @@ export default function ClientGrupoDetail({
                     <AnimatePresence initial={false}>
                       {visible.map((membro) => {
                         const isCreator =
-                          membro.usuario.id_usuario === grupo.fkId_usuario;
+                          membro.usuarios.id_usuario === grupo.fkId_usuario;
                         return (
                           <motion.div
                             key={membro.id_membro}
@@ -1102,10 +1102,10 @@ export default function ClientGrupoDetail({
                                   <Crown className="w-3 h-3 animate-accordion-down rotate-45 text-yellow-500 drop-shadow-md" />
                                 </div>
                               )}
-                              {membro.usuario.foto_perfil ? (
+                              {membro.usuarios.foto_perfil ? (
                                 <img
-                                  src={membro.usuario.foto_perfil}
-                                  alt={membro.usuario.nome_usuario}
+                                  src={membro.usuarios.foto_perfil}
+                                  alt={membro.usuarios.nome_usuario}
                                   className="w-10 h-10 rounded-full object-cover border border-gray-200 group-hover:border-purple-300 transition-colors"
                                 />
                               ) : (
@@ -1115,10 +1115,10 @@ export default function ClientGrupoDetail({
 
                             <div className="flex-1 min-w-0">
                               <p className="text-sm font-medium text-gray-900 truncate">
-                                {membro.usuario.nome_usuario}
+                                {membro.usuarios.nome_usuario}
                               </p>
                               <p className="text-xs text-gray-600 truncate">
-                                @{membro.usuario.apelido_usuario}
+                                @{membro.usuarios.apelido_usuario}
                               </p>
                             </div>
 

@@ -8,7 +8,7 @@ import {
 } from "@heroicons/react/24/solid";
 import { HeaderLoginCadastro } from "../../../../../components/layout/header";
 import { GlowingEffect } from "@/components/ui/glowing-effect";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { ActionButton } from "@/components/ui/actionButton";
 import { useRouter } from "next/navigation";
@@ -53,6 +53,40 @@ export default function LoginUsuario() {
   const [openOTPModal, setOpenOTPModal] = useState(false);
   const [otpValue, setOtpValue] = useState("");
 
+  useEffect(() => {
+    if (!openOTPModal) return;
+    const t = setTimeout(() => {
+      try {
+        const el = document.querySelector('[data-slot="input-otp"] input');
+        if (el && (el as HTMLElement).focus) (el as HTMLElement).focus();
+      } catch (e) {
+        // ignore
+      }
+    }, 120);
+    return () => clearTimeout(t);
+  }, [openOTPModal]);
+
+  // countdown timer (seconds)
+  const [secondsLeft, setSecondsLeft] = useState<number>(300);
+  useEffect(() => {
+    if (!openOTPModal) return;
+    setSecondsLeft(300);
+    const interval = setInterval(() => {
+      setSecondsLeft((s) => {
+        if (s <= 1) {
+          clearInterval(interval);
+          return 0;
+        }
+        return s - 1;
+      });
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [openOTPModal]);
+
+  const minutes = Math.floor(secondsLeft / 60);
+  const seconds = secondsLeft % 60;
+  const pct = Math.max(0, Math.round((secondsLeft / 300) * 100));
+
   const handleChange = (field: string, value: string) => {
     setForm((prev) => ({
       ...prev,
@@ -88,6 +122,7 @@ export default function LoginUsuario() {
       }
 
       // Abre modal para digitar OTP
+      setSuccess(false);
       setOpenOTPModal(true);
     } catch (error) {
       console.error("Erro ao logar usuário:", error);
@@ -119,7 +154,7 @@ export default function LoginUsuario() {
       );
 
       if (!res.ok) {
-        setErrorMessage("Código incorreto.");
+        setErrorMessage("Código informado não está correto.");
         return;
       }
 
@@ -281,38 +316,85 @@ export default function LoginUsuario() {
 
       {/* MODAL OTP */}
       <Dialog open={openOTPModal} onOpenChange={setOpenOTPModal}>
-        <DialogContent>
+        <DialogContent className="rounded-2xl border border-gray-100 bg-white p-6 shadow-xl max-w-md w-full">
           <DialogHeader>
-            <DialogTitle>Digite o código enviado ao seu email</DialogTitle>
+            <DialogTitle className="text-2xl font-extrabold text-purple-600">
+              Enviamos um código para o <br /> seu e-mail :)
+            </DialogTitle>
+            <p className="text-base text-zinc-600 mt-3 max-w-[36rem] text-center leading-relaxed">
+              Verifique sua caixa de entrada. Expira em{" "}
+              <span className="font-semibold">
+                {String(minutes).padStart(2, "0")}:
+                {String(seconds).padStart(2, "0")}
+              </span>
+            </p>
           </DialogHeader>
 
-          <div className="flex justify-center py-4">
+          <div className="flex flex-col items-center pb-4">
             <InputOTP
               maxLength={6}
               value={otpValue}
               onChange={(value) => setOtpValue(value)}
+              containerClassName="gap-3"
             >
               <InputOTPGroup>
-                <InputOTPSlot index={0} />
-                <InputOTPSlot index={1} />
-                <InputOTPSlot index={2} />
+                <InputOTPSlot
+                  index={0}
+                  className="h-12 w-12 text-2xl rounded-md bg-white shadow-sm border border-zinc-200"
+                />
+                <InputOTPSlot
+                  index={1}
+                  className="h-12 w-12 text-2xl rounded-md bg-white shadow-sm border border-zinc-200"
+                />
+                <InputOTPSlot
+                  index={2}
+                  className="h-12 w-12 text-2xl rounded-md bg-white shadow-sm border border-zinc-200"
+                />
               </InputOTPGroup>
-              <InputOTPSeparator />
+              <InputOTPSeparator className="text-zinc-400 mx-2" />
               <InputOTPGroup>
-                <InputOTPSlot index={3} />
-                <InputOTPSlot index={4} />
-                <InputOTPSlot index={5} />
+                <InputOTPSlot
+                  index={3}
+                  className="h-12 w-12 text-2xl rounded-md bg-white shadow-sm border border-zinc-200"
+                />
+                <InputOTPSlot
+                  index={4}
+                  className="h-12 w-12 text-2xl rounded-md bg-white shadow-sm border border-zinc-200"
+                />
+                <InputOTPSlot
+                  index={5}
+                  className="h-12 w-12 text-2xl rounded-md bg-white shadow-sm border border-zinc-200"
+                />
               </InputOTPGroup>
             </InputOTP>
+
+            <div className="w-full">
+              {errorMessage && (
+                <motion.div
+                  initial={{ opacity: 0, y: 6 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="text-center text-sm text-red-600 bg-red-50 p-2 rounded mt-4 w-full"
+                >
+                  {errorMessage}
+                </motion.div>
+              )}
+
+              <p className="text-sm text-zinc-500 mt-3 text-center max-w-[36rem] mx-auto">
+                Se não receber, verifique a pasta de spam.
+              </p>
+            </div>
           </div>
 
           <DialogFooter>
-            <button
-              className="w-full bg-purple-600 hover:bg-purple-700 text-white"
+            <ActionButton
+              textIdle={isLoading ? "Confirmando..." : "Confirmar"}
+              isLoading={isLoading}
+              isSuccess={success}
+              className="w-full"
               onClick={confirmarOTP}
-            >
-              Confirmar
-            </button>
+              enableRipplePulse
+              disabled={otpValue.length !== 6 || isLoading}
+            />
           </DialogFooter>
         </DialogContent>
       </Dialog>

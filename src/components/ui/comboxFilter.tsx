@@ -44,7 +44,7 @@ export function MultiSelectCombobox<T extends { id: string }>({
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
         <button
-          className="w-full bg-zinc-100 rounded-md p-2 flex justify-between items-center
+          className="w-full bg-zinc-100 rounded-md px-3 py-2 flex justify-between items-center text-sm
             hover:border-purple-600 hover:bg-zinc-200 hover:-translate-y-0.5 transition-all duration-300 border border-transparent cursor-pointer"
         >
           {selectedIds.length > 0
@@ -54,32 +54,38 @@ export function MultiSelectCombobox<T extends { id: string }>({
         </button>
       </PopoverTrigger>
 
-      <PopoverContent className="w-[250px] p-0">
+      <PopoverContent className="w-[320px] p-0">
         <Command>
           <CommandInput
-            placeholder={`Buscar ${placeholder.toLowerCase()}...`}
-            className="h-9"
+            placeholder={`Buscar ${placeholder
+              .replace(/selecionar\s*/i, "")
+              .trim()
+              .toLowerCase()}...`}
+            className="h-9 text-sm"
           />
           <CommandList>
             <CommandEmpty>Nenhum encontrado.</CommandEmpty>
             <CommandGroup>
-              {items.map((item) => (
-                <CommandItem
-                  key={item.id}
-                  value={item.id}
-                  onSelect={() => toggleItem(item.id)}
-                >
-                  {getLabel(item)}
-                  <Check
-                    className={cn(
-                      "ml-auto",
-                      selectedIds.includes(item.id)
-                        ? "opacity-100"
-                        : "opacity-0"
-                    )}
-                  />
-                </CommandItem>
-              ))}
+              {items.map((item) => {
+                const label = getLabel(item);
+                return (
+                  <CommandItem
+                    key={item.id}
+                    value={label}
+                    onSelect={() => toggleItem(item.id)}
+                  >
+                    <span className="text-sm">{label}</span>
+                    <Check
+                      className={cn(
+                        "ml-auto",
+                        selectedIds.includes(item.id)
+                          ? "opacity-100"
+                          : "opacity-0"
+                      )}
+                    />
+                  </CommandItem>
+                );
+              })}
             </CommandGroup>
           </CommandList>
         </Command>

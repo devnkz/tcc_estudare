@@ -303,7 +303,7 @@ export default function UsuarioClientPage({
                 setLeaving(true);
                 setTimeout(() => {
                   deleteToken("token");
-                  router.push("/login");
+                  router.push("/Auth/Login");
                 }, 450);
               }}
               className="bg-red-600 cursor-pointer hover:bg-red-700"

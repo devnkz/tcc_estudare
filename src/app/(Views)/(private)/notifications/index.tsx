@@ -532,7 +532,7 @@ export default function NotificacaoPageClient({ data }: { data: any }) {
                   Você não possui notificações no momento — quando houver
                   atualizações sobre denúncias, revisões ou comunicados
                   importantes, elas aparecerão aqui. Aproveite o momento para
-                  revisar sua página ou retornar mais tarde.
+                  tirar uma dúvida, revisar seu conteúdo ou retornar mais tarde.
                 </p>
               </div>
             </div>

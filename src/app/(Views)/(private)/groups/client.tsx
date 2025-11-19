@@ -53,6 +53,14 @@ const GroupsPage: React.FC<GroupsPageProps> = ({
   id_usuario,
   nome_usuario,
 }) => {
+  const creator = users.find(
+    (u) => String(u.id_usuario) === String(id_usuario)
+  );
+  const creatorLabel = creator
+    ? `${creator.nome_usuario}${
+        creator.apelido_usuario ? ` (@${creator.apelido_usuario})` : ""
+      }`
+    : nome_usuario;
   const [open, setOpen] = useState(false);
   const [filterOpen, setFilterOpen] = useState(false);
   const [searchNome, setSearchNome] = useState("");
@@ -356,18 +364,22 @@ const GroupsPage: React.FC<GroupsPageProps> = ({
               </motion.button>
             </DialogTrigger>
 
-            <DialogContent className="bg-white rounded-xl shadow-xl p-7 ">
+            <DialogContent className="rounded-2xl border border-purple-200 bg-white p-6">
               <DialogHeader>
-                <DialogTitle className="text-2xl font-semibold text-purple-600 ">
+                <DialogTitle className="text-3xl font-extrabold bg-gradient-to-r from-purple-600 to-fuchsia-600 bg-clip-text text-transparent">
                   Crie um novo grupo
                 </DialogTitle>
+                <p className="text-md text-zinc-700">
+                  Criador do grupo:{" "}
+                  <span className="font-bold">{creatorLabel}</span>
+                </p>
               </DialogHeader>
 
-              <div className="grid gap-3 py-4">
+              <div className="grid gap-3 text-md">
                 <p>Nome do grupo: </p>
                 <input
                   type="text"
-                  className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 transition ${
+                  className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 transition ${
                     hasBadWordText(nome_grupo) && nomeDirty
                       ? "border-red-500 focus:ring-red-400"
                       : "border-zinc-300 focus:ring-purple-500"
@@ -398,14 +410,20 @@ const GroupsPage: React.FC<GroupsPageProps> = ({
                   <p className="text-red-600 text-sm mt-1">{nomeError}</p>
                 )}
 
-                <h1>Criador do grupo: {nome_usuario}</h1>
+                <p className="text-md text-zinc-900">
+                  Selecione colegas para o grupo:
+                </p>
 
                 <MultiSelectCombobox
                   items={users.map((u) => ({ id: u.id_usuario, ...u }))}
                   selectedIds={selectedUserIds}
                   setSelectedIds={setSelectedUserIds}
                   placeholder="Selecionar membros"
-                  getLabel={(u) => u.nome_usuario}
+                  getLabel={(u) =>
+                    `${u.nome_usuario}${
+                      u.apelido_usuario ? ` (@${u.apelido_usuario})` : ""
+                    }`
+                  }
                 />
               </div>
 

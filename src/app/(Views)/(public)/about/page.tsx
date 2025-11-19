@@ -32,33 +32,69 @@ export default function Saiba_Mais() {
   const perguntas = [
     {
       key: "1",
-      title: 'O que é o "ESTUDARE"?',
+      title: "Origem do Estudare",
       content:
-        "Estudare é uma iniciativa da ETEC de Santa Fé do Sul, e agora também plataforma colaborativa onde alunos podem fazer perguntas e receber respostas de outros estudantes e professores. Um espaço para compartilhar conhecimento e aprenderem juntos.",
+        "O Estudare nasceu como um grupo de estudos presencial na ETEC de Santa Fé do Sul: alunos se reuniam à tarde na biblioteca para trocar exercícios, dúvidas e anotações. Com o tempo a experiência mostrou que aquelas trocas valiam para toda a comunidade — assim nasceu a ideia de transformar o grupo em uma plataforma online, mantendo o foco no estudo colaborativo.",
     },
     {
       key: "2",
-      title: "Aspectos",
+      title: 'O que é o "ESTUDARE"?',
       content:
-        "Oferecemos respostas rápidas e confiáveis, com a garantia de qualidade comprovada por professores especializados. Nosso compromisso é fornecer soluções precisas e eficientes.",
+        "Hoje, Estudare é uma plataforma colaborativa de aprendizado que conecta alunos e professores para fazer e responder perguntas, compartilhar materiais e revisar conceitos. Mantemos o espírito do grupo de estudos original: colaboração, clareza e foco pedagógico.",
+    },
+    {
+      key: "2a",
+      title: "Problemáticas e o que o Estudare resolve",
+      content:
+        "Muitos alunos queriam participar do grupo de estudos presencial, mas enfrentavam barreiras práticas: falta de tempo após as aulas, dificuldades de transporte e compromissos que impediam a ida à biblioteca à tarde. Além disso, dúvidas simples muitas vezes ficavam sem resposta rápida — o aluno precisava ir até o grupo presencial ou esperar por alguém com disponibilidade. A organização de grupos de estudo também sofria por não haver um espaço reservado e estruturado para gerenciar membros, materiais e encontros.\n\nEstudare resolve isso ao oferecer um espaço online aberto 24/7: quem não consegue comparecer presencialmente pode participar, postar dúvidas e receber respostas; dúvidas simples são resolvidas rapidamente pela comunidade; e grupos de estudo podem ser organizados em espaços privados com convites, facilitando coordenação e mantendo recursos e discussões centralizados.",
     },
     {
       key: "3",
-      title: "Por que usar o nosso site?",
+      title: "Por que usar o Estudare?",
       content:
-        "Porque oferecemos uma experiência de aprendizado colaborativa única, te conectando com outros alunos da ETEC. Nosso site ajuda os alunos a aprenderem de forma mais rápida e confiável.",
+        "Estudare organiza dúvidas por assunto, preserva histórico de perguntas e permite discussões estruturadas — ideal para revisão, tirar dúvidas rápidas e acessar explicações curadas. A comunidade acelera respostas e os professores garantem qualidade quando necessário.",
     },
     {
       key: "4",
       title: "Como garantimos qualidade nas respostas?",
       content:
-        "A qualidade é garantida através da curadoria de professores especializados e do uso de métodos pedagógicos reconhecidos.",
+        "Utilizamos curadoria de professores, moderação comunitária e ferramentas automáticas (filtros de linguagem). Usuários podem sinalizar conteúdo problemático; denúncias são revisadas por moderadores e, quando necessário, por especialistas.",
     },
     {
       key: "5",
-      title: "Quanto tempo levou para conclusão do projeto?",
+      title: "Como funcionam as notificações?",
       content:
-        "O projeto levou alguns meses para ser concluído, incluindo planejamento, desenvolvimento, validação pedagógica e testes.",
+        "As notificações serão usadas exclusivamente para informar sobre o status de denúncias que você registrou. Você receberá atualizações quando a denúncia for analisada, revisada ou quando houver alguma ação tomada. Elas não serão usadas para publicidade ou avisos gerais.",
+    },
+    {
+      key: "6",
+      title: "O que acontece quando eu faço uma denúncia?",
+      content:
+        "Ao sinalizar conteúdo, sua denúncia entra em fila para revisão. A equipe toma ações conforme as políticas: remoção de conteúdo, advertência ou outras medidas. Você pode acompanhar o andamento pela notificação de sistema.",
+    },
+    {
+      key: "7",
+      title: "Como funcionam os grupos privados?",
+      content:
+        "Grupos privados são espaços restritos para estudo em pequenos times. O criador convida membros, compartilha materiais e inicia discussões que só os participantes conseguem ver — ideal para projetos, trabalhos e revisões em grupo.",
+    },
+    {
+      key: "8",
+      title: "Privacidade e segurança",
+      content:
+        "Coletamos apenas os dados essenciais para operação (perfil, participações e preferências). Não vendemos informações e aplicamos boas práticas de segurança. Para mudanças sensíveis aplicamos validações adicionais e logs de auditoria.",
+    },
+    {
+      key: "9",
+      title: "Tempo de desenvolvimento",
+      content:
+        "O projeto foi desenvolvido em fases — planejamento, implementação, testes e validação pedagógica — ao longo de vários meses. Continuamos iterando e entregando melhorias baseadas no uso real e no feedback dos usuários.",
+    },
+    {
+      key: "10",
+      title: "Preciso de ajuda — como contatar?",
+      content:
+        "Para suporte, entre em contato com o Grêmio Estudantil ou com o grupo responsável pelo projeto. Caso preferir, envie um email para: etecestudare@gmail.com. Por favor descreva o problema com detalhes (passos para reproduzir, prints e contexto) para que possamos ajudar rapidamente.",
     },
   ];
 

@@ -39,7 +39,7 @@ export function InitialPage({ userData }: HomeProps) {
           <h1 className="font-bold text-4xl text-gray-800">
             Olá,{" "}
             <span className="text-purple-600">
-              {userData?.nome_usuario || "usuário"}
+              {userData?.apelido_usuario || userData?.nome_usuario || "usuário"}
             </span>
           </h1>
           <p className="text-zinc-600 text-base">Tem alguma dúvida hoje?</p>

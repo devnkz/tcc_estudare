@@ -37,7 +37,6 @@ import {
 import { motion, AnimatePresence } from "framer-motion";
 import { ActionButton } from "@/components/ui/actionButton";
 import badWordsJSON from "@/utils/badWordsPT.json";
-
 interface ClientGrupoDetailProps {
   grupoAtual: Grupo;
   users: User[];
@@ -117,6 +116,8 @@ export default function ClientGrupoDetail({
   // Refs
   const socketRef = useRef<Socket | null>(null);
   const chatEndRef = useRef<HTMLDivElement | null>(null);
+  const messageRefs = useRef<Map<string, HTMLDivElement | null>>(new Map());
+  const [highlightId, setHighlightId] = useState<string | null>(null);
 
   // Estados do chat e UI
   const [mensagens, setMensagens] = useState<Mensagem[]>([]);
@@ -196,14 +197,86 @@ export default function ClientGrupoDetail({
       .join("");
   };
 
+  // Insere quebras suaves (zero-width space) em tokens muito longos para
+  // permitir quebras de linha em strings contínuas (URLs, hashes, etc.).
+  const softBreakLongWords = (text: string, maxLen = 30) => {
+    if (!text) return text;
+    return text
+      .split(/(\s+)/)
+      .map((token) => {
+        // não mexe em whitespace
+        if (!token.trim()) return token;
+        // se o token já contém pontuação natural (como '/'), deixe-o também poder quebrar
+        if (token.length <= maxLen) return token;
+        return token.replace(new RegExp(`(.{1,${maxLen}})`, "g"), "$1\u200b");
+      })
+      .join("");
+  };
+
   // Ações
+  const PREVIEW_MAX = 191;
+  const SWIPE_THRESHOLD = 50; // pixels needed to trigger a reply on swipe (mobile)
+  const MAX_PULL = 20; // maximum px the message bubble will be allowed to move while dragging
+  const [currentDrag, setCurrentDrag] = useState<{
+    id: string;
+    x: number;
+  } | null>(null);
+  const [isMobile, setIsMobile] = useState<boolean>(
+    typeof window !== "undefined" ? window.innerWidth <= 768 : false
+  );
+
+  useEffect(() => {
+    const onResize = () => setIsMobile(window.innerWidth <= 768);
+    try {
+      window.addEventListener("resize", onResize);
+    } catch (e) {}
+    return () => {
+      try {
+        window.removeEventListener("resize", onResize);
+      } catch (e) {}
+    };
+  }, []);
+  const openReply = (m: Mensagem) => {
+    const raw = m?.mensagem || "";
+    // aplica quebras suaves para permitir wrap em tokens longos
+    const withSoftBreaks = softBreakLongWords(raw, 30);
+    // mantemos o preview curto para a barra, mas sem perder a possibilidade de quebra
+    const preview =
+      withSoftBreaks.length > PREVIEW_MAX
+        ? withSoftBreaks.slice(0, PREVIEW_MAX - 3) + "..."
+        : withSoftBreaks;
+    setReplyTarget({ ...m, mensagem: preview });
+  };
+
+  // Rola para a mensagem com animação de destaque
+  const jumpToMessage = (id?: string | null) => {
+    if (!id) return;
+    const el = messageRefs.current.get(id);
+    if (!el) return;
+    try {
+      el.scrollIntoView({ behavior: "smooth", block: "center" });
+      // registra métrica simples
+      try {
+        console.log("analytics:event", {
+          action: "jump_to_message",
+          messageId: id,
+        });
+      } catch (e) {}
+      // usa estado para acionar animação via framer-motion no render
+      setHighlightId(id);
+      setTimeout(() => setHighlightId(null), 1800);
+    } catch (e) {
+      // fallback silencioso
+      console.warn("Não foi possível rolar para a mensagem", e);
+    }
+  };
   const handleEditGroup = () => {
     const payload: UpdateGrupoData = {
       id: grupo.id_grupo,
       nome_grupo: novoNome,
     } as any;
     updateGrupoMutation.mutate(payload as any, {
-      onSuccess: () => setGrupo((g) => ({ ...g, nome_grupo: novoNome })),
+      onSuccess: () => setGrupo((g: Grupo) => ({ ...g, nome_grupo: novoNome })),
     });
   };
   const handleAddMembers = () => {
@@ -304,7 +377,9 @@ export default function ClientGrupoDetail({
     setSending(true);
     setChatError(null);
     const optimisticId = `temp-${Date.now()}`;
-    const currentUser = users.find((u) => u.id_usuario === id_usuario_logado);
+    const currentUser = users.find(
+      (u: User) => u.id_usuario === id_usuario_logado
+    );
     const optimisticMensagem: Mensagem = {
       id_mensagem: optimisticId,
       mensagem: censored,
@@ -418,7 +493,9 @@ export default function ClientGrupoDetail({
   // Helper: resolve/ensure usuario field for mensagens that come sem 'usuario'
   const ensureUsuario = (m: Mensagem) => {
     if (m && (m as any).usuario && (m as any).usuario.apelido_usuario) return m;
-    const fallbackUser = users.find((u) => u.id_usuario === m.fkId_usuario);
+    const fallbackUser = users.find(
+      (u: User) => u.id_usuario === m.fkId_usuario
+    );
     const usuario = fallbackUser
       ? {
           id_usuario: fallbackUser.id_usuario,
@@ -931,7 +1008,10 @@ export default function ClientGrupoDetail({
                       { id: grupo.id_grupo, nome_grupo: novoNome } as any,
                       {
                         onSuccess: () => {
-                          setGrupo((g) => ({ ...g, nome_grupo: novoNome }));
+                          setGrupo((g: Grupo) => ({
+                            ...g,
+                            nome_grupo: novoNome,
+                          }));
                           setEditSuccess(true);
                           setTimeout(() => {
                             setEditSuccess(false);
@@ -997,11 +1077,11 @@ export default function ClientGrupoDetail({
                         (m: Membro) => m.usuarios.id_usuario === u.id_usuario
                       )
                   )
-                  .map((u) => ({ id: u.id_usuario, ...u }))}
+                  .map((u: User) => ({ id: u.id_usuario, ...u }))}
                 selectedIds={selectedUserIds}
                 setSelectedIds={setSelectedUserIds}
                 placeholder="Selecionar membros"
-                getLabel={(u) => u.nome_usuario}
+                getLabel={(u: any) => u.nome_usuario}
               />
               <div className="flex items-center justify-between">
                 <p className="text-[11px] sm:text-xs text-zinc-500">
@@ -1124,7 +1204,7 @@ export default function ClientGrupoDetail({
 
                             {isOwner && !isCreator && (
                               <button
-                                className="text-xs text-red-500 hover:text-red-700 font-medium cursor-pointer opacity-0 group-hover:opacity-100 transition-opacity"
+                                className="text-xs text-red-500 hover:text-red-700 font-medium cursor-pointer transition-opacity opacity-100 md:opacity-0 md:group-hover:opacity-100"
                                 onClick={() =>
                                   handleRemoveMember(membro.id_membro)
                                 }
@@ -1177,7 +1257,7 @@ export default function ClientGrupoDetail({
             </h2>
             {/* Área de mensagens com watermark sutil */}
             <div
-              className="relative border border-zinc-200 rounded-lg p-4 overflow-y-auto transition-[height] group h-72 md:h-80 xl:h-96"
+              className="relative border border-zinc-200 rounded-lg p-4 overflow-y-auto overflow-x-hidden transition-[height] group h-72 md:h-80 xl:h-96"
               style={{
                 backgroundImage: `url(${pawTileLight})`,
                 backgroundRepeat: "repeat",
@@ -1190,19 +1270,27 @@ export default function ClientGrupoDetail({
                   const quoted = m.replyTo
                     ? mensagens.find((orig) => orig.id_mensagem === m.replyTo)
                     : null;
+                  // If this message is currently being dragged, follow that x so
+                  // small drags animate back to 0 when cleared.
+                  const targetX =
+                    currentDrag && currentDrag.id === m.id_mensagem
+                      ? currentDrag.x
+                      : 0;
                   const displayUsuario =
                     (m as any).usuario ||
-                    (users.find((u) => u.id_usuario === m.fkId_usuario)
+                    (users.find((u: User) => u.id_usuario === m.fkId_usuario)
                       ? {
                           id_usuario: m.fkId_usuario,
                           nome_usuario: users.find(
-                            (u) => u.id_usuario === m.fkId_usuario
+                            (u: User) => u.id_usuario === m.fkId_usuario
                           )!.nome_usuario,
                           apelido_usuario:
-                            users.find((u) => u.id_usuario === m.fkId_usuario)!
-                              .apelido_usuario ||
-                            users.find((u) => u.id_usuario === m.fkId_usuario)!
-                              .nome_usuario,
+                            users.find(
+                              (u: User) => u.id_usuario === m.fkId_usuario
+                            )!.apelido_usuario ||
+                            users.find(
+                              (u: User) => u.id_usuario === m.fkId_usuario
+                            )!.nome_usuario,
                         }
                       : {
                           id_usuario: m.fkId_usuario,
@@ -1238,10 +1326,56 @@ export default function ClientGrupoDetail({
                       }`}
                     >
                       <div
+                        ref={(el: HTMLDivElement | null) => {
+                          if (!m?.id_mensagem) return;
+                          if (el) messageRefs.current.set(m.id_mensagem, el);
+                          else messageRefs.current.delete(m.id_mensagem);
+                        }}
                         className={`relative group/msg ${
                           isMine ? "pl-8" : "pr-8"
                         } max-w-[85%] md:max-w-[75%]`}
                       >
+                        {/* Reply icon shown while swiping on mobile (slides in from the wall) */}
+                        <div
+                          className={`absolute ${
+                            isMine ? "-right-10 z-50" : "-left-10 z-50"
+                          } top-1/2 -translate-y-1/2 md:hidden`}
+                          style={{
+                            opacity:
+                              currentDrag && currentDrag.id === m.id_mensagem
+                                ? Math.min(
+                                    1,
+                                    Math.max(
+                                      0,
+                                      isMine
+                                        ? -currentDrag.x / SWIPE_THRESHOLD
+                                        : currentDrag.x / SWIPE_THRESHOLD
+                                    )
+                                  )
+                                : 0,
+                            transform: (() => {
+                              if (
+                                !currentDrag ||
+                                currentDrag.id !== m.id_mensagem
+                              )
+                                return undefined;
+                              const dx = currentDrag.x;
+                              const MAX_ICON_MOVE = 28; // px the icon will move inward
+                              const progress = isMine
+                                ? Math.max(0, -dx)
+                                : Math.max(0, dx);
+                              const shift = Math.min(MAX_ICON_MOVE, progress);
+                              return isMine
+                                ? `translateX(${-shift}px)`
+                                : `translateX(${shift}px)`;
+                            })(),
+                            transition: "opacity 120ms, transform 120ms",
+                          }}
+                        >
+                          <div className="w-8 h-8 rounded-full bg-purple-600 text-white flex items-center justify-center shadow-md">
+                            <CornerUpLeft className="w-4 h-4" />
+                          </div>
+                        </div>
                         <motion.button
                           type="button"
                           aria-label="Responder mensagem"
@@ -1250,7 +1384,7 @@ export default function ClientGrupoDetail({
                           } top-2 w-7 h-7 flex items-center justify-center rounded-full bg-white/80 backdrop-blur-sm border border-purple-200/50 text-purple-600 hover:text-purple-700 hover:bg-purple-50 cursor-pointer transition-all opacity-0 group-hover/msg:opacity-100 shadow-sm hover:shadow-md`}
                           onClick={(e) => {
                             e.stopPropagation();
-                            setReplyTarget(m);
+                            openReply(m);
                           }}
                           title="Responder"
                           whileHover={{ scale: 1.1 }}
@@ -1259,6 +1393,68 @@ export default function ClientGrupoDetail({
                           <CornerUpLeft className="w-4 h-4" />
                         </motion.button>
                         <motion.div
+                          drag={isMobile ? "x" : false}
+                          // reduzir elasticidade para evitar pull exagerado
+                          dragElastic={0.02}
+                          // limita quanto a bolha pode ser puxada para os lados
+                          // para mensagens próprias, só permitimos puxar para a esquerda (não para a direita)
+                          dragConstraints={{
+                            left: isMine ? -MAX_PULL : 0,
+                            right: isMine ? 0 : MAX_PULL,
+                          }}
+                          // desativa inércia para evitar que a bolha continue fora do lugar
+                          dragMomentum={false}
+                          onDrag={(e, info) => {
+                            try {
+                              const dx = info.offset.x;
+                              const mobile =
+                                typeof window !== "undefined" &&
+                                window.innerWidth <= 768;
+                              if (!mobile) return;
+
+                              // Clamp drag so own messages never have positive (right) dx
+                              let clamped = dx;
+                              if (isMine)
+                                clamped = Math.min(0, Math.max(-MAX_PULL, dx));
+                              else
+                                clamped = Math.max(0, Math.min(MAX_PULL, dx));
+
+                              setCurrentDrag({ id: m.id_mensagem, x: clamped });
+                            } catch (err) {
+                              // ignore
+                            }
+                          }}
+                          onDragEnd={(e, info) => {
+                            try {
+                              const dx = info.offset.x;
+                              const mobile =
+                                typeof window !== "undefined" &&
+                                window.innerWidth <= 768;
+                              if (mobile) {
+                                // For own messages: left swipe (negative) triggers reply
+                                if (isMine && dx < -SWIPE_THRESHOLD) {
+                                  openReply(m);
+                                  setHighlightId(m.id_mensagem);
+                                  setTimeout(() => setHighlightId(null), 1600);
+                                }
+                                // For others: right swipe triggers reply
+                                if (!isMine && dx > SWIPE_THRESHOLD) {
+                                  openReply(m);
+                                  setHighlightId(m.id_mensagem);
+                                  setTimeout(() => setHighlightId(null), 1600);
+                                }
+                              }
+                            } catch (err) {
+                              // ignore
+                            } finally {
+                              setCurrentDrag(null);
+                              setTimeout(() => {
+                                setHighlightId((prev) =>
+                                  prev === m.id_mensagem ? prev : prev
+                                );
+                              }, 0);
+                            }
+                          }}
                           className={`px-4 py-2.5 rounded-2xl break-words overflow-wrap-anywhere ${
                             quoted ? "min-w-[12rem]" : "min-w-[5rem]"
                           } ${
@@ -1274,16 +1470,45 @@ export default function ClientGrupoDetail({
                             scale: 0.85,
                             boxShadow: "0 0 0 rgba(0,0,0,0)",
                           }}
-                          animate={{
-                            scale: 1,
-                            boxShadow: "0 1px 2px 0 rgba(0, 0, 0, 0.05)",
-                          }}
-                          transition={{
-                            type: "spring",
-                            stiffness: 300,
-                            damping: 18,
-                            delay: 0.05,
-                          }}
+                          animate={
+                            m.id_mensagem === highlightId
+                              ? {
+                                  // pulse + lateral pull: start slightly outside and move inward to 0
+                                  scale: [1, 1.06, 1],
+                                  x: isMine ? [8, 0] : [-8, 0],
+                                  boxShadow: isMine
+                                    ? "0 0 0 6px rgba(99,39,199,0.10), 0 18px 50px rgba(18,6,60,0.22)"
+                                    : "0 12px 40px rgba(18, 6, 60, 0.18)",
+                                  backgroundColor: isMine
+                                    ? "rgba(48, 8, 61, 0.98)"
+                                    : "rgba(99, 39, 199, 0.14)",
+                                  border: isMine
+                                    ? "2px solid rgba(255,255,255,0.06)"
+                                    : undefined,
+                                  color: isMine ? "#ffffff" : undefined,
+                                }
+                              : {
+                                  scale: 1,
+                                  // follow the live drag x when present, otherwise animate back to 0
+                                  x: targetX,
+                                  boxShadow: "0 1px 2px 0 rgba(0, 0, 0, 0.05)",
+                                }
+                          }
+                          transition={
+                            m.id_mensagem === highlightId
+                              ? {
+                                  duration: 1.5,
+                                  ease: "easeInOut",
+                                  // x should be quicker than the full pulse
+                                  x: { duration: 0.45, ease: "easeOut" },
+                                }
+                              : {
+                                  type: "spring",
+                                  stiffness: 300,
+                                  damping: 18,
+                                  delay: 0.05,
+                                }
+                          }
                           whileHover={{
                             scale: 1.02,
                             boxShadow:
@@ -1293,11 +1518,16 @@ export default function ClientGrupoDetail({
                         >
                           {quoted && (
                             <div
+                              role="button"
+                              tabIndex={0}
+                              onClick={() =>
+                                jumpToMessage((quoted as Mensagem).id_mensagem)
+                              }
                               className={`mb-2 px-3 py-2 rounded-xl border-l-[6px] min-h-[3rem] flex flex-col justify-center ${
                                 isMine
                                   ? "border-white/80 bg-white/30 backdrop-blur-sm"
                                   : "border-purple-600 bg-purple-200"
-                              }`}
+                              } cursor-pointer hover:brightness-95`}
                             >
                               <div
                                 className={`text-xs font-semibold mb-0.5 ${
@@ -1306,19 +1536,21 @@ export default function ClientGrupoDetail({
                               >
                                 {(quoted as any).usuario?.apelido_usuario ||
                                   users.find(
-                                    (u) => u.id_usuario === quoted.fkId_usuario
+                                    (u: User) =>
+                                      u.id_usuario === quoted.fkId_usuario
                                   )?.apelido_usuario ||
                                   users.find(
-                                    (u) => u.id_usuario === quoted.fkId_usuario
+                                    (u: User) =>
+                                      u.id_usuario === quoted.fkId_usuario
                                   )?.nome_usuario ||
                                   "Usuário"}
                               </div>
                               <div
-                                className={`text-xs line-clamp-2 ${
+                                className={`text-xs line-clamp-2 break-words whitespace-pre-wrap ${
                                   isMine ? "text-white/90" : "text-gray-700"
                                 }`}
                               >
-                                {quoted.mensagem}
+                                {softBreakLongWords(quoted.mensagem || "", 30)}
                               </div>
                             </div>
                           )}
@@ -1329,7 +1561,7 @@ export default function ClientGrupoDetail({
                             className="flex flex-col gap-1"
                           >
                             <div
-                              className="break-words"
+                              className="break-words whitespace-pre-wrap"
                               style={{
                                 wordBreak: "break-word",
                                 overflowWrap: "anywhere",
@@ -1338,8 +1570,8 @@ export default function ClientGrupoDetail({
                               <span className="font-semibold text-sm mr-1 whitespace-nowrap">
                                 {displayUsuario.apelido_usuario}:
                               </span>
-                              <span className="text-sm leading-snug">
-                                {m.mensagem}
+                              <span className="text-sm leading-snug whitespace-pre-wrap break-words">
+                                {softBreakLongWords(m.mensagem || "", 30)}
                               </span>
                             </div>
                             <span
@@ -1421,9 +1653,9 @@ export default function ClientGrupoDetail({
                           {Array.from(usersTyping)
                             .map(
                               (uid) =>
-                                users.find((u) => u.id_usuario === uid)
+                                users.find((u: User) => u.id_usuario === uid)
                                   ?.apelido_usuario ||
-                                users.find((u) => u.id_usuario === uid)
+                                users.find((u: User) => u.id_usuario === uid)
                                   ?.nome_usuario ||
                                 "Alguém"
                             )
@@ -1452,13 +1684,14 @@ export default function ClientGrupoDetail({
                     stiffness: 400,
                     damping: 25,
                   }}
-                  className="mt-2 mb-1 flex items-stretch border-l-4 border-purple-500 bg-gradient-to-r from-purple-50 to-fuchsia-50 rounded-lg shadow-sm overflow-hidden"
+                  className="mt-2 mb-1 flex items-stretch border-l-4 border-purple-500 bg-gradient-to-r from-purple-50 to-fuchsia-50 rounded-lg shadow-sm overflow-hidden cursor-pointer"
+                  onClick={() => jumpToMessage(replyTarget?.id_mensagem)}
                 >
                   <div className="px-4 py-2.5 flex-1 min-w-0">
                     <div className="text-xs font-bold text-purple-700 mb-0.5">
                       Respondendo a {replyTarget.usuario.apelido_usuario}
                     </div>
-                    <div className="text-sm text-gray-700 max-h-10 overflow-hidden line-clamp-2">
+                    <div className="text-sm text-gray-700 max-h-10 overflow-hidden break-words line-clamp-2">
                       {replyTarget.mensagem}
                     </div>
                   </div>

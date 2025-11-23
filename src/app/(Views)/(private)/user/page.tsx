@@ -4,6 +4,7 @@ import UsuarioClientPage from "./client";
 import { jwtDecode } from "jwt-decode";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
+import { fetchConquistasByUsuario } from "@/services/conquitasService";
 
 interface JWTPayload {
   id: string;
@@ -53,9 +54,16 @@ export default async function IndexUser() {
   }
 
   const perguntas = await fetchPerguntasByIdUser({ userId: userId! });
+  const conquistas = await fetchConquistasByUsuario({ userId: userId! });
   const usuario = usuariosId;
 
   console.log("Usuario", usuario);
 
-  return <UsuarioClientPage usuario={usuario} perguntas={perguntas} />;
+  return (
+    <UsuarioClientPage
+      usuario={usuario}
+      perguntas={perguntas}
+      conquistas={conquistas}
+    />
+  );
 }

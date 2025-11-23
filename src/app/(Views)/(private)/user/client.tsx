@@ -13,6 +13,12 @@ import {
   BsEmojiGrin,
   BsEmojiAngry,
 } from "react-icons/bs";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
 import { Pergunta } from "@/types/pergunta";
 import { User } from "@/types/user";
 import { motion } from "framer-motion";
@@ -24,13 +30,16 @@ import {
   DialogHeader as ConfirmHeader,
   DialogTitle as ConfirmTitle,
 } from "@/components/ui/dialog";
+import { Conquista } from "@/types/conquista";
 
 export default function UsuarioClientPage({
   usuario: initialUser,
   perguntas,
+  conquistas,
 }: {
   usuario: User;
   perguntas: Pergunta[];
+  conquistas: Conquista[];
 }) {
   const router = useRouter();
   const [openDialog, setOpenDialog] = useState<null | "usuario" | "foto">(null);
@@ -186,6 +195,58 @@ export default function UsuarioClientPage({
             />
           </div>
         </motion.div>
+
+        <Accordion type="single" collapsible className="w-full">
+          <AccordionItem value="item-3">
+            <AccordionTrigger className="cursor-pointer bg-zinc-200 px-4 py-2 hover:bg-zinc-300 rounded-md text-zinc-900 font-medium">
+              VIZUALIZAR CONQUISTAS
+            </AccordionTrigger>
+            <AccordionContent className="flex flex-col gap-4 text-balance px-4 py-2">
+              {conquistas && conquistas.length > 0 ? (
+                conquistas.map((conquista) => {
+                  const concluida =
+                    conquista.progressoAtual! >= conquista.progressoMax;
+
+                  return (
+                    <div
+                      key={conquista.id}
+                      className={`p-3 rounded-lg border ${
+                        concluida
+                          ? "border-green-500 bg-green-50"
+                          : "border-zinc-300 bg-zinc-100 opacity-50"
+                      }`}
+                    >
+                      <h4
+                        className={`font-semibold text-lg ${
+                          concluida ? "text-green-700" : "text-zinc-500"
+                        }`}
+                      >
+                        {conquista.titulo}
+                      </h4>
+
+                      <p
+                        className={`text-sm ${
+                          concluida ? "text-green-600" : "text-zinc-500"
+                        }`}
+                      >
+                        {conquista.descricao}
+                      </p>
+
+                      {conquista.progressoMax !== undefined && (
+                        <p className="text-xs text-zinc-700 mt-1">
+                          Progresso: {conquista.progressoAtual} /{" "}
+                          {conquista.progressoMax}
+                        </p>
+                      )}
+                    </div>
+                  );
+                })
+              ) : (
+                <p>Nenhuma conquista encontrada.</p>
+              )}
+            </AccordionContent>
+          </AccordionItem>
+        </Accordion>
 
         {/* PENALIDADES */}
         <motion.div

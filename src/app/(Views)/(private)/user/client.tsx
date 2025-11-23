@@ -19,12 +19,28 @@ import { useEffect, useState } from "react";
 import { deleteToken } from "@/lib/deleteToken";
 // replaced GoPencil with lucide-react PencilIcon
 import { useGetUser } from "@/hooks/user/useListId";
-// using lucide-react icons for credibilidade
+import {
+  BsEmojiExpressionless,
+  BsEmojiGrin,
+  BsEmojiAngry,
+} from "react-icons/bs";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
 import { Pergunta } from "@/types/pergunta";
 import { User } from "@/types/user";
 import { motion } from "framer-motion";
 import { MessageSquare, FileText, Image as ImageIcon } from "lucide-react";
 import { ActionButton } from "@/components/ui/actionButton";
+import { useDenuncia } from "@/hooks/denuncia/useDenuncia";
+import { useQuery } from "@tanstack/react-query";
+import axios from "axios";
+import { fetchPerguntaById } from "@/services/perguntaService";
+import { fetchRespostaById } from "@/services/respostaService";
+import { Resposta } from "@/types/resposta";
 import {
   Dialog,
   DialogContent,
@@ -32,12 +48,7 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
-import { useDenuncia } from "@/hooks/denuncia/useDenuncia";
-import { useQuery } from "@tanstack/react-query";
-import axios from "axios";
-import { fetchPerguntaById } from "@/services/perguntaService";
-import { fetchRespostaById } from "@/services/respostaService";
-import { Resposta } from "@/types/resposta";
+import { Conquista } from "@/types/conquista";
 
 function PenalidadeCard({
   penalidade,
@@ -154,9 +165,11 @@ function PenalidadeCard({
 export default function UsuarioClientPage({
   usuario: initialUser,
   perguntas,
+  conquistas,
 }: {
   usuario: User;
   perguntas: Pergunta[];
+  conquistas: Conquista[];
 }) {
   const router = useRouter();
   const [openDialog, setOpenDialog] = useState<null | "usuario" | "foto">(null);
@@ -416,7 +429,59 @@ export default function UsuarioClientPage({
           </div>
         </motion.div>
 
-        {/* PENALIDADES + CONQUISTAS (layout side-by-side on md+) */}
+        <Accordion type="single" collapsible className="w-full">
+          <AccordionItem value="item-3">
+            <AccordionTrigger className="cursor-pointer bg-zinc-200 px-4 py-2 hover:bg-zinc-300 rounded-md text-zinc-900 font-medium">
+              VIZUALIZAR CONQUISTAS
+            </AccordionTrigger>
+            <AccordionContent className="flex flex-col gap-4 text-balance px-4 py-2">
+              {conquistas && conquistas.length > 0 ? (
+                conquistas.map((conquista) => {
+                  const concluida =
+                    conquista.progressoAtual! >= conquista.progressoMax;
+
+                  return (
+                    <div
+                      key={conquista.id}
+                      className={`p-3 rounded-lg border ${
+                        concluida
+                          ? "border-green-500 bg-green-50"
+                          : "border-zinc-300 bg-zinc-100 opacity-50"
+                      }`}
+                    >
+                      <h4
+                        className={`font-semibold text-lg ${
+                          concluida ? "text-green-700" : "text-zinc-500"
+                        }`}
+                      >
+                        {conquista.titulo}
+                      </h4>
+
+                      <p
+                        className={`text-sm ${
+                          concluida ? "text-green-600" : "text-zinc-500"
+                        }`}
+                      >
+                        {conquista.descricao}
+                      </p>
+
+                      {conquista.progressoMax !== undefined && (
+                        <p className="text-xs text-zinc-700 mt-1">
+                          Progresso: {conquista.progressoAtual} /{" "}
+                          {conquista.progressoMax}
+                        </p>
+                      )}
+                    </div>
+                  );
+                })
+              ) : (
+                <p>Nenhuma conquista encontrada.</p>
+              )}
+            </AccordionContent>
+          </AccordionItem>
+        </Accordion>
+
+        {/* PENALIDADES */}
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           whileInView={{ opacity: 1, y: 0 }}

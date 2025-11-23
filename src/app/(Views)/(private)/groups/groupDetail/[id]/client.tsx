@@ -110,6 +110,15 @@ export default function ClientGrupoDetail({
     null
   );
   const [confirmError, setConfirmError] = useState<string | null>(null);
+  // State for confirming member removal (modal)
+  const [memberToRemove, setMemberToRemove] = useState<{
+    id: string;
+    nome: string;
+  } | null>(null);
+  const [memberConfirmOpen, setMemberConfirmOpen] = useState(false);
+  const [memberConfirmError, setMemberConfirmError] = useState<string | null>(
+    null
+  );
 
   const { data: grupoData } = useGrupoById(grupo.id_grupo);
 
@@ -841,6 +850,106 @@ export default function ClientGrupoDetail({
           </DialogContent>
         </Dialog>
 
+        {/* Dialog: Confirmar remoção de membro (mesmo estilo/anim da exclusão) */}
+        <Dialog
+          open={memberConfirmOpen}
+          onOpenChange={(v) => {
+            if (!v) {
+              setMemberConfirmOpen(false);
+              setMemberToRemove(null);
+              setMemberConfirmError(null);
+            } else {
+              setMemberConfirmOpen(true);
+            }
+          }}
+        >
+          <DialogContent className="w-[calc(100vw-2rem)] sm:w-auto max-w-sm rounded-2xl p-6 bg-white dark:bg-slate-900 border border-red-200 shadow-xl">
+            <DialogHeader>
+              <DialogTitle className="text-xl font-extrabold bg-gradient-to-r from-red-600 to-rose-600 bg-clip-text text-transparent">
+                Remover membro
+              </DialogTitle>
+            </DialogHeader>
+            <motion.div
+              initial={{ opacity: 0, y: -6 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="mb-4 rounded-lg border border-red-100 bg-red-50/70 px-3 py-2 text-[var(--foreground)] flex gap-2 items-start"
+            >
+              <Info className="w-4 h-4 mt-0.5 text-red-600" />
+              <p className="text-xs sm:text-sm">
+                {memberConfirmError ? (
+                  memberConfirmError
+                ) : (
+                  <>
+                    Tem certeza que deseja remover
+                    <span className="font-semibold">
+                      {memberToRemove?.nome}
+                    </span>{" "}
+                    do grupo? Esta ação pode ser revertida apenas convidando
+                    novamente.
+                  </>
+                )}
+              </p>
+            </motion.div>
+            {memberConfirmError && (
+              <motion.p
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                className="text-xs text-red-600 mb-3"
+              >
+                {memberConfirmError}
+              </motion.p>
+            )}
+            <DialogFooter className="pt-2">
+              <div className="flex items-center justify-between w-full gap-3">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMemberConfirmOpen(false);
+                    setMemberToRemove(null);
+                    setMemberConfirmError(null);
+                  }}
+                  className="text-sm cursor-pointer text-zinc-600 hover:text-zinc-800 transition"
+                >
+                  Cancelar
+                </button>
+                <ActionButton
+                  type="button"
+                  onClick={() => {
+                    if (!memberToRemove) return;
+                    setMemberConfirmError(null);
+                    removeMemberMutation.mutate(
+                      { grupoId: grupo.id_grupo, membroId: memberToRemove.id },
+                      {
+                        onSuccess: () => {
+                          setMemberConfirmOpen(false);
+                          setMemberToRemove(null);
+                        },
+                        onError: (err: any) => {
+                          console.error("Erro ao remover membro", err);
+                          setMemberConfirmError(
+                            err?.response?.data?.message ||
+                              "Falha ao remover membro. Tente novamente."
+                          );
+                        },
+                      }
+                    );
+                  }}
+                  textIdle={
+                    removeMemberMutation.isPending
+                      ? "Removendo..."
+                      : "Confirmar remoção"
+                  }
+                  isLoading={removeMemberMutation.isPending}
+                  isSuccess={false}
+                  enableRipplePulse
+                  disabled={removeMemberMutation.isPending || !memberToRemove}
+                  className="min-w-[160px] cursor-pointer bg-gradient-to-r from-red-600 to-rose-600"
+                />
+              </div>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
         {/* Dialog: Editar nome */}
         <Dialog open={editNameOpen} onOpenChange={setEditNameOpen}>
           <DialogContent className="w-[calc(100vw-2rem)] sm:w-auto max-w-sm sm:max-w-md md:max-w-lg rounded-2xl p-6 sm:p-8 bg-white dark:bg-slate-900 border border-purple-200 shadow-xl">
@@ -1205,9 +1314,14 @@ export default function ClientGrupoDetail({
                             {isOwner && !isCreator && (
                               <button
                                 className="text-xs text-red-500 hover:text-red-700 font-medium cursor-pointer transition-opacity opacity-100 md:opacity-0 md:group-hover:opacity-100"
-                                onClick={() =>
-                                  handleRemoveMember(membro.id_membro)
-                                }
+                                onClick={() => {
+                                  setMemberToRemove({
+                                    id: membro.id_membro,
+                                    nome: membro.usuarios.nome_usuario,
+                                  });
+                                  setMemberConfirmError(null);
+                                  setMemberConfirmOpen(true);
+                                }}
                                 disabled={removeMemberMutation.isPending}
                               >
                                 {removeMemberMutation.isPending

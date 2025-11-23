@@ -22,6 +22,12 @@ import {
 } from "lucide-react";
 import { Info } from "lucide-react";
 import { motion } from "framer-motion";
+import {
+  BsEmojiExpressionless,
+  BsEmojiGrin,
+  BsEmojiAngry,
+} from "react-icons/bs";
+import { UserIcon } from "@heroicons/react/16/solid";
 
 // Implementação local simples de debounce para remover dependência externa
 function debounce<F extends (...args: any[]) => void>(fn: F, wait = 450) {
@@ -687,6 +693,9 @@ export default function DashboardPage({
   const [savingEdit, setSavingEdit] = useState(false);
   const [savingSuccess, setSavingSuccess] = useState(false);
 
+  const [viewUser, setViewUser] = useState<User | null>(null);
+  const [viewPenalOpen, setViewPenalOpen] = useState(false);
+
   // Edit user helpers
   const [editUserLoading, setEditUserLoading] = useState(false);
   const [editUserSuccess, setEditUserSuccess] = useState(false);
@@ -1335,8 +1344,8 @@ export default function DashboardPage({
                       }
                     }}
                   >
-                    {keyStatus === "arquivada"
-                      ? "Ver Denúnica"
+                    {keyStatus === "arquivada" || keyStatus === "resolvida"
+                      ? "Ver Denúncia"
                       : "Analisar Denúncia"}
                   </button>
                 </div>
@@ -2026,7 +2035,11 @@ export default function DashboardPage({
                 : selectedDenuncia.tipo_conteudo ?? "—";
 
               return (
-                <>
+                <motion.div
+                  initial={{ opacity: 0, y: -6 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="space-y-3"
+                >
                   <div className="mt-4 grid grid-cols-2 gap-3">
                     <div className="rounded-lg border border-blue-100 bg-blue-50/60 p-3 flex flex-col gap-1">
                       <div className="text-xs text-blue-700 font-semibold">
@@ -2058,7 +2071,7 @@ export default function DashboardPage({
                     </span>
                     .
                   </div>
-                </>
+                </motion.div>
               );
             })()}
 
@@ -2127,172 +2140,164 @@ export default function DashboardPage({
               </div>
             </div>
 
-            <div className="mt-6 flex items-center justify-end gap-4">
-              {/* hide action buttons for already-archived denúncias */}
-              {((selectedDenuncia as any).__modalKeyStatus ||
-                (selectedDenuncia as any).status ||
-                "pendente") !== "arquivada" && (
-                <div className="flex items-center gap-3">
-                  <button
-                    className={`relative inline-flex items-center justify-center rounded-lg bg-zinc-200 text-zinc-800 hover:bg-zinc-300 text-sm px-4 py-2 transition ${
-                      arquivarLoading || arquivarSuccess
-                        ? "opacity-70 cursor-not-allowed"
-                        : "cursor-pointer"
-                    }`}
-                    disabled={arquivarLoading || arquivarSuccess}
-                    onClick={async () => {
-                      if (arquivarLoading || arquivarSuccess) return;
-                      setArquivarLoading(true);
-                      try {
-                        const [{ updateDenuncia }, { createNotificacao }] =
-                          await Promise.all([
-                            import("@/services/denuncia"),
-                            import("@/services/notificacao"),
-                          ]);
-                        const updated = await updateDenuncia(
-                          selectedDenuncia.id_denuncia,
-                          {
-                            fkId_usuario: selectedDenuncia.usuario?.id_usuario,
-                            fkId_conteudo_denunciado:
-                              selectedDenuncia.fkId_conteudo_denunciado,
-                            nivel_denuncia: selectedDenuncia.nivel_denuncia,
-                            status: "arquivada",
-                            resultado:
-                              "Por falta de provas concretas, não aplicamos nenhuma ação contra o usuário - converse com o suporte caso tenhamos feito algum erro.",
+            <div className="mt-6">
+              {(() => {
+                const key =
+                  (selectedDenuncia as any).__modalKeyStatus ||
+                  (selectedDenuncia as any).status ||
+                  "pendente";
+                return key !== "arquivada" && key !== "resolvida";
+              })() && (
+                <DialogFooter className="pt-2">
+                  <div className="flex items-center justify-end w-full gap-3">
+                    <ActionButton
+                      type="button"
+                      onClick={async () => {
+                        if (arquivarLoading || arquivarSuccess) return;
+                        setArquivarLoading(true);
+                        try {
+                          const [{ updateDenuncia }, { createNotificacao }] =
+                            await Promise.all([
+                              import("@/services/denuncia"),
+                              import("@/services/notificacao"),
+                            ]);
+                          const updated = await updateDenuncia(
+                            selectedDenuncia.id_denuncia,
+                            {
+                              fkId_usuario:
+                                selectedDenuncia.usuario?.id_usuario,
+                              fkId_conteudo_denunciado:
+                                selectedDenuncia.fkId_conteudo_denunciado,
+                              nivel_denuncia: selectedDenuncia.nivel_denuncia,
+                              status: "arquivada",
+                              resultado:
+                                "Por falta de provas concretas, não aplicamos nenhuma ação contra o usuário - converse com o suporte caso tenhamos feito algum erro.",
+                            }
+                          );
+                          setDenunciasState((prev) =>
+                            prev.map((d) =>
+                              d.id_denuncia === updated.id_denuncia
+                                ? updated
+                                : d
+                            )
+                          );
+                          const targetUserId =
+                            selectedDenuncia?.usuario?.id_usuario ??
+                            (selectedDenuncia as any)?.usuarios?.id_usuario ??
+                            (selectedDenuncia as any)?.fkId_usuario ??
+                            (selectedDenuncia as any)?.fkId_usuario_conteudo ??
+                            (selectedDenuncia as any)
+                              ?.fkId_usuario_conteudo_usuario ??
+                            (selectedDenuncia as any)?.fkId_usuarioCriador ??
+                            (selectedDenuncia as any)
+                              ?.fkId_usuario_conteudo_criador;
+
+                          if (targetUserId) {
+                            await createNotificacao({
+                              fkId_usuario: targetUserId,
+                              titulo: "Denúncia arquivada",
+                              mensagem:
+                                "Por falta de provas concretas, não aplicamos nenhuma ação contra o usuário - converse com o suporte caso tenhamos feito algum erro.",
+                              tipo: "denuncia",
+                              fkId_denuncia: selectedDenuncia.id_denuncia,
+                              fkId_conteudo_denunciado:
+                                selectedDenuncia.fkId_conteudo_denunciado,
+                              tipo_denuncia:
+                                (selectedDenuncia as any).tipo_denuncia ??
+                                selectedDenuncia.tipo_conteudo,
+                              nivel_denuncia: selectedDenuncia.nivel_denuncia,
+                              revisao:
+                                "Por falta de provas concretas, não aplicamos nenhuma ação contra o usuário - converse com o suporte caso tenhamos feito algum erro.",
+                              dataRevisao: new Date().toISOString(),
+                              item_denunciado:
+                                conteudoRevisado?.texto ?? undefined,
+                              denunciadoNome: victimName,
+                              fkId_usuario_conteudo:
+                                selectedDenuncia.fkId_usuario_conteudo,
+                            });
                           }
-                        );
-                        setDenunciasState((prev) =>
-                          prev.map((d) =>
-                            d.id_denuncia === updated.id_denuncia ? updated : d
-                          )
-                        );
-                        const targetUserId =
-                          selectedDenuncia?.usuario?.id_usuario ??
-                          (selectedDenuncia as any)?.usuarios?.id_usuario ??
-                          (selectedDenuncia as any)?.fkId_usuario ??
-                          (selectedDenuncia as any)?.fkId_usuario_conteudo ??
-                          (selectedDenuncia as any)
-                            ?.fkId_usuario_conteudo_usuario ??
-                          (selectedDenuncia as any)?.fkId_usuarioCriador ??
-                          (selectedDenuncia as any)
-                            ?.fkId_usuario_conteudo_criador;
-
-                        if (targetUserId) {
-                          await createNotificacao({
-                            fkId_usuario: targetUserId,
-                            titulo: "Denúncia arquivada",
-                            mensagem:
-                              "Por falta de provas concretas, não aplicamos nenhuma ação contra o usuário - converse com o suporte caso tenhamos feito algum erro.",
-                            tipo: "denuncia",
-                            fkId_denuncia: selectedDenuncia.id_denuncia,
-                            fkId_conteudo_denunciado:
-                              selectedDenuncia.fkId_conteudo_denunciado,
-                            tipo_denuncia:
-                              (selectedDenuncia as any).tipo_denuncia ??
-                              selectedDenuncia.tipo_conteudo,
-                            nivel_denuncia: selectedDenuncia.nivel_denuncia,
-                            revisao:
-                              "Por falta de provas concretas, não aplicamos nenhuma ação contra o usuário - converse com o suporte caso tenhamos feito algum erro.",
-                            dataRevisao: new Date().toISOString(),
-                            item_denunciado:
-                              conteudoRevisado?.texto ?? undefined,
-                            denunciadoNome: victimName,
-                            fkId_usuario_conteudo:
-                              selectedDenuncia.fkId_usuario_conteudo,
+                          push({
+                            kind: "success",
+                            message: "Denúncia arquivada.",
                           });
-                        }
-                        push({
-                          kind: "success",
-                          message: "Denúncia arquivada.",
-                        });
-                        pushAudit({
-                          action: "update",
-                          entity: "denuncia",
-                          entityId: selectedDenuncia.id_denuncia,
-                          details: "status=arquivada (via modal)",
-                        });
-                        setArquivarSuccess(true);
-                        setTimeout(() => {
+                          pushAudit({
+                            action: "update",
+                            entity: "denuncia",
+                            entityId: selectedDenuncia.id_denuncia,
+                            details: "status=arquivada (via modal)",
+                          });
+                          setArquivarSuccess(true);
+                          setTimeout(() => {
+                            setArquivarLoading(false);
+                            setOpenAnalise(false);
+                            setSelectedDenuncia(null);
+                            setArquivarSuccess(false);
+                          }, 900);
+                        } catch (e: any) {
+                          console.error("Erro ao arquivar denúncia:", e);
+                          const serverMessage =
+                            e?.response?.data?.message || e?.message;
+                          push({
+                            kind: "error",
+                            message:
+                              serverMessage || "Falha ao arquivar denúncia.",
+                          });
                           setArquivarLoading(false);
-                          setOpenAnalise(false);
-                          setSelectedDenuncia(null);
-                          setArquivarSuccess(false);
-                        }, 900);
-                      } catch (e: any) {
-                        console.error("Erro ao arquivar denúncia:", e);
-                        // attempt to surface backend message if present
-                        const serverMessage =
-                          e?.response?.data?.message || e?.message;
-                        push({
-                          kind: "error",
-                          message:
-                            serverMessage || "Falha ao arquivar denúncia.",
-                        });
-                        setArquivarLoading(false);
+                        }
+                      }}
+                      textIdle={
+                        arquivarLoading ? "Arquivando..." : "Arquivar Denúncia"
                       }
-                    }}
-                  >
-                    {arquivarLoading ? (
-                      <span className="flex items-center gap-2">
-                        <span className="h-4 w-4 animate-spin rounded-full border-2 border-zinc-300 border-t-zinc-700" />
-                        Arquivando...
-                      </span>
-                    ) : arquivarSuccess ? (
-                      <span className="flex items-center gap-2 text-emerald-700">
-                        <Check className="h-4 w-4" /> Arquivado
-                      </span>
-                    ) : (
-                      "Arquivar Denúncia"
-                    )}
-                  </button>
+                      isLoading={arquivarLoading}
+                      isSuccess={arquivarSuccess}
+                      enableRipplePulse
+                      className="min-w-[160px]"
+                    />
 
-                  <button
-                    className={`relative inline-flex items-center justify-center rounded-lg bg-gradient-to-r from-red-600 to-rose-600 px-4 py-2 text-white text-sm hover:from-red-500 hover:to-rose-500 transition ${
-                      penalidadeLoading
-                        ? "opacity-70 cursor-not-allowed"
-                        : "cursor-pointer"
-                    }`}
-                    disabled={penalidadeLoading}
-                    onClick={() => {
-                      if (penalidadeLoading) return;
-                      setPenalidadeLoading(true);
-                      // resolve victim name to pass to PenalidadeModal
-                      const possible = [
-                        (selectedDenuncia as any).fkId_usuario_conteudo,
-                        (selectedDenuncia as any).fkId_usuario_conteudo_usuario,
-                        (selectedDenuncia as any).fkId_usuarioCriador,
-                        (selectedDenuncia as any).fkId_usuario_conteudo_criador,
-                        (selectedDenuncia as any).fkId_usuario,
-                      ];
-                      const id = possible.find(Boolean);
-                      let victim: any = null;
-                      if (id)
-                        victim = usersState.find(
-                          (u) => String(u.id_usuario) === String(id)
-                        );
-                      const name = victim
-                        ? victim.nome_usuario ?? victim.apelido_usuario
-                        : undefined;
-                      setPenalidadeUsuarioNome(name);
-                      setTimeout(() => {
-                        setPenalidadeLoading(false);
-                        setOpenAnalise(false);
-                        setOpenPenalidade(true);
-                        setPenalidadeSuccess(true);
-                        setTimeout(() => setPenalidadeSuccess(false), 800);
-                      }, 450);
-                    }}
-                  >
-                    {penalidadeLoading ? (
-                      <span className="flex items-center gap-2">
-                        <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" />{" "}
-                        Aplicando...
-                      </span>
-                    ) : (
-                      "Aplicar Penalidade"
-                    )}
-                  </button>
-                </div>
+                    <ActionButton
+                      type="button"
+                      onClick={() => {
+                        if (penalidadeLoading) return;
+                        setPenalidadeLoading(true);
+                        // resolve victim name to pass to PenalidadeModal
+                        const possible = [
+                          (selectedDenuncia as any).fkId_usuario_conteudo,
+                          (selectedDenuncia as any)
+                            .fkId_usuario_conteudo_usuario,
+                          (selectedDenuncia as any).fkId_usuarioCriador,
+                          (selectedDenuncia as any)
+                            .fkId_usuario_conteudo_criador,
+                          (selectedDenuncia as any).fkId_usuario,
+                        ];
+                        const id = possible.find(Boolean);
+                        let victim: any = null;
+                        if (id)
+                          victim = usersState.find(
+                            (u) => String(u.id_usuario) === String(id)
+                          );
+                        const name = victim
+                          ? victim.nome_usuario ?? victim.apelido_usuario
+                          : undefined;
+                        setPenalidadeUsuarioNome(name);
+                        setTimeout(() => {
+                          setPenalidadeLoading(false);
+                          setOpenAnalise(false);
+                          setOpenPenalidade(true);
+                          setPenalidadeSuccess(true);
+                          setTimeout(() => setPenalidadeSuccess(false), 800);
+                        }, 450);
+                      }}
+                      textIdle={
+                        penalidadeLoading
+                          ? "Aplicando..."
+                          : "Aplicar Penalidade"
+                      }
+                      isLoading={penalidadeLoading}
+                      enableRipplePulse
+                      className="min-w-[160px] bg-gradient-to-r from-red-600 to-rose-600"
+                    />
+                  </div>
+                </DialogFooter>
               )}
             </div>
           </DialogContent>
@@ -2339,6 +2344,12 @@ export default function DashboardPage({
                   </div>
                   <div className="flex gap-2">
                     <button
+                      className="cursor-pointer px-3 py-1 text-xs rounded-lg bg-white border border-purple-200 text-purple-800 hover:bg-purple-50"
+                      onClick={() => setViewUser(u)}
+                    >
+                      Ver
+                    </button>
+                    <button
                       className="cursor-pointer px-3 py-1 text-xs rounded-lg bg-purple-200 text-purple-800 hover:bg-purple-300"
                       onClick={() => {
                         setEditUserSuccess(false);
@@ -2379,6 +2390,177 @@ export default function DashboardPage({
         openDialog={openDialog}
         tipousuarios={tipousuario}
       />
+
+      {/* Modal de visualização do usuário (somente leitura) */}
+      {viewUser && (
+        <Dialog
+          open={!!viewUser}
+          onOpenChange={(v) => {
+            if (!v) setViewUser(null);
+          }}
+        >
+          <DialogContent className="w-[calc(100vw-2rem)] sm:w-auto max-w-3xl rounded-2xl p-6 bg-white border border-zinc-100 shadow-xl">
+            <DialogHeader>
+              <DialogTitle className="text-2xl font-extrabold bg-gradient-to-r from-purple-600 to-fuchsia-600 bg-clip-text text-transparent">
+                Perfil de {viewUser.nome_usuario}
+              </DialogTitle>
+            </DialogHeader>
+
+            <motion.div
+              initial={{ opacity: 0, y: -6 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="flex flex-col gap-6"
+            >
+              <div className="flex flex-col items-center gap-3">
+                <div className="relative">
+                  {viewUser.foto_perfil ? (
+                    <img
+                      src={viewUser.foto_perfil}
+                      className="h-36 w-36 rounded-full object-cover border border-neutral-300"
+                    />
+                  ) : (
+                    <div className="h-36 w-36 rounded-full bg-neutral-200 flex items-center justify-center">
+                      <UserIcon className="h-12 w-12 text-neutral-500" />
+                    </div>
+                  )}
+                </div>
+                <div className="flex flex-col items-center gap-1">
+                  <h3 className="font-semibold text-2xl text-zinc-900">
+                    {viewUser.nome_usuario}
+                  </h3>
+                  <p className="text-zinc-600">
+                    Mais conhecido como:{" "}
+                    <span className="font-bold">
+                      {viewUser.apelido_usuario}
+                    </span>
+                  </p>
+                  <p className="text-zinc-600">
+                    Desde{" "}
+                    {viewUser.dataCriacao_usuario
+                      ? new Date(
+                          viewUser.dataCriacao_usuario
+                        ).toLocaleDateString("pt-BR")
+                      : "-"}
+                  </p>
+                </div>
+              </div>
+
+              {/* Credibilidade */}
+              {(() => {
+                const cred = Number(viewUser.credibilidade_usuario ?? 0);
+                let CredibilidadeEmoji: any = BsEmojiExpressionless;
+                let credMensagem = "";
+                if (cred < 35) {
+                  CredibilidadeEmoji = BsEmojiAngry;
+                  credMensagem =
+                    "Você precisa ser mais sério com suas responsabilidades!";
+                } else if (cred < 70) {
+                  CredibilidadeEmoji = BsEmojiExpressionless;
+                  credMensagem = "Cuidado! Tome mais atenção às suas ações.";
+                } else {
+                  CredibilidadeEmoji = BsEmojiGrin;
+                  credMensagem =
+                    "Parabéns! Continue com essa credibilidade alta.";
+                }
+                return (
+                  <div className="flex flex-col items-center justify-center gap-2 w-full p-4 rounded-xl border border-zinc-200 bg-white shadow-sm">
+                    <CredibilidadeEmoji className="text-4xl" />
+                    <span className="font-medium text-base">
+                      Credibilidade: {cred}
+                    </span>
+                    <p className="text-sm text-center">{credMensagem}</p>
+                    <div className="w-full bg-zinc-200 h-2 rounded-full mt-1">
+                      <div
+                        className="h-2 rounded-full bg-purple-600 transition-all duration-500"
+                        style={{ width: `${cred}%` }}
+                      />
+                    </div>
+                  </div>
+                );
+              })()}
+
+              {/* Penalidades */}
+              <div className="w-full rounded-xl border border-zinc-200 bg-white p-4 shadow-sm space-y-3">
+                <h4 className="font-semibold text-zinc-800">Penalidades</h4>
+                <p className="text-sm text-neutral-600">
+                  Para ver as penalidades deste usuário, abra a lista de
+                  penalidades.
+                </p>
+                <div className="flex">
+                  <ActionButton
+                    textIdle="Ver Penalidades"
+                    onClick={() => setViewPenalOpen(true)}
+                    className="min-w-[160px]"
+                  />
+                </div>
+
+                {/* Penalidades dialog (read-only) */}
+                <Dialog
+                  open={viewPenalOpen}
+                  onOpenChange={(v) => setViewPenalOpen(Boolean(v))}
+                >
+                  <DialogContent className="w-[calc(100vw-2rem)] sm:w-auto max-w-3xl rounded-2xl p-6 bg-white border border-zinc-100 shadow-xl">
+                    <DialogHeader>
+                      <DialogTitle className="text-2xl font-extrabold bg-gradient-to-r from-purple-600 to-fuchsia-600 bg-clip-text text-transparent">
+                        Penalidades de {viewUser?.nome_usuario}
+                      </DialogTitle>
+                    </DialogHeader>
+                    <div className="flex flex-col gap-4 mt-2">
+                      {(viewUser?.penalidades || []).length > 0 ? (
+                        (viewUser?.penalidades || []).map((p: any) => (
+                          <div
+                            key={p.id_penalidade}
+                            className="p-3 rounded-lg border border-zinc-200"
+                          >
+                            <p className="text-sm text-neutral-700">
+                              <span className="font-medium">Descrição:</span>{" "}
+                              {p.descricao}
+                            </p>
+                            <p className="text-sm text-neutral-700">
+                              <span className="font-medium">Ativa:</span>{" "}
+                              {p.ativa ? "Sim" : "Não"}
+                            </p>
+                            <p className="text-sm text-neutral-700">
+                              <span className="font-medium">Início:</span>{" "}
+                              {p.dataInicio_penalidade
+                                ? new Date(
+                                    p.dataInicio_penalidade
+                                  ).toLocaleDateString("pt-BR")
+                                : "-"}
+                            </p>
+                            <p className="text-sm text-neutral-700">
+                              <span className="font-medium">Fim:</span>{" "}
+                              {p.dataFim_penalidade
+                                ? new Date(
+                                    p.dataFim_penalidade
+                                  ).toLocaleDateString("pt-BR")
+                                : "-"}
+                            </p>
+                          </div>
+                        ))
+                      ) : (
+                        <p className="text-neutral-500 text-sm italic">
+                          Nenhuma penalidade registrada.
+                        </p>
+                      )}
+                    </div>
+                    <DialogFooter>
+                      <div className="flex justify-end">
+                        <button
+                          onClick={() => setViewPenalOpen(false)}
+                          className="text-sm cursor-pointer text-zinc-600 hover:text-zinc-800"
+                        >
+                          Fechar
+                        </button>
+                      </div>
+                    </DialogFooter>
+                  </DialogContent>
+                </Dialog>
+              </div>
+            </motion.div>
+          </DialogContent>
+        </Dialog>
+      )}
 
       {/* Modal de penalidade */}
       {selectedDenuncia && (

@@ -1,6 +1,6 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { updateUser } from "@/services/userService";
-import { User } from "@/types/user"; // ajuste os tipos conforme seu projeto
+import { User } from "@/types/user";
 
 export function useUpdateUser() {
   const queryClient = useQueryClient();
@@ -8,11 +8,22 @@ export function useUpdateUser() {
   return useMutation({
     mutationFn: updateUser,
     onSuccess: (updatedUser: User) => {
-      // Atualiza cache de todos os usuários, se tiver listagem
       queryClient.invalidateQueries({ queryKey: ["users"] });
 
-      // Atualiza cache de um usuário específico
-      queryClient.setQueryData<User>(["user", updatedUser.id_usuario], updatedUser);
+      const userKey = ["user", updatedUser.id_usuario] as const;
+      const previous = queryClient.getQueryData<User>(userKey) as User | undefined;
+
+      let mergedUser = updatedUser;
+      if (previous) {
+      
+        if (!('penalidades' in updatedUser) && previous.penalidades) {
+          mergedUser = { ...mergedUser, penalidades: previous.penalidades } as User;
+        }
+        
+      }
+
+ 
+      queryClient.setQueryData<User>(userKey, mergedUser);
     },
   });
 }

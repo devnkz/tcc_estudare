@@ -16,7 +16,7 @@ export interface User {
 
   ultimaAlteracao_apelido?: string;
 
-  Penalidades: {
+  penalidades: {
     id_penalidade: string;
     dataInicio_penalidade: string;
     dataFim_penalidade: string;

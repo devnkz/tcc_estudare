@@ -40,6 +40,12 @@ export async function updateDenuncia(
   return res.data;
 }
 
+// Busca uma denúncia por id
+export async function fetchDenunciaById(id: string): Promise<Denuncia> {
+  const res = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/denuncia/${id}`);
+  return res.data;
+}
+
 // Verifica se o usuário já denunciou um conteúdo específico
 export async function checkDenuncia(
   id_usuario: string,

@@ -1,29 +1,155 @@
 "use client";
 
-import { UserIcon, PencilIcon } from "@heroicons/react/16/solid";
+import {
+  User as UserIcon,
+  Pencil as PencilIcon,
+  AlertTriangle as ExclamationTriangleIcon,
+  Star as StarIcon,
+  Calendar as CalendarIcon,
+  LogOut,
+  Smile,
+  Meh,
+  Frown,
+} from "lucide-react";
+import { ShieldCheck, ThumbsUp, XCircle } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { UpdateUserModal } from "./updateUserModal";
 import { UpdateUserFotoModal } from "./fotoPerfilUser/index";
 import { useEffect, useState } from "react";
 import { deleteToken } from "@/lib/deleteToken";
-import { GoPencil } from "react-icons/go";
+// replaced GoPencil with lucide-react PencilIcon
 import { useGetUser } from "@/hooks/user/useListId";
-import {
-  BsEmojiExpressionless,
-  BsEmojiGrin,
-  BsEmojiAngry,
-} from "react-icons/bs";
+// using lucide-react icons for credibilidade
 import { Pergunta } from "@/types/pergunta";
 import { User } from "@/types/user";
 import { motion } from "framer-motion";
-import { LogOut } from "lucide-react";
+import { MessageSquare, FileText, Image as ImageIcon } from "lucide-react";
 import { ActionButton } from "@/components/ui/actionButton";
 import {
-  Dialog as ConfirmDialog,
-  DialogContent as ConfirmContent,
-  DialogHeader as ConfirmHeader,
-  DialogTitle as ConfirmTitle,
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
 } from "@/components/ui/dialog";
+import { useDenuncia } from "@/hooks/denuncia/useDenuncia";
+import { useQuery } from "@tanstack/react-query";
+import axios from "axios";
+import { fetchPerguntaById } from "@/services/perguntaService";
+import { fetchRespostaById } from "@/services/respostaService";
+import { Resposta } from "@/types/resposta";
+
+function PenalidadeCard({
+  penalidade,
+  onView,
+}: {
+  penalidade: any;
+  onView: (id_conteudo: string, tipo_conteudo: string) => void;
+}) {
+  const denunciaId =
+    penalidade?.denuncia?.id_denuncia ?? penalidade?.fkId_denuncia;
+  const { data: denunciaData } = useDenuncia(denunciaId);
+
+  const tipoConteudo =
+    penalidade?.denuncia?.tipo_conteudo ?? denunciaData?.tipo_conteudo;
+  const fkConteudo =
+    penalidade?.denuncia?.fkId_conteudo_denunciado ??
+    denunciaData?.fkId_conteudo_denunciado ??
+    null;
+
+  const TipoIcon =
+    tipoConteudo === "pergunta"
+      ? MessageSquare
+      : tipoConteudo === "resposta"
+      ? MessageSquare
+      : FileText;
+
+  return (
+    <div className="flex items-start">
+      <div
+        className={`w-1 rounded-l-lg ${
+          penalidade.ativa ? "bg-red-500" : "bg-zinc-200"
+        }`}
+      />
+      <div className="p-3 rounded-lg border border-zinc-200 bg-white shadow-sm flex-1 flex flex-col gap-2 hover:shadow-md transition relative">
+        <div className="absolute top-3 right-3">
+          <div
+            className={`text-xs px-2 py-1 rounded-full font-medium ${
+              penalidade.ativa
+                ? "bg-red-100 text-red-700"
+                : "bg-zinc-100 text-zinc-600"
+            }`}
+          >
+            {penalidade.ativa ? (
+              <>
+                <ExclamationTriangleIcon className="w-3 h-3 inline mr-1 text-red-600" />{" "}
+                Ativa
+              </>
+            ) : (
+              <>
+                <ShieldCheck className="w-3 h-3 inline mr-1 text-emerald-600" />{" "}
+                Inativa
+              </>
+            )}
+          </div>
+        </div>
+
+        <div className="flex items-center justify-start gap-3">
+          <div className="flex items-center gap-2">
+            <TipoIcon className="w-5 h-5 text-zinc-600" />
+            <div className="text-sm text-zinc-700 font-medium">
+              {tipoConteudo ?? "conteúdo"}
+            </div>
+          </div>
+        </div>
+
+        <div className="text-sm text-zinc-700 truncate">
+          <span className="font-medium">Detalhes:</span> {penalidade.descricao}
+        </div>
+
+        <div className="text-right text-sm text-zinc-500">
+          <div className="text-xs">Pontos perdidos</div>
+          <div className="font-bold text-zinc-900 text-lg">
+            {penalidade.perder_credibilidade ?? 0}
+          </div>
+        </div>
+
+        <div className="flex items-center justify-between text-sm text-zinc-500">
+          <div className="flex flex-col">
+            <div className="font-medium text-zinc-700">Início</div>
+            <div>
+              {penalidade.dataInicio_penalidade
+                ? new Date(penalidade.dataInicio_penalidade).toLocaleDateString(
+                    "pt-BR"
+                  )
+                : "-"}
+            </div>
+          </div>
+
+          <div className="flex flex-col">
+            <div className="font-medium text-zinc-700">Fim</div>
+            <div>
+              {penalidade.dataFim_penalidade
+                ? new Date(penalidade.dataFim_penalidade).toLocaleDateString(
+                    "pt-BR"
+                  )
+                : "-"}
+            </div>
+          </div>
+
+          {fkConteudo && tipoConteudo && (
+            <button
+              onClick={() => onView(fkConteudo, tipoConteudo)}
+              className="px-2 py-1 rounded-md bg-white border border-zinc-200 text-xs text-zinc-700 hover:bg-zinc-50"
+            >
+              Ver conteúdo
+            </button>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export default function UsuarioClientPage({
   usuario: initialUser,
@@ -37,62 +163,146 @@ export default function UsuarioClientPage({
   const [logoutOpen, setLogoutOpen] = useState(false);
   const [leaving, setLeaving] = useState(false);
   const [headerHeight, setHeaderHeight] = useState(0);
+  const [openPenalidades, setOpenPenalidades] = useState(false);
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const [previewId, setPreviewId] = useState<string | null>(null);
+  const [previewTipo, setPreviewTipo] = useState<string | null>(null);
+  const [openDenunciaDetail, setOpenDenunciaDetail] = useState(false);
+  const [selectedDenunciaId, setSelectedDenunciaId] = useState<string | null>(
+    null
+  );
+  const [selectedPenalidade, setSelectedPenalidade] = useState<any | null>(
+    null
+  );
   const userId = initialUser?.id_usuario;
 
   const { data: usuario_data, isError } = useGetUser(userId, initialUser);
 
-  // If initialUser is not present, clear token and redirect to login
-  useEffect(() => {
-    if (!initialUser) {
-      try {
-        deleteToken();
-      } catch (e) {
-        // ignore
-      }
-      router.push("/Auth/Login");
-    }
-  }, [initialUser, router]);
+  // Preview query to fetch content when preview modal is opened
+  const previewQuery = useQuery({
+    queryKey: ["preview", previewTipo, previewId],
+    queryFn: async () => {
+      if (!previewId || !previewTipo) return null;
+      if (previewTipo === "pergunta") return fetchPerguntaById(previewId);
+      if (previewTipo === "resposta") return fetchRespostaById(previewId);
+      return null;
+    },
+    enabled: Boolean(previewOpen && previewId && previewTipo),
+  });
 
-  // If fetching user fails (invalid token / user missing), redirect to login
+  // Denuncia detail query (fetch denuncia by selected id)
+  const denunciaDetailQuery = useDenuncia(selectedDenunciaId ?? undefined);
+
+  // Keep backward-compatible: we'll also have an imperative fetch when the modal opens
+  // to mirror the notifications page approach (robust to field name differences).
+  const [loadingDenuncia, setLoadingDenuncia] = useState(false);
+  const [denunciaLocal, setDenunciaLocal] = useState<any | null>(null);
+  const [denunciaError, setDenunciaError] = useState<string | null>(null);
+  const [conteudoTexto, setConteudoTexto] = useState<string | null>(null);
+
+  // When modal opens or selectedDenunciaId changes, fetch the denuncia (imperative pattern)
   useEffect(() => {
-    if (isError) {
+    let mounted = true;
+    async function loadDenuncia() {
+      const denunciaId = selectedDenunciaId;
+      if (!openDenunciaDetail || !denunciaId) return;
       try {
-        deleteToken();
-      } catch (e) {}
-      router.push("/Auth/Login");
+        setLoadingDenuncia(true);
+        setDenunciaError(null);
+        setDenunciaLocal(null);
+        setConteudoTexto(null);
+        const res = await axios.get(
+          `${process.env.NEXT_PUBLIC_API_URL}/denuncia/${denunciaId}`
+        );
+        if (!mounted) return;
+        const d = res.data;
+        setDenunciaLocal(d);
+
+        // resolve item denunciado if not present
+        if (d.item_denunciado) {
+          setConteudoTexto(d.item_denunciado);
+        } else {
+          const tipo = d.tipo_conteudo;
+          const fk = d.fkId_conteudo_denunciado;
+          if (fk && tipo === "pergunta") {
+            const p = await fetchPerguntaById(String(fk));
+            if (!mounted) return;
+            setConteudoTexto(p.pergunta ?? null);
+          } else if (fk && tipo === "resposta") {
+            const r = await fetchRespostaById(String(fk));
+            if (!mounted) return;
+            setConteudoTexto(r.resposta ?? null);
+          }
+        }
+      } catch (err: any) {
+        if (!mounted) return;
+        setDenunciaError(
+          err?.response?.data?.message || "Falha ao carregar denúncia."
+        );
+      } finally {
+        if (mounted) setLoadingDenuncia(false);
+      }
     }
-  }, [isError, router]);
+
+    loadDenuncia();
+
+    return () => {
+      mounted = false;
+    };
+  }, [openDenunciaDetail, selectedDenunciaId]);
 
   if (!usuario_data) return null;
 
   const cred = usuario_data.credibilidade_usuario;
 
-  let CredibilidadeEmoji;
-  let credibilidadeMensagem;
+  let CredibilidadeEmoji: any;
+  let credibilidadeMensagem: string | undefined;
 
-  if (cred < 35) {
-    CredibilidadeEmoji = BsEmojiAngry;
+  const credNum = Number(cred ?? 0);
+  if (credNum >= 75) {
+    CredibilidadeEmoji = ShieldCheck;
     credibilidadeMensagem =
-      "Você precisa ser mais sério com suas responsabilidades!";
-  } else if (cred < 70) {
-    CredibilidadeEmoji = BsEmojiExpressionless;
-    credibilidadeMensagem = "Cuidado! Tome mais atenção às suas ações.";
+      "Excelente! Sua conduta é um exemplo — continue assim.";
+  } else if (credNum >= 50) {
+    CredibilidadeEmoji = ThumbsUp;
+    credibilidadeMensagem =
+      "Muito bom! Você está no caminho certo, mantenha o bom comportamento.";
+  } else if (credNum >= 25) {
+    CredibilidadeEmoji = ExclamationTriangleIcon;
+    credibilidadeMensagem =
+      "Atenção: seu comportamento precisa melhorar. Siga as regras da comunidade para evitar penalidades.";
   } else {
-    CredibilidadeEmoji = BsEmojiGrin;
-    credibilidadeMensagem = "Parabéns! Continue com essa credibilidade alta.";
+    CredibilidadeEmoji = XCircle;
+    credibilidadeMensagem =
+      "Aviso: seu comportamento está prejudicando a comunidade. Reveja suas ações.";
   }
 
-  // Redireciona para tela de perguntas com query param do post
+  let progressGradient = "from-purple-600 to-fuchsia-500";
+  let progressTextClass = "text-purple-700";
+  if (credNum >= 75) {
+    progressGradient = "from-purple-600 to-fuchsia-500";
+    progressTextClass = "text-purple-700";
+  } else if (credNum >= 50) {
+    progressGradient = "from-emerald-500 to-green-500";
+    progressTextClass = "text-emerald-600";
+  } else if (credNum >= 25) {
+    progressGradient = "from-orange-400 to-orange-600";
+    progressTextClass = "text-orange-600";
+  } else {
+    progressGradient = "from-red-600 to-rose-600";
+    progressTextClass = "text-red-600";
+  }
+
   const handleVisualizarConteudo = (
     id_conteudo: string,
     tipo_conteudo: string
   ) => {
-    router.push(
-      `/home?tipo_conteudo=${tipo_conteudo}&id_conteudo=${id_conteudo}`
-    );
+    // Open preview modal instead of navigating directly
+    setPreviewId(id_conteudo);
+    setPreviewTipo(tipo_conteudo);
+    setPreviewOpen(true);
   };
 
-  // Corrige sobreposição do header (Android): mede altura do header fixo
   useEffect(() => {
     const header = document.querySelector("header");
     if (header) {
@@ -106,15 +316,6 @@ export default function UsuarioClientPage({
       style={{ paddingTop: headerHeight ? headerHeight + 2 : undefined }}
     >
       <div className="w-full max-w-3xl flex flex-col justify-start items-stretch py-7 md:py-7 space-y-8 relative">
-        {/* TÍTULO */}
-        <motion.h1
-          initial={{ opacity: 0, y: -10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4 }}
-          className="text-3xl md:text-5xl font-extrabold bg-gradient-to-r from-purple-600 to-fuchsia-500 bg-clip-text text-transparent"
-        >
-          Meu perfil
-        </motion.h1>
         {/* FOTO + NOME */}
         <motion.div
           initial={{ opacity: 0, y: 10 }}
@@ -136,7 +337,7 @@ export default function UsuarioClientPage({
               <UserIcon className="h-36 w-36 p-8 bg-neutral-200 rounded-full" />
             )}
             <span className="absolute bottom-0 right-0 p-2 rounded-full text-neutral-700 border border-neutral-300 bg-white shadow-sm cursor-pointer">
-              <GoPencil />
+              <PencilIcon className="w-4 h-4" />
             </span>
           </div>
           <div className="flex flex-col items-center gap-3">
@@ -149,21 +350,13 @@ export default function UsuarioClientPage({
             </p>
             {/* Botão pill colocado ABAIXO das infos (acima de credibilidade) */}
           </div>
-          <p className="text-neutral-600 text-md">
-            Desde{" "}
-            {usuario_data.dataCriacao_usuario
-              ? new Date(usuario_data.dataCriacao_usuario).toLocaleDateString(
-                  "pt-BR"
-                )
-              : "-"}
-          </p>
           <button
             onClick={() => setOpenDialog("usuario")}
             className="inline-flex items-center gap-2 rounded-full border border-purple-400/60 text-purple-700 px-6 py-2 bg-white hover:bg-purple-50 shadow-sm transition cursor-pointer"
             title="Editar dados"
             aria-label="Editar dados"
           >
-            <GoPencil className="text-purple-700" />
+            <PencilIcon className="text-purple-700 w-4 h-4" />
             <span className="text-sm font-medium">Editar dados</span>
           </button>
         </motion.div>
@@ -174,77 +367,155 @@ export default function UsuarioClientPage({
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, amount: 0.2 }}
           transition={{ duration: 0.5 }}
-          className={`flex flex-col items-center justify-center gap-2 w-full p-4 rounded-xl border border-zinc-200 bg-white shadow-sm`}
+          className="w-full"
         >
-          <CredibilidadeEmoji className="text-4xl" />
-          <span className="font-medium text-base">Credibilidade: {cred}</span>
-          <p className="text-sm text-center">{credibilidadeMensagem}</p>
-          <div className="w-full bg-zinc-200 h-2 rounded-full mt-1">
-            <div
-              className="h-2 rounded-full bg-purple-600 transition-all duration-500"
-              style={{ width: `${cred}%` }}
-            />
+          <div className="flex flex-col md:flex-row items-stretch gap-4">
+            <div className="flex-1 rounded-xl border border-zinc-200 bg-white p-5 shadow-sm flex items-center gap-6">
+              <div className="flex-shrink-0">
+                <CredibilidadeEmoji
+                  className={`w-12 h-12 ${progressTextClass}`}
+                />
+              </div>
+              <div className="flex-1">
+                <div className="flex items-center gap-2">
+                  <span className="text-lg font-semibold text-zinc-800">
+                    Credibilidade
+                  </span>
+                  <span
+                    className={`text-2xl font-extrabold ${progressTextClass}`}
+                  >
+                    {cred}
+                  </span>
+                </div>
+                <p className={`text-sm mt-1 ${progressTextClass}`}>
+                  {credibilidadeMensagem}
+                </p>
+                <div className="w-full h-2 rounded-full bg-zinc-100 mt-3">
+                  <div
+                    className={`h-2 rounded-full bg-gradient-to-r ${progressGradient}`}
+                    style={{ width: `${Math.max(0, Math.min(100, credNum))}%` }}
+                  />
+                </div>
+              </div>
+            </div>
+            <div className="w-full md:w-1/3 rounded-xl border border-zinc-200 bg-white p-4 shadow-sm flex items-center justify-center">
+              <div className="flex items-center gap-3">
+                <CalendarIcon className="w-6 h-6 text-zinc-500" />
+                <div className="text-left">
+                  <span className="text-sm text-zinc-600 block">Desde</span>
+                  <span className="text-lg font-semibold text-zinc-800 block">
+                    {usuario_data.dataCriacao_usuario
+                      ? new Date(
+                          usuario_data.dataCriacao_usuario
+                        ).toLocaleDateString("pt-BR")
+                      : "-"}
+                  </span>
+                </div>
+              </div>
+            </div>
           </div>
         </motion.div>
 
-        {/* PENALIDADES */}
+        {/* PENALIDADES + CONQUISTAS (layout side-by-side on md+) */}
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, amount: 0.2 }}
           transition={{ duration: 0.5 }}
-          className="w-full rounded-xl border border-zinc-200 bg-white p-4 shadow-sm space-y-3"
+          className="w-full grid grid-cols-1 md:grid-cols-2 gap-4"
         >
-          <h3 className="font-semibold text-zinc-800 text-base">Penalidades</h3>
-          {usuario_data.Penalidades && usuario_data.Penalidades.length > 0 ? (
-            usuario_data.Penalidades.map((penalidade) => (
-              <div
-                key={penalidade.id_penalidade}
-                className="p-3 rounded-lg border border-zinc-200"
-              >
-                <p className="text-sm text-neutral-700">
-                  <span className="font-medium">Descrição:</span>{" "}
-                  {penalidade.descricao}
-                </p>
-                <p className="text-sm text-neutral-700">
-                  <span className="font-medium">Ativa:</span>{" "}
-                  {penalidade.ativa ? "Sim" : "Não"}
-                </p>
-                <p className="text-sm text-neutral-700">
-                  <span className="font-medium">Início:</span>{" "}
-                  {new Date(
-                    penalidade.dataInicio_penalidade
-                  ).toLocaleDateString("pt-BR")}
-                </p>
-                <p className="text-sm text-neutral-700">
-                  <span className="font-medium">Fim:</span>{" "}
-                  {new Date(penalidade.dataFim_penalidade).toLocaleDateString(
-                    "pt-BR"
-                  )}
-                </p>
-                <p className="text-sm text-neutral-700">
-                  <span className="font-medium">Perda de Credibilidade:</span>{" "}
-                  {penalidade.perder_credibilidade}
-                </p>
+          {/* Penalidades (smaller, personal view) */}
+          <div className="relative rounded-xl border border-red-100 bg-white p-4 shadow-sm space-y-3 h-full flex flex-col justify-between">
+            <span className="absolute -top-3 -right-3 inline-flex items-center justify-center bg-red-50 text-red-700 border border-red-200 rounded-full px-3 py-1 text-sm font-semibold z-10">
+              {(usuario_data.penalidades || []).length} Penalidade(s)
+            </span>
+            <div>
+              <h3 className="flex items-center gap-2 font-semibold text-red-700 text-base">
+                <ExclamationTriangleIcon className="w-5 h-5 text-red-600" />
+                Suas penalidades
+              </h3>
+              <p className="text-sm text-neutral-600 mt-2">
+                Aqui você encontra suas penalidades registradas. Se houver
+                dúvidas, entre em contato com a equipe.
+              </p>
+            </div>
+            <div className="flex justify-end">
+              <ActionButton
+                textIdle="Ver suas penalidades"
+                onClick={() => setOpenPenalidades(true)}
+                className="min-w-[140px] bg-gradient-to-r from-red-600 to-rose-600"
+              />
+            </div>
 
-                <button
-                  className="mt-2 text-sm text-purple-600 hover:underline cursor-pointer"
-                  onClick={() =>
-                    handleVisualizarConteudo(
-                      penalidade.denuncia.fkId_conteudo_denunciado,
-                      penalidade.denuncia.tipo_conteudo
-                    )
-                  }
-                >
-                  Visualizar conteúdo
-                </button>
-              </div>
-            ))
-          ) : (
-            <p className="text-neutral-500 text-sm italic">
-              Nenhuma penalidade registrada.
-            </p>
-          )}
+            {/* Penalidades dialog (personal, red-themed) */}
+            <Dialog
+              open={openPenalidades}
+              onOpenChange={(v: boolean | undefined) =>
+                setOpenPenalidades(Boolean(v))
+              }
+            >
+              <DialogContent className="w-[calc(100vw-2rem)] sm:w-auto sm:min-w-[560px] max-w-4xl min-h-[40vh] rounded-2xl p-6 bg-white border border-zinc-100 shadow-xl">
+                <DialogHeader>
+                  <DialogTitle className="text-xl font-extrabold bg-gradient-to-r from-red-600 to-rose-500 bg-clip-text text-transparent">
+                    Suas penalidades
+                  </DialogTitle>
+                </DialogHeader>
+                <div className="flex flex-col items-start gap-4 mt-2">
+                  {(usuario_data.penalidades || []).length > 0 ? (
+                    (usuario_data.penalidades || []).map((p: any) => (
+                      <div
+                        key={p.id_penalidade}
+                        role="button"
+                        tabIndex={0}
+                        onClick={() => {
+                          const denunciaId =
+                            p.denuncia?.id_denuncia ?? p.fkId_denuncia;
+                          setSelectedDenunciaId(denunciaId ?? null);
+                          setSelectedPenalidade(p);
+                          setOpenDenunciaDetail(true);
+                        }}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") {
+                            const denunciaId =
+                              p.denuncia?.id_denuncia ?? p.fkId_denuncia;
+                            setSelectedDenunciaId(denunciaId ?? null);
+                            setSelectedPenalidade(p);
+                            setOpenDenunciaDetail(true);
+                          }
+                        }}
+                      >
+                        <PenalidadeCard
+                          penalidade={p}
+                          onView={handleVisualizarConteudo}
+                        />
+                      </div>
+                    ))
+                  ) : (
+                    <p className="text-neutral-500 text-sm italic">
+                      Nenhuma penalidade registrada.
+                    </p>
+                  )}
+                </div>
+                {/* footer removed: modal closes by clicking outside or pressing Esc */}
+              </DialogContent>
+            </Dialog>
+          </div>
+
+          {/* Conquistas placeholder */}
+          <div className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm space-y-3 h-full flex flex-col justify-between">
+            <div>
+              <h3 className="flex items-center gap-2 font-semibold text-amber-600 text-base">
+                <StarIcon className="w-5 h-5 text-amber-500" />
+                Conquistas
+              </h3>
+              <p className="text-sm text-amber-600 mt-2">
+                Em breve: espaço reservado para exibir conquistas do usuário.
+              </p>
+            </div>
+            <div className="flex justify-start">
+              <div className="h-10 rounded-full bg-zinc-100 w-24" />
+            </div>
+          </div>
         </motion.div>
 
         {/* BOTÃO SAIR */}
@@ -271,18 +542,200 @@ export default function UsuarioClientPage({
         user={usuario_data}
       />
 
+      {/* Content Preview Modal */}
+      <Dialog
+        open={previewOpen}
+        onOpenChange={(v: boolean | undefined) => {
+          setPreviewOpen(Boolean(v));
+          if (!v) {
+            setPreviewId(null);
+            setPreviewTipo(null);
+          }
+        }}
+      >
+        <DialogContent
+          showCloseButton={false}
+          className="w-[calc(100vw-2rem)] sm:w-auto max-w-lg sm:min-w-[260px] min-w-[220px] min-h-[320px] rounded-2xl p-5 bg-white border border-zinc-100 shadow-xl"
+        >
+          <DialogHeader>
+            <DialogTitle className="text-lg font-bold">
+              Preview do conteúdo denunciado
+            </DialogTitle>
+          </DialogHeader>
+          <div className="mt-2">
+            {/* Render preview from `previewQuery` */}
+            {!previewId || !previewTipo ? (
+              <div className="text-sm text-zinc-500">
+                Nenhum conteúdo selecionado.
+              </div>
+            ) : previewQuery.isLoading ? (
+              <div className="text-sm text-zinc-500">Carregando...</div>
+            ) : previewQuery.isError ? (
+              <div className="text-sm text-red-600">
+                Erro ao carregar conteúdo.
+              </div>
+            ) : previewTipo === "pergunta" && previewQuery.data ? (
+              (() => {
+                const p = previewQuery.data as Pergunta;
+                return (
+                  <div>
+                    <h3 className="font-semibold text-zinc-800">Pergunta</h3>
+                    <p className="mt-2 text-zinc-700">{p.pergunta}</p>
+                    <div className="mt-3 text-xs text-zinc-500">
+                      Por: {p.usuario?.nome_usuario ?? "-"}
+                    </div>
+                  </div>
+                );
+              })()
+            ) : previewTipo === "resposta" && previewQuery.data ? (
+              (() => {
+                const r = previewQuery.data as Resposta;
+                return (
+                  <div>
+                    <h3 className="font-semibold text-zinc-800">Resposta</h3>
+                    <p className="mt-2 text-zinc-700">{r.resposta}</p>
+                    <div className="mt-3 text-xs text-zinc-500">
+                      Por: {r.usuario?.nome_usuario ?? "-"}
+                    </div>
+                  </div>
+                );
+              })()
+            ) : (
+              <div className="text-sm text-zinc-500">
+                Conteúdo não disponível para visualização.
+              </div>
+            )}
+          </div>
+          {/* footer removed: modal closes by clicking outside or pressing Esc */}
+        </DialogContent>
+      </Dialog>
+
+      {/* Denúncia detail modal (opened when clicking a penalidade card) */}
+      <Dialog
+        open={openDenunciaDetail}
+        onOpenChange={(v: boolean | undefined) => {
+          setOpenDenunciaDetail(Boolean(v));
+          if (!v) {
+            setSelectedDenunciaId(null);
+            setSelectedPenalidade(null);
+          }
+        }}
+      >
+        <DialogContent
+          showCloseButton={false}
+          className="w-[calc(100vw-2rem)] sm:w-auto max-w-lg mx-4 bg-white rounded-2xl border border-zinc-100 shadow-xl p-6"
+        >
+          <DialogHeader>
+            <DialogTitle className="text-2xl font-extrabold text-rose-600">
+              Denúncia
+            </DialogTitle>
+            <div className="text-sm text-zinc-500 mt-1">
+              {selectedPenalidade?.dataInicio_penalidade
+                ? `Data de início da penalidade: ${new Date(
+                    selectedPenalidade.dataInicio_penalidade
+                  ).toLocaleString("pt-BR")}`
+                : ""}
+            </div>
+          </DialogHeader>
+
+          <div className="mt-4 grid grid-cols-1 gap-3">
+            {loadingDenuncia || denunciaDetailQuery.isLoading ? (
+              <div className="p-3 bg-yellow-50 border border-yellow-100 rounded text-yellow-800 text-sm">
+                Carregando denúncia...
+              </div>
+            ) : denunciaError || denunciaDetailQuery.isError ? (
+              <div className="p-3 bg-red-50 border border-red-100 rounded text-red-700 text-sm">
+                {denunciaError}
+              </div>
+            ) : !(denunciaLocal ?? denunciaDetailQuery.data) ? (
+              <div className="p-3 text-sm text-zinc-500">
+                Nenhuma denúncia selecionada.
+              </div>
+            ) : (
+              (() => {
+                const d = denunciaLocal ?? denunciaDetailQuery.data!;
+                const motivo = d.tipo_denuncia ?? d.tipo_conteudo ?? "—";
+                const revisado = d.revisadoTipo ?? d.tipo_conteudo ?? "—";
+                const item = loadingDenuncia
+                  ? "Carregando item..."
+                  : denunciaError
+                  ? "Erro ao carregar item denunciado."
+                  : conteudoTexto
+                  ? conteudoTexto
+                  : d.item_denunciado
+                  ? d.item_denunciado
+                  : "Conteúdo não disponível.";
+
+                return (
+                  <div className="space-y-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      <div className="rounded-lg border border-zinc-100 bg-gray-50 p-3">
+                        <div className="text-xs text-zinc-500 uppercase tracking-wide">
+                          Motivo
+                        </div>
+                        <div className="text-sm font-semibold mt-1">
+                          {String(motivo).toUpperCase()}
+                        </div>
+                      </div>
+
+                      <div className="rounded-lg border border-zinc-100 bg-white p-3">
+                        <div className="text-xs text-zinc-500 uppercase tracking-wide">
+                          Pontos de credibilidade perdidos
+                        </div>
+                        <div className="text-sm font-semibold mt-1">
+                          {selectedPenalidade?.perder_credibilidade ?? 0}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="rounded-lg border border-zinc-100 bg-gray-50 p-3">
+                      <div className="text-xs text-zinc-500 uppercase tracking-wide">
+                        O que foi revisado
+                      </div>
+                      <div className="text-sm font-semibold mt-1">
+                        {revisado}
+                      </div>
+                    </div>
+
+                    <div className="rounded-lg border border-zinc-100 bg-white p-3">
+                      <div className="text-xs text-zinc-500 uppercase tracking-wide">
+                        Item analisado
+                      </div>
+                      <div className="mt-2 p-3 bg-white rounded border text-sm max-w-prose mx-auto">
+                        {item}
+                      </div>
+                    </div>
+
+                    <div className="rounded-lg border border-zinc-100 bg-gray-50 p-3">
+                      <div className="text-xs text-zinc-500 uppercase tracking-wide">
+                        Descrição da penalidade (observação do moderador)
+                      </div>
+                      <div className="text-sm mt-1 break-words">
+                        {selectedPenalidade?.descricao ?? "-"}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })()
+            )}
+          </div>
+
+          {/* footer removed: modal closes by clicking outside or pressing Esc */}
+        </DialogContent>
+      </Dialog>
+
       {/* CONFIRM SAIR */}
-      <ConfirmDialog
+      <Dialog
         open={logoutOpen}
-        onOpenChange={(v) => {
-          setLogoutOpen(v);
+        onOpenChange={(v: boolean | undefined) => {
+          setLogoutOpen(Boolean(v));
           if (!v) setLeaving(false);
         }}
       >
-        <ConfirmContent className="bg-white">
-          <ConfirmHeader>
-            <ConfirmTitle className="text-zinc-900">Sair da conta</ConfirmTitle>
-          </ConfirmHeader>
+        <DialogContent className="bg-white">
+          <DialogHeader>
+            <DialogTitle className="text-zinc-900">Sair da conta</DialogTitle>
+          </DialogHeader>
           <div className="text-sm text-zinc-600">
             Tem certeza que deseja sair da sua conta?
           </div>
@@ -310,8 +763,8 @@ export default function UsuarioClientPage({
               enableRipplePulse
             />
           </div>
-        </ConfirmContent>
-      </ConfirmDialog>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

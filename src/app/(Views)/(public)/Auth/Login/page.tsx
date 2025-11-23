@@ -14,6 +14,7 @@ import { ActionButton } from "@/components/ui/actionButton";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Inter } from "next/font/google";
+import { getCookie } from "cookies-next";
 
 import {
   InputOTP,
@@ -40,6 +41,32 @@ export default function LoginUsuario() {
   });
 
   const router = useRouter();
+
+  // If user becomes authenticated in another tab, redirect away from login
+  useEffect(() => {
+    const checkAuth = () => {
+      try {
+        const token = getCookie("token");
+        if (token) router.replace("/home");
+      } catch (e) {}
+    };
+    checkAuth();
+    const onStorage = (e: StorageEvent) => {
+      if (e.key === "token" || e.key === null) checkAuth();
+    };
+    const onVisibility = () => {
+      if (!document.hidden) checkAuth();
+    };
+    window.addEventListener("storage", onStorage);
+    document.addEventListener("visibilitychange", onVisibility);
+    const iv = window.setInterval(checkAuth, 1500);
+    return () => {
+      window.removeEventListener("storage", onStorage);
+      document.removeEventListener("visibilitychange", onVisibility);
+      clearInterval(iv);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   const [isChecked, setIsChecked] = useState(false);
   const [mostrarSenha, setMostrarSenha] = useState(false);
   const [isLoading, setIsLoading] = useState(false);

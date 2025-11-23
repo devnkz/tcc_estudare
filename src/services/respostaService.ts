@@ -28,3 +28,9 @@ export async function deleteResposta(id: string, token: string): Promise<void> {
     },
   });
 }
+
+// Busca uma resposta por id
+export async function fetchRespostaById(id: string): Promise<Resposta> {
+  const res = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/resposta/${id}`);
+  return res.data;
+}

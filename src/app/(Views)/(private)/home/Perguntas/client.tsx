@@ -25,6 +25,8 @@ import { Inter } from "next/font/google";
 import Image from "next/image";
 import { AnimatePresence, motion } from "framer-motion";
 import { Search, BookOpen, Puzzle, X, ChevronDown, User } from "lucide-react";
+import { Info } from "lucide-react";
+import { ActionButton } from "@/components/ui/actionButton";
 import { UserCircleIcon } from "@heroicons/react/24/solid";
 import { BsThreeDotsVertical, BsReply, BsClock } from "react-icons/bs";
 import {
@@ -35,6 +37,13 @@ import {
   DropdownMenuSeparator,
   DropdownMenuLabel,
 } from "@/components/ui/dropdown-menu";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import { validarTextoOuErro } from "@/utils/filterText";
 
 const inter = Inter({ subsets: ["latin"] });
@@ -216,6 +225,33 @@ export function PerguntasClientPage({
         onSuccess: () => triggerAlert("Pergunta excluída com sucesso"),
       }
     );
+
+  // Confirmation modal state for deleting a pergunta (keeps same style as short-question modal)
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
+  const [deleteConfirmError, setDeleteConfirmError] = useState<string | null>(
+    null
+  );
+
+  const proceedWithDelete = () => {
+    if (!deleteTargetId) return;
+    setDeleteConfirmError(null);
+    deletePerguntaHook.mutate(
+      { id: deleteTargetId },
+      {
+        onSuccess: () => {
+          setDeleteConfirmOpen(false);
+          setDeleteTargetId(null);
+          triggerAlert("Pergunta excluída com sucesso");
+        },
+        onError: (err: any) => {
+          const serverMessage =
+            err?.response?.data?.error || err?.message || "Falha ao excluir.";
+          setDeleteConfirmError(serverMessage);
+        },
+      }
+    );
+  };
 
   const handleDeleteResposta = (id: string) =>
     deleteRespostaHook.mutate(
@@ -754,7 +790,11 @@ export function PerguntasClientPage({
                         )}
                         {id_usuario === author.id_usuario && (
                           <DropdownMenuItem
-                            onClick={() => handleDelete(pergunta.id_pergunta)}
+                            onClick={() => {
+                              // open confirm dialog instead of deleting immediately
+                              setDeleteTargetId(pergunta.id_pergunta);
+                              setDeleteConfirmOpen(true);
+                            }}
                             className="cursor-pointer text-red-600"
                           >
                             Excluir
@@ -864,6 +904,83 @@ export function PerguntasClientPage({
                       }))
                     }
                   />
+                  {/* Confirm delete modal (same visual style as short-question modal) */}
+                  <Dialog
+                    open={deleteConfirmOpen}
+                    onOpenChange={(v) => {
+                      if (!v) {
+                        setDeleteConfirmOpen(false);
+                        setDeleteTargetId(null);
+                        setDeleteConfirmError(null);
+                      } else {
+                        setDeleteConfirmOpen(true);
+                      }
+                    }}
+                  >
+                    <DialogContent
+                      overlayClassName="bg-black/20 backdrop-blur-sm"
+                      className="w-[calc(100vw-2rem)] sm:w-auto max-w-sm rounded-2xl p-6 bg-white dark:bg-slate-900 border border-red-200 shadow-xl"
+                    >
+                      <DialogHeader>
+                        <DialogTitle className="text-xl font-extrabold bg-gradient-to-r from-red-600 to-rose-600 bg-clip-text text-transparent">
+                          Tem certeza que deseja excluir <br /> esta pergunta?
+                        </DialogTitle>
+                      </DialogHeader>
+
+                      <motion.div
+                        initial={{ opacity: 0, y: -6 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="mb-4 rounded-lg border border-red-100 bg-red-50/70 px-3 py-2 text-[var(--foreground)] flex gap-2 items-start"
+                      >
+                        <Info className="w-4 h-4 mt-0.5 text-red-600" />
+                        <p className="text-xs sm:text-sm">
+                          Ao excluir, esta pergunta será removida
+                          permanentemente. Esta ação não pode ser desfeita.
+                          Deseja continuar?
+                        </p>
+                      </motion.div>
+
+                      {deleteConfirmError && (
+                        <motion.p
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: 1 }}
+                          className="text-xs text-red-600 mb-3"
+                        >
+                          {deleteConfirmError}
+                        </motion.p>
+                      )}
+
+                      <DialogFooter className="pt-2">
+                        <div className="flex items-center justify-between w-full gap-3">
+                          <ActionButton
+                            type="button"
+                            onClick={() => proceedWithDelete()}
+                            textIdle={
+                              deletePerguntaHook.isPending
+                                ? "Excluindo..."
+                                : "Excluir pergunta"
+                            }
+                            isLoading={deletePerguntaHook.isPending}
+                            enableRipplePulse
+                            className="min-w-[160px] cursor-pointer bg-gradient-to-r from-red-600 to-rose-600"
+                          />
+
+                          <ActionButton
+                            type="button"
+                            onClick={() => {
+                              setDeleteConfirmOpen(false);
+                              setDeleteTargetId(null);
+                            }}
+                            textIdle="Cancelar"
+                            isLoading={false}
+                            isSuccess={false}
+                            enableRipplePulse
+                            className="min-w-[160px] cursor-pointer bg-gradient-to-r from-purple-600 to-fuchsia-600"
+                          />
+                        </div>
+                      </DialogFooter>
+                    </DialogContent>
+                  </Dialog>
                 </motion.div>
               </div>
             );

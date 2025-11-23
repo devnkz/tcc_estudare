@@ -23,7 +23,7 @@ O Estudare é uma aplicação web desenvolvida com Next.js, focada em oferecer u
 - [x] Aulas extracurriculares e interacao e resolucao de duvidas
 - [x] Componentização com React e Tailwind
 - [x] Sistema de cadastro e login
-- [ ] Área de chat entre os alunos
+- [x] Área de chat entre os alunos
 - [x] Dashboard administrativo
 - [x] Integração com banco de dados MySQL
 

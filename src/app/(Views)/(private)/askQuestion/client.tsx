@@ -20,6 +20,14 @@ import { useEffect, useState, useMemo } from "react";
 import { motion } from "framer-motion";
 import badWordsJSON from "@/utils/badWordsPT.json";
 import { ActionButton } from "@/components/ui/actionButton";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { Info } from "lucide-react";
 
 export default function AskQuestionPage({
   componentes,
@@ -173,6 +181,16 @@ export default function AskQuestionPage({
 
   const { mutate, isPending } = useCreatePergunta();
 
+  // Short question confirmation
+  const MIN_QUESTION_LENGTH = 65; // perguntas mais curtas que isso disparam confirmação
+  const [shortConfirmOpen, setShortConfirmOpen] = useState(false);
+  const [shortConfirmError, setShortConfirmError] = useState<string | null>(
+    null
+  );
+  const [shortPayload, setShortPayload] = useState<CreatePerguntaData | null>(
+    null
+  );
+
   const onSubmit = (data: CreatePerguntaData) => {
     // prevent empty or whitespace-only submissions
     const raw = (perguntaText || data.pergunta || "").toString();
@@ -206,6 +224,14 @@ export default function AskQuestionPage({
       fkId_usuario: id_usuario || "",
     };
 
+    // If the question is very short, ask for confirmation before posting
+    if ((perguntaTrim || "").length < MIN_QUESTION_LENGTH) {
+      setShortPayload(payload as CreatePerguntaData);
+      setShortConfirmError(null);
+      setShortConfirmOpen(true);
+      return;
+    }
+
     mutate(payload, {
       onSuccess: () => {
         setIsSuccess(true);
@@ -223,6 +249,29 @@ export default function AskQuestionPage({
           type: "server",
           message: serverMessage,
         });
+      },
+    });
+  };
+
+  const proceedWithShortQuestion = () => {
+    if (!shortPayload) return;
+    setShortConfirmError(null);
+    // reuse same mutate flow
+    mutate(shortPayload, {
+      onSuccess: () => {
+        setIsSuccess(true);
+        setShortConfirmOpen(false);
+        setShortPayload(null);
+        setTimeout(() => {
+          router.push("/home");
+        }, 1500);
+      },
+      onError: (err: any) => {
+        const serverMessage =
+          err?.response?.data?.error ||
+          err?.message ||
+          "Erro ao criar pergunta";
+        setShortConfirmError(serverMessage);
       },
     });
   };
@@ -554,6 +603,80 @@ export default function AskQuestionPage({
           </div>
         </div>
       </main>
+
+      {/* Modal: Confirmar postagem de pergunta curta */}
+      <Dialog
+        open={shortConfirmOpen}
+        onOpenChange={(v) => {
+          if (!v) {
+            setShortConfirmOpen(false);
+            setShortPayload(null);
+            setShortConfirmError(null);
+          } else {
+            setShortConfirmOpen(true);
+          }
+        }}
+      >
+        <DialogContent className="w-[calc(100vw-2rem)] sm:w-auto max-w-sm rounded-2xl p-6 bg-white dark:bg-slate-900 border border-red-200 shadow-xl">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-extrabold bg-gradient-to-r from-red-600 to-rose-600 bg-clip-text text-transparent">
+              Tem certeza que sua pergunta está clara?
+            </DialogTitle>
+          </DialogHeader>
+          <motion.div
+            initial={{ opacity: 0, y: -6 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mb-4 rounded-lg border border-red-100 bg-red-50/70 px-3 py-2 text-[var(--foreground)] flex gap-2 items-start"
+          >
+            <Info className="w-4 h-4 mt-0.5 text-red-600" />
+            <p className="text-xs sm:text-sm">
+              Sua pergunta parece curta. Você leu nossas dicas e tem certeza de
+              que ela está suficientemente clara? Recomendamos fornecer mais
+              contexto para obter respostas melhores.
+            </p>
+          </motion.div>
+          {shortConfirmError && (
+            <motion.p
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="text-xs text-red-600 mb-3"
+            >
+              {shortConfirmError}
+            </motion.p>
+          )}
+          <DialogFooter className="pt-2">
+            <div className="flex items-center justify-between w-full gap-3">
+              {/* Left: less prominent publish action (gray text) */}
+              <button
+                type="button"
+                onClick={() => proceedWithShortQuestion()}
+                disabled={isPending}
+                className={`text-sm cursor-pointer transition ${
+                  isPending
+                    ? "text-zinc-400 pointer-events-none"
+                    : "text-zinc-600 hover:text-zinc-800"
+                }`}
+              >
+                {isPending ? "Postando..." : "Postar assim mesmo"}
+              </button>
+
+              {/* Right: voltar e melhorar (primary) */}
+              <ActionButton
+                type="button"
+                onClick={() => {
+                  // voltar para edição: fecha modal, keep text
+                  setShortConfirmOpen(false);
+                }}
+                textIdle="Voltar e melhorar a pergunta"
+                isLoading={false}
+                isSuccess={false}
+                enableRipplePulse
+                className="min-w-[160px] cursor-pointer bg-gradient-to-r from-purple-600 to-fuchsia-600"
+              />
+            </div>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <Footer />
     </div>

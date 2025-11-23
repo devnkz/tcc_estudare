@@ -167,10 +167,10 @@ export function UpdateUserModal({
         const FOURTEEN_DAYS_MS = 14 * 24 * 60 * 60 * 1000;
         if (now - last < FOURTEEN_DAYS_MS) {
           const nextDate = new Date(last + FOURTEEN_DAYS_MS).toLocaleString();
-          setError("apelido_usuario", {
-            type: "validate",
-            message: `Você só pode alterar o apelido a cada 14 dias. Próxima alteração em ${nextDate}`,
-          });
+          // show a user-facing message below the apelido field instead of a form error
+          setApelidoError(
+            `Você só pode alterar o apelido a cada 14 dias. Próxima alteração em ${nextDate}`
+          );
           return;
         }
       }
@@ -261,14 +261,19 @@ export function UpdateUserModal({
                 nameStatus = (
                   <Loader2 className="h-4 w-4 animate-spin text-zinc-500" />
                 );
-              } else if (field.value && !nameHasBad) {
-                nameStatus = (
-                  <CheckCircle2 className="h-4 w-4 text-emerald-600 animate-in fade-in" />
-                );
-              } else if (nameHasBad) {
-                nameStatus = (
-                  <XCircle className="h-4 w-4 text-red-600 animate-in fade-in" />
-                );
+              } else if (field.value) {
+                // consider form errors and bad-word check when showing status
+                const nomeHasError =
+                  nameHasBad || !!errors?.nome_usuario?.message;
+                if (nomeHasError) {
+                  nameStatus = (
+                    <XCircle className="h-4 w-4 text-red-600 animate-in fade-in" />
+                  );
+                } else {
+                  nameStatus = (
+                    <CheckCircle2 className="h-4 w-4 text-emerald-600 animate-in fade-in" />
+                  );
+                }
               }
 
               return (
@@ -301,14 +306,22 @@ export function UpdateUserModal({
                 statusIcon = (
                   <Loader2 className="h-4 w-4 animate-spin text-zinc-500" />
                 );
-              } else if (field.value && !nickHasBad) {
-                statusIcon = (
-                  <CheckCircle2 className="h-4 w-4 text-emerald-600 animate-in fade-in" />
-                );
-              } else if (nickHasBad) {
-                statusIcon = (
-                  <XCircle className="h-4 w-4 text-red-600 animate-in fade-in" />
-                );
+              } else if (field.value) {
+                // show error icon if there are validation warnings/errors
+                const apelidoHasError =
+                  nickHasBad ||
+                  !!errors?.apelido_usuario?.message ||
+                  !!apelidoError ||
+                  apelidoExists;
+                if (apelidoHasError) {
+                  statusIcon = (
+                    <XCircle className="h-4 w-4 text-red-600 animate-in fade-in" />
+                  );
+                } else {
+                  statusIcon = (
+                    <CheckCircle2 className="h-4 w-4 text-emerald-600 animate-in fade-in" />
+                  );
+                }
               }
 
               return (
@@ -394,27 +407,42 @@ export function UpdateUserModal({
       </DialogContent>
       {/* Confirmation modal for apelido change */}
       <Dialog open={confirmOpen} onOpenChange={(v) => setConfirmOpen(v)}>
-        <DialogContent className="max-w-md">
+        <DialogContent
+          overlayClassName="z-[210] bg-black/20 backdrop-blur-sm"
+          contentClassName="z-[220]"
+          className="max-w-md"
+        >
           <DialogHeader>
-            <DialogTitle>Confirmar alteração de apelido</DialogTitle>
+            <DialogTitle className="text-lg sm:text-xl font-extrabold bg-gradient-to-r from-purple-600 to-fuchsia-500 bg-clip-text text-transparent">
+              Confirmar alteração de apelido
+            </DialogTitle>
           </DialogHeader>
-          <div className="text-sm text-zinc-700">
-            Ao confirmar, seu apelido será alterado e você só poderá mudá-lo
-            novamente após 14 dias. Deseja continuar?
+          <div className="rounded-lg border border-purple-100 bg-purple-50/60 px-3 py-2 flex gap-2 items-start">
+            <Info className="w-4 h-4 mt-0.5 text-purple-600" />
+            <p className="text-xs sm:text-sm text-[var(--foreground)]">
+              Ao confirmar, seu apelido será alterado e você só poderá mudá-lo
+              novamente após 14 dias.
+            </p>
           </div>
-          <div className="mt-4 flex justify-end gap-2">
-            <button
-              type="button"
-              className="px-4 py-2 rounded-md border cursor-pointer border-zinc-300 text-zinc-700 hover:bg-zinc-50"
-              onClick={() => setConfirmOpen(false)}
-            >
-              Cancelar
-            </button>
-            <ActionButton
-              type="button"
-              textIdle="Confirmar"
-              onClick={() => confirmAndSubmit(values as UpdateUserData)}
-            />
+
+          <div className="mt-4 flex items-center justify-between gap-3">
+            <div className="flex-1">
+              <button
+                type="button"
+                onClick={() => setConfirmOpen(false)}
+                className="text-sm cursor-pointer text-zinc-600 hover:text-zinc-800 transition"
+              >
+                Cancelar
+              </button>
+            </div>
+            <div className="flex-shrink-0">
+              <ActionButton
+                type="button"
+                textIdle="Confirmar"
+                onClick={() => confirmAndSubmit(values as UpdateUserData)}
+                enableRipplePulse
+              />
+            </div>
           </div>
         </DialogContent>
       </Dialog>

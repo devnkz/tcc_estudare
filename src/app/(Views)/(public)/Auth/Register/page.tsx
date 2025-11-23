@@ -14,6 +14,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { useForm, Controller } from "react-hook-form";
 import { useRouter, useSearchParams } from "next/navigation";
 import { HeaderLoginCadastro } from "@/components/layout/header";
+import { getCookie } from "cookies-next";
 import { GlowingEffect } from "@/components/ui/glowing-effect";
 import { motion, AnimatePresence } from "framer-motion";
 import { ActionButton } from "@/components/ui/actionButton";
@@ -178,6 +179,32 @@ export default function CadastroUsuario() {
     return () => {
       if (redirectTimer.current) window.clearTimeout(redirectTimer.current);
     };
+  }, []);
+
+  // If user becomes authenticated in another tab, redirect away from register
+  useEffect(() => {
+    const checkAuth = () => {
+      try {
+        const token = getCookie("token");
+        if (token) router.replace("/home");
+      } catch (e) {}
+    };
+    checkAuth();
+    const onStorage = (e: StorageEvent) => {
+      if (e.key === "token" || e.key === null) checkAuth();
+    };
+    const onVisibility = () => {
+      if (!document.hidden) checkAuth();
+    };
+    window.addEventListener("storage", onStorage);
+    document.addEventListener("visibilitychange", onVisibility);
+    const iv = window.setInterval(checkAuth, 1500);
+    return () => {
+      window.removeEventListener("storage", onStorage);
+      document.removeEventListener("visibilitychange", onVisibility);
+      clearInterval(iv);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Funções para força de senha

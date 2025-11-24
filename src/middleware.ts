@@ -1,4 +1,4 @@
-import { MiddlewareConfig, NextRequest, NextResponse, ProxyConfig } from "next/server";
+import { MiddlewareConfig, NextRequest, NextResponse } from "next/server";
 import { jwtDecode } from "jwt-decode";
 import { ADMIN_EMAILS } from "@/lib/roles";
 
@@ -16,7 +16,7 @@ interface JWTPayload {
   [key: string]: any;
 }
 
-export function proxy(request: NextRequest) {
+export function Middleware(request: NextRequest) {
   const path = request.nextUrl.pathname;
   const publicRoute = publicRoutes.find(route => route.path === path);
   const authToken = request.cookies.get("token");
@@ -86,7 +86,7 @@ export function proxy(request: NextRequest) {
 
 }
 
-export const config: ProxyConfig = {
+export const config: MiddlewareConfig = {
     matcher: [
         /*
     Match all request paths except for os que começam com:

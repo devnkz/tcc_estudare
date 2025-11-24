@@ -1,7 +1,19 @@
-import { NextResponse } from "next/server";
-import type { NextRequest } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
+import { jwtDecode } from "jwt-decode";
+import type { MiddlewareConfig } from "next/server";
+import { ADMIN_EMAILS } from "@/lib/roles";
 
-// Lista de prefixos de rota que precisam de autenticação
+// Rotas públicas e comportamento quando autenticado
+const publicRoutes = [
+  { path: "/Auth/Login", whenAuthenticated: "redirect" },
+  { path: "/Auth/Register", whenAuthenticated: "redirect" },
+  { path: "/about", whenAuthenticated: "next" },
+  { path: "/", whenAuthenticated: "next" }
+] as const;
+
+const REDIRECT_NOT_AUTHENTICATED = "/Auth/Login";
+
+// Rotas que exigem autenticação explícita
 const protectedPaths = [
   "/home",
   "/dashboard",
@@ -9,96 +21,102 @@ const protectedPaths = [
   "/notifications",
   "/groups",
   "/askQuestion",
-  "/Auth/Me", // exemplo
+  "/Auth/Me"
 ];
 
+// Determina se a rota é protegida
 function isProtected(pathname: string) {
-  // Não proteger arquivos estáticos, _next, api, e a rota Auth public
-  if (pathname.startsWith("/_next") || pathname.startsWith("/api") || pathname.startsWith("/Auth") || pathname.startsWith("/static") || pathname.startsWith("/favicon.ico")) {
+  if (
+    pathname.startsWith("/_next") ||
+    pathname.startsWith("/api") ||
+    pathname.startsWith("/Auth") ||
+    pathname.startsWith("/static") ||
+    pathname.startsWith("/favicon.ico")
+  ) {
     return false;
   }
-
   return protectedPaths.some((p) => pathname === p || pathname.startsWith(p + "/"));
 }
 
-// Decodifica o payload do JWT sem verificar assinatura (apenas para extrair o id)
-function decodeJwtPayload(token: string) {
+// JWT expiração
+function isTokenExpired(token: string): boolean {
   try {
-    const parts = token.split('.');
-    if (parts.length < 2) return null;
-    const payload = parts[1];
-    const decoded = JSON.parse(Buffer.from(payload, 'base64').toString('utf8'));
-    return decoded as any;
-  } catch (e) {
-    return null;
+    const decoded: any = jwtDecode(token);
+    const now = Math.floor(Date.now() / 1000);
+    return decoded.exp < now;
+  } catch {
+    return true;
   }
 }
 
-export async function middleware(req: NextRequest) {
-  const { nextUrl, cookies } = req;
-  const pathname = nextUrl.pathname;
+export function middleware(req: NextRequest) {
+  const path = req.nextUrl.pathname;
+  const publicRoute = publicRoutes.find(r => r.path === path);
+  const token = req.cookies.get("token");
 
-  if (!isProtected(pathname)) {
+  // 🔓 1. Se rota pública e sem token → segue
+  if (!token && publicRoute) {
     return NextResponse.next();
   }
 
-  const token = cookies.get('token')?.value;
-  const loginUrl = new URL('/Auth/Login', req.url);
-
-  if (!token) {
-    // Sem token -> redirecionar para login
-    return NextResponse.redirect(loginUrl);
+  // 🔐 2. Se rota privada e sem token → redireciona para login
+  if (!token && !publicRoute && isProtected(path)) {
+    const url = req.nextUrl.clone();
+    url.pathname = REDIRECT_NOT_AUTHENTICATED;
+    return NextResponse.redirect(url);
   }
 
-  const payload = decodeJwtPayload(token);
-  const userId = payload?.id;
-  if (!userId) {
-    // Token inválido -> limpar cookie e redirecionar
-    const res = NextResponse.redirect(loginUrl);
-    res.cookies.set('token', '', { path: '/', maxAge: 0 });
-    return res;
+  // 🔁 3. Se autenticado e rota pública que exige redirect → manda pra /home
+  if (token && publicRoute && publicRoute.whenAuthenticated === "redirect") {
+    const url = req.nextUrl.clone();
+    url.pathname = "/home";
+    return NextResponse.redirect(url);
   }
 
-  try {
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || '';
-    if (!apiUrl) {
-      // Se não houver API configurada, permita seguir (ou você pode ajustar para falhar).
-      return NextResponse.next();
-    }
-
-    const checkRes = await fetch(`${apiUrl.replace(/\/$/, '')}/user/${userId}`, {
-      method: 'GET',
-      headers: { accept: 'application/json' },
-    });
-
-    if (checkRes.ok) {
-      return NextResponse.next();
-    }
-
-    // Se o usuário não existe (404) ou server error (500) -> limpar token e redirecionar
-    if (checkRes.status === 404 || checkRes.status === 500) {
-      const res = NextResponse.redirect(loginUrl);
-      res.cookies.set('token', '', { path: '/', maxAge: 0 });
+  // 🔐 4. Token presente nas rotas protegidas → validar expiração
+  if (token && isProtected(path)) {
+    if (isTokenExpired(token.value)) {
+      const url = req.nextUrl.clone();
+      url.pathname = REDIRECT_NOT_AUTHENTICATED;
+      const res = NextResponse.redirect(url);
+      res.cookies.set("token", "", { maxAge: -1 });
       return res;
     }
 
-    // Para outros códigos, permita seguir (ou mudar conforme necessidade)
-    return NextResponse.next();
-  } catch (e) {
-    // Em caso de erro de rede ao consultar backend, limpar cookie e redirecionar
-    const res = NextResponse.redirect(loginUrl);
-    res.cookies.set('token', '', { path: '/', maxAge: 0 });
-    return res;
+    // 👑 5. Autorização de admin para /dashboard
+    if (path.startsWith("/dashboard")) {
+      try {
+        const data: any = jwtDecode(token.value);
+        const role = (data?.tipo_usuario || "").toLowerCase();
+        const email = (data?.email_usuario || "").toLowerCase();
+
+        const isAdmin =
+          role === "admin" ||
+          role === "administrador" ||
+          ADMIN_EMAILS.includes(email);
+
+        if (!isAdmin) {
+          const url = req.nextUrl.clone();
+          url.pathname = "/home";
+          return NextResponse.redirect(url);
+        }
+      } catch (e) {
+        // token mal formado → desaloga
+        const url = req.nextUrl.clone();
+        url.pathname = REDIRECT_NOT_AUTHENTICATED;
+        const res = NextResponse.redirect(url);
+        res.cookies.set("token", "", { maxAge: -1 });
+        return res;
+      }
+    }
   }
+
+  // ✔️ Se passou por tudo → segue request normal
+  return NextResponse.next();
 }
 
-export const config = {
+export const config: MiddlewareConfig = {
   matcher: [
-    '/home/:path*',
-    '/dashboard/:path*',
-    '/user/:path*',
-    '/notifications/:path*',
-    '/groups/:path*',
-    '/askQuestion/:path*',
-  ],
+    "/((?!api|_next/static|_next/image|favicon.ico|.*\\.png$|.*\\.svg$).*)"
+  ]
 };

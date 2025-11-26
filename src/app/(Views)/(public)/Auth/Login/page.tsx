@@ -300,7 +300,10 @@ export default function LoginUsuario() {
                   </div>
                 </label>
 
-                <button className="text-purple-600 hover:underline">
+                <button
+                  onClick={() => router.push("/forgot-password")}
+                  className="text-purple-600 hover:underline"
+                >
                   Esqueceu a senha?
                 </button>
               </div>

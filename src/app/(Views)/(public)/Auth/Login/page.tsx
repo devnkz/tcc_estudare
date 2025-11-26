@@ -174,8 +174,8 @@ export default function LoginUsuario() {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            email: form.email_usuario,
-            code: otpValue,
+            email_usuario: form.email_usuario,
+            codigo: otpValue,
           }),
         }
       );

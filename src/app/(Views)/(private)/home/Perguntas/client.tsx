@@ -19,6 +19,7 @@ import ModalUpdateResponse from "./modalUpdateResponse";
 import ModalCreateDenuncia from "./modalCreateReport";
 import { GlowingEffect } from "@/components/ui/glowing-effect";
 import { LiquidButton } from "@/components/ui/liquid-glass-button";
+import { validarResposta } from "@/services/validarResposta";
 // use `User` from lucide-react to keep icon set consistent
 
 import { Inter } from "next/font/google";
@@ -1112,6 +1113,7 @@ export function PerguntasClientPage({
                   <h3 className="text-left text-xl sm:text-2xl font-extrabold tracking-tight text-zinc-900">
                     {openPergunta.pergunta}
                   </h3>
+
                   {/* Respostas list */}
                   <div className="max-h-[50vh] overflow-y-auto pr-1 space-y-2">
                     {respostas
@@ -1169,7 +1171,9 @@ export function PerguntasClientPage({
                                   <DropdownMenuTrigger className="opacity-80 hover:opacity-100 p-2 rounded-md hover:bg-zinc-100 transition cursor-pointer">
                                     <BsThreeDotsVertical className="w-4 h-4 text-zinc-600" />
                                   </DropdownMenuTrigger>
+
                                   <DropdownMenuContent className="z-[120]">
+                                    {/* Editar se for o dono */}
                                     {id_usuario === rAuthor.id_usuario && (
                                       <DropdownMenuItem
                                         className="cursor-pointer"
@@ -1180,6 +1184,8 @@ export function PerguntasClientPage({
                                         Editar
                                       </DropdownMenuItem>
                                     )}
+
+                                    {/* Excluir se for o dono ou dono da pergunta */}
                                     {(id_usuario === rAuthor.id_usuario ||
                                       id_usuario ===
                                         (openPergunta as any).openAuthor
@@ -1193,6 +1199,37 @@ export function PerguntasClientPage({
                                         Excluir
                                       </DropdownMenuItem>
                                     )}
+
+                                    {/* Professores podem validar respostas de outras pessoas */}
+                                    {tipousuario === "Professor" &&
+                                      id_usuario !== rAuthor.id_usuario && (
+                                        <DropdownMenuItem
+                                          className="cursor-pointer text-green-600"
+                                          onClick={async () => {
+                                            const resultado =
+                                              await validarResposta(
+                                                r.id_resposta,
+                                                token,
+                                                id_usuario
+                                              );
+
+                                            if (resultado.sucesso) {
+                                              alert(
+                                                "Resposta validada com sucesso!"
+                                              );
+                                            } else {
+                                              alert(
+                                                "Erro ao validar resposta: " +
+                                                  resultado.erro
+                                              );
+                                            }
+                                          }}
+                                        >
+                                          Validar resposta
+                                        </DropdownMenuItem>
+                                      )}
+
+                                    {/* Denunciar se não for o autor */}
                                     {id_usuario !== rAuthor.id_usuario && (
                                       <DropdownMenuItem
                                         className="cursor-pointer text-red-500"

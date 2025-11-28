@@ -429,58 +429,6 @@ export default function UsuarioClientPage({
           </div>
         </motion.div>
 
-        <Accordion type="single" collapsible className="w-full">
-          <AccordionItem value="item-3">
-            <AccordionTrigger className="cursor-pointer bg-zinc-200 px-4 py-2 hover:bg-zinc-300 rounded-md text-zinc-900 font-medium">
-              VIZUALIZAR CONQUISTAS
-            </AccordionTrigger>
-            <AccordionContent className="flex flex-col gap-4 text-balance px-4 py-2">
-              {conquistas && conquistas.length > 0 ? (
-                conquistas.map((conquista) => {
-                  const concluida =
-                    conquista.progressoAtual! >= conquista.progressoMax;
-
-                  return (
-                    <div
-                      key={conquista.id}
-                      className={`p-3 rounded-lg border ${
-                        concluida
-                          ? "border-green-500 bg-green-50"
-                          : "border-zinc-300 bg-zinc-100 opacity-50"
-                      }`}
-                    >
-                      <h4
-                        className={`font-semibold text-lg ${
-                          concluida ? "text-green-700" : "text-zinc-500"
-                        }`}
-                      >
-                        {conquista.titulo}
-                      </h4>
-
-                      <p
-                        className={`text-sm ${
-                          concluida ? "text-green-600" : "text-zinc-500"
-                        }`}
-                      >
-                        {conquista.descricao}
-                      </p>
-
-                      {conquista.progressoMax !== undefined && (
-                        <p className="text-xs text-zinc-700 mt-1">
-                          Progresso: {conquista.progressoAtual} /{" "}
-                          {conquista.progressoMax}
-                        </p>
-                      )}
-                    </div>
-                  );
-                })
-              ) : (
-                <p>Nenhuma conquista encontrada.</p>
-              )}
-            </AccordionContent>
-          </AccordionItem>
-        </Accordion>
-
         {/* PENALIDADES */}
         <motion.div
           initial={{ opacity: 0, y: 10 }}
@@ -574,11 +522,42 @@ export default function UsuarioClientPage({
                 Conquistas
               </h3>
               <p className="text-sm text-amber-600 mt-2">
-                Em breve: espaço reservado para exibir conquistas do usuário.
+                Espaço reservado para exibir conquistas do usuário.
               </p>
             </div>
-            <div className="flex justify-start">
-              <div className="h-10 rounded-full bg-zinc-100 w-24" />
+            <div className="w-full">
+              <Accordion type="single" collapsible className="w-full">
+                <AccordionItem value="item-1">
+                  <AccordionTrigger className="cursor-pointer hover:text-purple-600 h-10 rounded-full bg-zinc-100 w-fit px-4 flex items-center text-sm font-medium text-zinc-700">
+                    {conquistas.length} Conquista(s)
+                  </AccordionTrigger>
+                  <AccordionContent>
+                    <div className="grid gap-3 p-2">
+                      {conquistas.map((c, i) => (
+                        <div
+                          key={i}
+                          className="rounded-xl border border-zinc-200 p-4 bg-white shadow-sm"
+                        >
+                          <h3 className="text-base font-semibold text-purple-600">
+                            {c.titulo}
+                          </h3>
+                          <p className="text-sm text-zinc-600">{c.descricao}</p>
+                          <div className="mt-2 h-2 w-full bg-zinc-200 rounded-full overflow-hidden">
+                            <div
+                              className="h-full bg-purple-600"
+                              style={{
+                                width: `${
+                                  (c.progressoAtual! / c.progressoMax) * 10
+                                }%`,
+                              }}
+                            />
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </AccordionContent>
+                </AccordionItem>
+              </Accordion>
             </div>
           </div>
         </motion.div>

@@ -2332,9 +2332,9 @@ export default function DashboardPage({
                           ({u.apelido_usuario})
                         </span>
                       )}
-                      {u.tipoUsuario && (
+                      {u.tipousuario && (
                         <span className="text-xs px-2 py-0.5 rounded-full bg-purple-100 text-purple-700 font-normal ml-2">
-                          {u.tipoUsuario.nome_tipousuario}
+                          {u.tipousuario.nome_tipousuario}
                         </span>
                       )}
                     </span>

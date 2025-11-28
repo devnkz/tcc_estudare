@@ -37,11 +37,25 @@ export function InitialPage({ userData }: HomeProps) {
         {/* Saudação */}
         <div className="space-y-1 mt-6">
           <h1 className="font-bold text-4xl text-gray-800">
-            Olá,{" "}
-            <span className="text-purple-600">
-              {userData?.apelido_usuario || userData?.nome_usuario || "usuário"}
-            </span>
+            {userData?.tipousuario?.nome_tipousuario === "Professor" ? (
+              <>
+                Bem-vindo, Professor(a){" "}
+                <span className="text-purple-600">
+                  {userData?.nome_usuario}
+                </span>{" "}
+              </>
+            ) : (
+              <>
+                Olá,{" "}
+                <span className="text-purple-600">
+                  {userData?.apelido_usuario ||
+                    userData?.nome_usuario ||
+                    "usuário"}
+                </span>
+              </>
+            )}
           </h1>
+
           <p className="text-zinc-600 text-base">Tem alguma dúvida hoje?</p>
         </div>
 

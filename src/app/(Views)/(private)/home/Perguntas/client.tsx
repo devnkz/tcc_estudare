@@ -29,6 +29,7 @@ import { Info } from "lucide-react";
 import { ActionButton } from "@/components/ui/actionButton";
 import { UserCircleIcon } from "@heroicons/react/24/solid";
 import { BsThreeDotsVertical, BsReply, BsClock } from "react-icons/bs";
+import { ocultarPergunta } from "@/services/ocultarPerguntaService";
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -54,6 +55,8 @@ interface PerguntasClientPageProps {
   initialCursos: Curso[];
   initialRespostas: Resposta[];
   id_usuario: string;
+  tipousuario: string;
+  token: string;
 }
 
 export function PerguntasClientPage({
@@ -61,7 +64,9 @@ export function PerguntasClientPage({
   initialComponentes,
   initialCursos,
   initialRespostas,
+  tipousuario,
   id_usuario,
+  token,
 }: PerguntasClientPageProps) {
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -682,309 +687,336 @@ export function PerguntasClientPage({
           ))}
         </div>
       )}
-      {!isLoadingList && filteredPerguntas.length > 0 ? (
+      {!isLoadingList &&
+      filteredPerguntas.filter((p) => p.visibilidade_pergunta === true).length >
+        0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-          {filteredPerguntas.map((pergunta) => {
-            const respostasPergunta = respostas.filter(
-              (r) => r.fkId_pergunta === pergunta.id_pergunta
-            );
-            // normalize author shape: backend sometimes returns `usuario` or `usuarios`
-            const author = (pergunta as any).usuario ??
-              (pergunta as any).usuarios ?? {
-                id_usuario: "",
-                nome_usuario: "Usuário removido",
-                apelido_usuario: "",
-                foto_perfil: null,
-              };
-            const minhaResposta = respostasPergunta.find(
-              (r) =>
-                ((r as any).usuario ?? (r as any).usuarios)?.id_usuario ===
-                id_usuario
-            );
-            const jaRespondida = !!minhaResposta;
-            const temResposta = respostasPergunta.length > 0;
-            const isPerguntaHighlighted =
-              highlightType === "Pergunta" &&
-              highlightId === pergunta.id_pergunta;
-            const showAnswers =
-              openAnswers[pergunta.id_pergunta] ||
-              (openAnswers.__openAll as unknown as boolean);
+          {filteredPerguntas
+            .filter((p) => p.visibilidade_pergunta === true)
+            .map((pergunta) => {
+              const respostasPergunta = respostas.filter(
+                (r) => r.fkId_pergunta === pergunta.id_pergunta
+              );
+              // normalize author shape: backend sometimes returns `usuario` or `usuarios`
+              const author = (pergunta as any).usuario ??
+                (pergunta as any).usuarios ?? {
+                  id_usuario: "",
+                  nome_usuario: "Usuário removido",
+                  apelido_usuario: "",
+                  foto_perfil: null,
+                };
+              const minhaResposta = respostasPergunta.find(
+                (r) =>
+                  ((r as any).usuario ?? (r as any).usuarios)?.id_usuario ===
+                  id_usuario
+              );
+              const jaRespondida = !!minhaResposta;
+              const temResposta = respostasPergunta.length > 0;
+              const isPerguntaHighlighted =
+                highlightType === "Pergunta" &&
+                highlightId === pergunta.id_pergunta;
+              const showAnswers =
+                openAnswers[pergunta.id_pergunta] ||
+                (openAnswers.__openAll as unknown as boolean);
 
-            return (
-              <div key={pergunta.id_pergunta} className="relative">
-                <GlowingEffect
-                  spread={70}
-                  glow={true}
-                  disabled={false}
-                  proximity={150}
-                  inactiveZone={0.2}
-                  borderWidth={3}
-                  movementDuration={1}
-                  blur={6}
-                />
-                <motion.div
-                  ref={(el) =>
-                    void (perguntasRefs.current[pergunta.id_pergunta] = el)
-                  }
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.28 }}
-                  className={`group relative w-full h-full overflow-hidden rounded-3xl border bg-white/70 backdrop-blur-sm shadow-[0_2px_6px_-1px_rgba(0,0,0,0.05)] hover:shadow-[0_4px_14px_-2px_rgba(0,0,0,0.08)] hover:-translate-y-0.5 transition-all px-6 py-6 flex flex-col
+              return (
+                <div key={pergunta.id_pergunta} className="relative">
+                  <GlowingEffect
+                    spread={70}
+                    glow={true}
+                    disabled={false}
+                    proximity={150}
+                    inactiveZone={0.2}
+                    borderWidth={3}
+                    movementDuration={1}
+                    blur={6}
+                  />
+                  <motion.div
+                    ref={(el) =>
+                      void (perguntasRefs.current[pergunta.id_pergunta] = el)
+                    }
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.28 }}
+                    className={`group relative w-full h-full overflow-hidden rounded-3xl border bg-white/70 backdrop-blur-sm shadow-[0_2px_6px_-1px_rgba(0,0,0,0.05)] hover:shadow-[0_4px_14px_-2px_rgba(0,0,0,0.08)] hover:-translate-y-0.5 transition-all px-6 py-6 flex flex-col
                   ${
                     isPerguntaHighlighted
                       ? "ring-2 ring-purple-300/60"
                       : "border-zinc-200"
                   }`}
-                >
-                  {/* subtle gradient overlay */}
-                  <div className="pointer-events-none absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <div className="absolute inset-0 bg-gradient-to-br from-purple-500/10 via-transparent to-pink-500/10" />
-                  </div>
-                  {/* Header */}
-                  <div className="flex items-start justify-between gap-3 mb-4">
-                    <div className="flex items-start gap-3 min-w-0 flex-1">
-                      {author.foto_perfil ? (
-                        <img
-                          src={author.foto_perfil}
-                          alt={author.nome_usuario || "avatar"}
-                          className="w-10 h-10 rounded-full object-cover shadow-sm flex-shrink-0"
-                        />
-                      ) : (
-                        <UserCircleIcon className="w-10 h-10 text-purple-400 flex-shrink-0" />
-                      )}
-                      <div className="flex flex-col min-w-0 flex-1 items-start">
-                        <span className="text-sm font-semibold text-zinc-800 break-words text-left w-full">
-                          {author.nome_usuario} ({author.apelido_usuario})
-                        </span>
-                        <span className="text-[11px] text-zinc-500 flex items-center gap-1 text-left">
-                          <BsClock className="w-3.5 h-3.5" />{" "}
-                          {timeAgo(pergunta.dataCriacao_pergunta)}
-                          {wasEdited(
-                            pergunta.dataCriacao_pergunta,
-                            pergunta.dataAtualizacao_pergunta
-                          ) && (
-                            <span className="ml-1 text-zinc-400">
-                              • editado
-                            </span>
-                          )}
-                        </span>
-                      </div>
+                  >
+                    {/* subtle gradient overlay */}
+                    <div className="pointer-events-none absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <div className="absolute inset-0 bg-gradient-to-br from-purple-500/10 via-transparent to-pink-500/10" />
                     </div>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger className="p-2 rounded-xl bg-white/50 hover:bg-white text-zinc-600 shadow-sm border border-zinc-200 cursor-pointer transition">
-                        <BsThreeDotsVertical className="w-4 h-4" />
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent className="z-[120]">
-                        <DropdownMenuLabel>Ações</DropdownMenuLabel>
-                        <DropdownMenuSeparator />
-                        {id_usuario === author.id_usuario && (
-                          <DropdownMenuItem
-                            onClick={() => {
-                              setOpenPergunta(null); // Fecha modal de ver respostas
-                              setEditPerguntaId(pergunta.id_pergunta);
-                            }}
-                            className="cursor-pointer"
-                          >
-                            Editar
-                          </DropdownMenuItem>
+                    {/* Header */}
+                    <div className="flex items-start justify-between gap-3 mb-4">
+                      <div className="flex items-start gap-3 min-w-0 flex-1">
+                        {author.foto_perfil ? (
+                          <img
+                            src={author.foto_perfil}
+                            alt={author.nome_usuario || "avatar"}
+                            className="w-10 h-10 rounded-full object-cover shadow-sm flex-shrink-0"
+                          />
+                        ) : (
+                          <UserCircleIcon className="w-10 h-10 text-purple-400 flex-shrink-0" />
                         )}
-                        {id_usuario === author.id_usuario && (
-                          <DropdownMenuItem
-                            onClick={() => {
-                              // open confirm dialog instead of deleting immediately
-                              setDeleteTargetId(pergunta.id_pergunta);
-                              setDeleteConfirmOpen(true);
-                            }}
-                            className="cursor-pointer text-red-600"
-                          >
-                            Excluir
-                          </DropdownMenuItem>
-                        )}
-                        {id_usuario !== author.id_usuario && (
-                          <DropdownMenuItem
-                            onClick={() => {
-                              setOpenPergunta(pergunta);
-                              handleResponder(pergunta.id_pergunta);
-                            }}
-                            className="cursor-pointer"
-                          >
-                            Responder
-                          </DropdownMenuItem>
-                        )}
-                        {id_usuario !== author.id_usuario && (
-                          <DropdownMenuItem
-                            onClick={() =>
-                              toggleModalDenuncia(pergunta.id_pergunta)
-                            }
-                            className="cursor-pointer text-red-500"
-                          >
-                            Denunciar
-                          </DropdownMenuItem>
-                        )}
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </div>
+                        <div className="flex flex-col min-w-0 flex-1 items-start">
+                          <span className="text-sm font-semibold text-zinc-800 break-words text-left w-full">
+                            {author.nome_usuario} ({author.apelido_usuario})
+                          </span>
+                          <span className="text-[11px] text-zinc-500 flex items-center gap-1 text-left">
+                            <BsClock className="w-3.5 h-3.5" />{" "}
+                            {timeAgo(pergunta.dataCriacao_pergunta)}
+                            {wasEdited(
+                              pergunta.dataCriacao_pergunta,
+                              pergunta.dataAtualizacao_pergunta
+                            ) && (
+                              <span className="ml-1 text-zinc-400">
+                                • editado
+                              </span>
+                            )}
+                          </span>
+                        </div>
+                      </div>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger className="p-2 rounded-xl bg-white/50 hover:bg-white text-zinc-600 shadow-sm border border-zinc-200 cursor-pointer transition">
+                          <BsThreeDotsVertical className="w-4 h-4" />
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent className="z-[120]">
+                          <DropdownMenuLabel>Ações</DropdownMenuLabel>
+                          <DropdownMenuSeparator />
+                          {id_usuario === author.id_usuario && (
+                            <DropdownMenuItem
+                              onClick={() => {
+                                setOpenPergunta(null); // Fecha modal de ver respostas
+                                setEditPerguntaId(pergunta.id_pergunta);
+                              }}
+                              className="cursor-pointer"
+                            >
+                              Editar
+                            </DropdownMenuItem>
+                          )}
+                          {id_usuario === author.id_usuario && (
+                            <DropdownMenuItem
+                              onClick={() => {
+                                // open confirm dialog instead of deleting immediately
+                                setDeleteTargetId(pergunta.id_pergunta);
+                                setDeleteConfirmOpen(true);
+                              }}
+                              className="cursor-pointer text-red-600"
+                            >
+                              Excluir
+                            </DropdownMenuItem>
+                          )}
+                          {id_usuario !== author.id_usuario &&
+                            tipousuario !== "Professor" && (
+                              <DropdownMenuItem
+                                onClick={() => {
+                                  setOpenPergunta(pergunta);
+                                  handleResponder(pergunta.id_pergunta);
+                                }}
+                                className="cursor-pointer"
+                              >
+                                Responder
+                              </DropdownMenuItem>
+                            )}
 
-                  {/* Pergunta */}
-                  <div className="relative mb-4">
-                    <h3 className="text-left text-[18px] md:text-[20px] font-bold leading-snug tracking-tight text-zinc-900">
-                      {pergunta.pergunta}
-                    </h3>
-                  </div>
+                          {tipousuario === "Professor" && (
+                            <DropdownMenuItem
+                              onClick={async () => {
+                                const ok = await ocultarPergunta(
+                                  pergunta.id_pergunta,
+                                  token
+                                );
+                                if (ok) {
+                                  triggerAlert("Pergunta ocultada");
+                                  // Fecha modal/dropdown
+                                  setOpenPergunta(null);
+                                }
+                              }}
+                              className="cursor-pointer text-red-500"
+                            >
+                              Ocultar pergunta
+                            </DropdownMenuItem>
+                          )}
 
-                  {/* Tags */}
-                  <div className="flex flex-wrap gap-2 mb-4">
-                    <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-blue-50 text-[12px] font-semibold text-blue-700 border border-blue-200">
-                      <BookOpen className="w-3.5 h-3.5" />
-                      {pergunta.curso.nome_curso}
-                    </span>
-                    <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-purple-50 text-[12px] font-semibold text-purple-700 border border-purple-200">
-                      <Puzzle className="w-3.5 h-3.5" />
-                      {pergunta.componente.nome_componente}
-                    </span>
-                    {temResposta && (
-                      <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-purple-50 text-[11px] font-medium text-purple-600">
-                        {respostasPergunta.length} resposta(s)
+                          {id_usuario !== author.id_usuario && (
+                            <DropdownMenuItem
+                              onClick={() =>
+                                toggleModalDenuncia(pergunta.id_pergunta)
+                              }
+                              className="cursor-pointer text-red-500"
+                            >
+                              Denunciar
+                            </DropdownMenuItem>
+                          )}
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
+
+                    {/* Pergunta */}
+                    <div className="relative mb-4">
+                      <h3 className="text-left text-[18px] md:text-[20px] font-bold leading-snug tracking-tight text-zinc-900">
+                        {pergunta.pergunta}
+                      </h3>
+                    </div>
+
+                    {/* Tags */}
+                    <div className="flex flex-wrap gap-2 mb-4">
+                      <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-blue-50 text-[12px] font-semibold text-blue-700 border border-blue-200">
+                        <BookOpen className="w-3.5 h-3.5" />
+                        {pergunta.curso.nome_curso}
                       </span>
-                    )}
-                  </div>
+                      <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-purple-50 text-[12px] font-semibold text-purple-700 border border-purple-200">
+                        <Puzzle className="w-3.5 h-3.5" />
+                        {pergunta.componente.nome_componente}
+                      </span>
+                      {temResposta && (
+                        <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-purple-50 text-[11px] font-medium text-purple-600">
+                          {respostasPergunta.length} resposta(s)
+                        </span>
+                      )}
+                    </div>
 
-                  {/* Spacer para empurrar botões para o final */}
-                  <div className="flex-1"></div>
+                    {/* Spacer para empurrar botões para o final */}
+                    <div className="flex-1"></div>
 
-                  {/* Actions - botões sempre no final do card */}
-                  <div className="flex flex-col gap-2 items-center w-full">
-                    {id_usuario !== author.id_usuario && !jaRespondida ? (
+                    {/* Actions - botões sempre no final do card */}
+                    <div className="flex flex-col gap-2 items-center w-full">
+                      {id_usuario !== author.id_usuario &&
+                      tipousuario !== "Professor" &&
+                      !jaRespondida ? (
+                        <LiquidButton
+                          size="default"
+                          className="w-full flex items-center justify-center gap-1.5 px-3 py-2.5 text-sm font-semibold bg-gradient-to-r from-purple-600 to-purple-500 text-white hover:from-purple-700 hover:to-purple-600 shadow-md hover:shadow-lg rounded-2xl"
+                          onClick={() => {
+                            setOpenPergunta(pergunta);
+                            handleResponder(pergunta.id_pergunta);
+                          }}
+                        >
+                          Responder
+                        </LiquidButton>
+                      ) : (
+                        <div className="h-10" />
+                      )}
                       <LiquidButton
                         size="default"
-                        className="w-full flex items-center justify-center gap-1.5 px-3 py-2.5 text-sm font-semibold bg-gradient-to-r from-purple-600 to-purple-500 text-white hover:from-purple-700 hover:to-purple-600 shadow-md hover:shadow-lg rounded-2xl"
-                        onClick={() => {
-                          setOpenPergunta(pergunta);
-                          handleResponder(pergunta.id_pergunta);
-                        }}
+                        className="w-full px-3 py-2.5 text-sm font-medium text-zinc-700 rounded-2xl"
+                        onClick={() => setOpenPergunta(pergunta)}
                       >
-                        Responder
+                        Ver respostas
                       </LiquidButton>
-                    ) : (
-                      <div className="h-10" />
-                    )}
-                    <LiquidButton
-                      size="default"
-                      className="w-full px-3 py-2.5 text-sm font-medium text-zinc-700 rounded-2xl"
-                      onClick={() => setOpenPergunta(pergunta)}
-                    >
-                      Ver respostas
-                    </LiquidButton>
-                  </div>
+                    </div>
 
-                  {/* Modal de editar pergunta - controlado por estado */}
-                  <ModalUpdateQuestion
-                    pergunta={pergunta}
-                    isOpen={editPerguntaId === pergunta.id_pergunta}
-                    onOpenChange={(open) => {
-                      if (!open) setEditPerguntaId(null);
-                    }}
-                    onSuccess={() => {
-                      setEditPerguntaId(null);
-                      triggerAlert("Pergunta atualizada");
-                    }}
-                  />
+                    {/* Modal de editar pergunta - controlado por estado */}
+                    <ModalUpdateQuestion
+                      pergunta={pergunta}
+                      isOpen={editPerguntaId === pergunta.id_pergunta}
+                      onOpenChange={(open) => {
+                        if (!open) setEditPerguntaId(null);
+                      }}
+                      onSuccess={() => {
+                        setEditPerguntaId(null);
+                        triggerAlert("Pergunta atualizada");
+                      }}
+                    />
 
-                  {/* Modal de denunciar pergunta */}
-                  <ModalCreateDenuncia
-                    id_conteudo={pergunta.id_pergunta}
-                    id_usuario={id_usuario}
-                    fkId_usuario_conteudo={author.id_usuario}
-                    tipo_conteudo="Pergunta"
-                    isOpen={!!modalDenunciaOpen[pergunta.id_pergunta]}
-                    onOpenChange={(open) =>
-                      setModalDenunciaOpen((prev) => ({
-                        ...prev,
-                        [pergunta.id_pergunta]: open,
-                      }))
-                    }
-                  />
-                  {/* Confirm delete modal (same visual style as short-question modal) */}
-                  <Dialog
-                    open={deleteConfirmOpen}
-                    onOpenChange={(v) => {
-                      if (!v) {
-                        setDeleteConfirmOpen(false);
-                        setDeleteTargetId(null);
-                        setDeleteConfirmError(null);
-                      } else {
-                        setDeleteConfirmOpen(true);
+                    {/* Modal de denunciar pergunta */}
+                    <ModalCreateDenuncia
+                      id_conteudo={pergunta.id_pergunta}
+                      id_usuario={id_usuario}
+                      fkId_usuario_conteudo={author.id_usuario}
+                      tipo_conteudo="Pergunta"
+                      isOpen={!!modalDenunciaOpen[pergunta.id_pergunta]}
+                      onOpenChange={(open) =>
+                        setModalDenunciaOpen((prev) => ({
+                          ...prev,
+                          [pergunta.id_pergunta]: open,
+                        }))
                       }
-                    }}
-                  >
-                    <DialogContent
-                      overlayClassName="bg-black/20 backdrop-blur-sm"
-                      className="w-[calc(100vw-2rem)] sm:w-auto max-w-sm rounded-2xl p-6 bg-white dark:bg-slate-900 border border-red-200 shadow-xl"
+                    />
+                    {/* Confirm delete modal (same visual style as short-question modal) */}
+                    <Dialog
+                      open={deleteConfirmOpen}
+                      onOpenChange={(v) => {
+                        if (!v) {
+                          setDeleteConfirmOpen(false);
+                          setDeleteTargetId(null);
+                          setDeleteConfirmError(null);
+                        } else {
+                          setDeleteConfirmOpen(true);
+                        }
+                      }}
                     >
-                      <DialogHeader>
-                        <DialogTitle className="text-xl font-extrabold bg-gradient-to-r from-red-600 to-rose-600 bg-clip-text text-transparent">
-                          Tem certeza que deseja excluir <br /> esta pergunta?
-                        </DialogTitle>
-                      </DialogHeader>
-
-                      <motion.div
-                        initial={{ opacity: 0, y: -6 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        className="mb-4 rounded-lg border border-red-100 bg-red-50/70 px-3 py-2 text-[var(--foreground)] flex gap-2 items-start"
+                      <DialogContent
+                        overlayClassName="bg-black/20 backdrop-blur-sm"
+                        className="w-[calc(100vw-2rem)] sm:w-auto max-w-sm rounded-2xl p-6 bg-white dark:bg-slate-900 border border-red-200 shadow-xl"
                       >
-                        <Info className="w-4 h-4 mt-0.5 text-red-600" />
-                        <p className="text-xs sm:text-sm">
-                          Ao excluir, esta pergunta será removida
-                          permanentemente. Esta ação não pode ser desfeita.
-                          Deseja continuar?
-                        </p>
-                      </motion.div>
+                        <DialogHeader>
+                          <DialogTitle className="text-xl font-extrabold bg-gradient-to-r from-red-600 to-rose-600 bg-clip-text text-transparent">
+                            Tem certeza que deseja excluir <br /> esta pergunta?
+                          </DialogTitle>
+                        </DialogHeader>
 
-                      {deleteConfirmError && (
-                        <motion.p
-                          initial={{ opacity: 0 }}
-                          animate={{ opacity: 1 }}
-                          className="text-xs text-red-600 mb-3"
+                        <motion.div
+                          initial={{ opacity: 0, y: -6 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          className="mb-4 rounded-lg border border-red-100 bg-red-50/70 px-3 py-2 text-[var(--foreground)] flex gap-2 items-start"
                         >
-                          {deleteConfirmError}
-                        </motion.p>
-                      )}
+                          <Info className="w-4 h-4 mt-0.5 text-red-600" />
+                          <p className="text-xs sm:text-sm">
+                            Ao excluir, esta pergunta será removida
+                            permanentemente. Esta ação não pode ser desfeita.
+                            Deseja continuar?
+                          </p>
+                        </motion.div>
 
-                      <DialogFooter className="pt-2">
-                        <div className="flex items-center justify-between w-full gap-3">
-                          <ActionButton
-                            type="button"
-                            onClick={() => proceedWithDelete()}
-                            textIdle={
-                              deletePerguntaHook.isPending
-                                ? "Excluindo..."
-                                : "Excluir pergunta"
-                            }
-                            isLoading={deletePerguntaHook.isPending}
-                            enableRipplePulse
-                            className="min-w-[160px] cursor-pointer bg-gradient-to-r from-red-600 to-rose-600"
-                          />
+                        {deleteConfirmError && (
+                          <motion.p
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            className="text-xs text-red-600 mb-3"
+                          >
+                            {deleteConfirmError}
+                          </motion.p>
+                        )}
 
-                          <ActionButton
-                            type="button"
-                            onClick={() => {
-                              setDeleteConfirmOpen(false);
-                              setDeleteTargetId(null);
-                            }}
-                            textIdle="Cancelar"
-                            isLoading={false}
-                            isSuccess={false}
-                            enableRipplePulse
-                            className="min-w-[160px] cursor-pointer bg-gradient-to-r from-purple-600 to-fuchsia-600"
-                          />
-                        </div>
-                      </DialogFooter>
-                    </DialogContent>
-                  </Dialog>
-                </motion.div>
-              </div>
-            );
-          })}
+                        <DialogFooter className="pt-2">
+                          <div className="flex items-center justify-between w-full gap-3">
+                            <ActionButton
+                              type="button"
+                              onClick={() => proceedWithDelete()}
+                              textIdle={
+                                deletePerguntaHook.isPending
+                                  ? "Excluindo..."
+                                  : "Excluir pergunta"
+                              }
+                              isLoading={deletePerguntaHook.isPending}
+                              enableRipplePulse
+                              className="min-w-[160px] cursor-pointer bg-gradient-to-r from-red-600 to-rose-600"
+                            />
+
+                            <ActionButton
+                              type="button"
+                              onClick={() => {
+                                setDeleteConfirmOpen(false);
+                                setDeleteTargetId(null);
+                              }}
+                              textIdle="Cancelar"
+                              isLoading={false}
+                              isSuccess={false}
+                              enableRipplePulse
+                              className="min-w-[160px] cursor-pointer bg-gradient-to-r from-purple-600 to-fuchsia-600"
+                            />
+                          </div>
+                        </DialogFooter>
+                      </DialogContent>
+                    </Dialog>
+                  </motion.div>
+                </div>
+              );
+            })}
         </div>
       ) : (
         <div>Sem perguntas até o momento</div>
@@ -1224,16 +1256,19 @@ export function PerguntasClientPage({
                         ((r as any).usuario ?? (r as any).usuarios)
                           ?.id_usuario === id_usuario
                     );
+                    const isProfessor = tipousuario === "Professor";
                     const souDono =
                       (openPergunta as any).openAuthor?.id_usuario ===
                       id_usuario;
-                    if (jaRespondi || souDono) {
+                    if (jaRespondi || souDono || isProfessor) {
                       return (
                         <div className="rounded-2xl border border-zinc-200 bg-white/70 backdrop-blur p-4 text-sm text-zinc-600 flex items-center justify-between">
                           <span>
                             {souDono
                               ? "Você é o autor desta pergunta."
-                              : "Você já respondeu esta pergunta."}
+                              : jaRespondi
+                              ? "Você já respondeu esta pergunta."
+                              : "Professores não podem responder perguntas."}
                           </span>
                           {jaRespondi && (
                             <button

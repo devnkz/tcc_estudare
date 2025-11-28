@@ -33,11 +33,14 @@ export default function AskQuestionPage({
   componentes,
   cursos,
   id_usuario,
+  tiposuario,
 }: {
   componentes: Componente[];
   cursos: Curso[];
   id_usuario: string;
+  tiposuario: string;
 }) {
+  const isProfessor = tiposuario === "Professor";
   const TipsForAsking = [
     { text: "Seja específico e forneça contexto sobre sua dúvida." },
     { text: "Verifique se sua pergunta está clara e objetiva." },
@@ -329,6 +332,13 @@ export default function AskQuestionPage({
             <p className="text-zinc-600 text-base sm:text-lg max-w-2xl mx-auto">
               Tire suas dúvidas com a comunidade Estudare
             </p>
+
+            {tiposuario === "Professor" && (
+              <p className="text-red-600 text-2xl mt-4">
+                Professores não podem realizar perguntas para manter a interação
+                focada nos alunos.
+              </p>
+            )}
           </motion.div>
 
           {/* GRID LAYOUT */}
@@ -360,6 +370,7 @@ export default function AskQuestionPage({
                     rules={{ required: "Selecione um curso" }}
                     render={({ field }) => (
                       <Select
+                        disabled={isProfessor}
                         onValueChange={(val) => {
                           // when user selects course, clear componente if it doesn't belong
                           field.onChange(val);
@@ -418,6 +429,7 @@ export default function AskQuestionPage({
                     rules={{ required: "Selecione um componente" }}
                     render={({ field }) => (
                       <Select
+                        disabled={componenteDisabled || isProfessor}
                         onValueChange={(val) => {
                           field.onChange(val);
                           // if componente selected first, auto-select its curso
@@ -482,6 +494,7 @@ export default function AskQuestionPage({
                     Sua Pergunta
                   </label>
                   <textarea
+                    disabled={isProfessor}
                     {...register("pergunta", {
                       required: "A pergunta é obrigatória",
                     })}
@@ -525,7 +538,9 @@ export default function AskQuestionPage({
                   textIdle="Publicar Pergunta"
                   isLoading={isPending}
                   isSuccess={isSuccess}
-                  disabled={isPending || hasBadWords || isSuccess}
+                  disabled={
+                    isPending || hasBadWords || isSuccess || isProfessor
+                  }
                   enableRipplePulse
                   className="mt-2 w-full h-12 rounded-full"
                 />

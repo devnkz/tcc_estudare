@@ -3,6 +3,7 @@ export interface Pergunta {
   pergunta: string;
   fkId_usuario?: string;
   fkId_componente?: string;
+  visibilidade_pergunta: boolean;
   dataCriacao_pergunta?: Date | string;
   dataAtualizacao_pergunta?: Date | string;
   usuario:{

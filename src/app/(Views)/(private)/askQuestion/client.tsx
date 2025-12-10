@@ -194,10 +194,71 @@ export default function AskQuestionPage({
     null
   );
 
-  const onSubmit = (data: CreatePerguntaData) => {
-    // prevent empty or whitespace-only submissions
+  // ===========================================
+  // FUNÇÃO CENTRAL — cria a pergunta e envia a foto
+  // ===========================================
+  const criarPerguntaEEnviarImagem = async (payload: CreatePerguntaData) => {
+    return new Promise<void>((resolve) => {
+      mutate(payload, {
+        onSuccess: async (created) => {
+          const perguntaId = created?.id_pergunta;
+          if (!perguntaId) {
+            console.error("Backend não retornou o ID da pergunta!");
+            resolve();
+            return;
+          }
+
+          try {
+            const file = payload.foto_pergunta;
+            if (file) {
+              const formData = new FormData();
+              formData.append("foto_pergunta", file);
+
+              const response = await fetch(
+                `${process.env.NEXT_PUBLIC_API_URL}/pergunta/foto/${perguntaId}`,
+                {
+                  method: "POST",
+                  body: formData,
+                }
+              );
+
+              if (!response.ok) {
+                console.log("Campos enviados no FormData:");
+                for (const [key, value] of formData.entries()) {
+                  console.log(key, value);
+                }
+              }
+            }
+          } catch (err) {
+            console.error("Erro ao enviar imagem", err);
+          }
+
+          setIsSuccess(true);
+          setTimeout(() => router.push("/home"), 1500);
+          resolve();
+        },
+
+        onError: (err: any) => {
+          const serverMessage =
+            err?.response?.data?.error ||
+            err?.message ||
+            "Erro ao criar pergunta";
+
+          setError("pergunta" as any, {
+            type: "server",
+            message: serverMessage,
+          });
+
+          resolve();
+        },
+      });
+    });
+  };
+
+  const onSubmit = async (data: CreatePerguntaData) => {
     const raw = (perguntaText || data.pergunta || "").toString();
     const perguntaTrim = raw.trim();
+
     if (!perguntaTrim) {
       setError("pergunta" as any, {
         type: "manual",
@@ -206,13 +267,11 @@ export default function AskQuestionPage({
       return;
     }
 
-    // run local filter and block submission if offensive words are present
     const filtro = filtrarTextoLocal(perguntaTrim);
     setFilteredText(filtro.textoFiltrado);
     setHasBadWords(filtro.contemPalavraOfensiva);
 
     if (filtro.contemPalavraOfensiva) {
-      // set a form error so the user sees why submission is blocked
       setError("pergunta" as any, {
         type: "manual",
         message:
@@ -221,39 +280,14 @@ export default function AskQuestionPage({
       return;
     }
 
-    const payload = {
+    const payload: CreatePerguntaData = {
       ...data,
       pergunta: filtro.textoFiltrado,
       fkId_usuario: id_usuario || "",
     };
 
-    // If the question is very short, ask for confirmation before posting
-    if ((perguntaTrim || "").length < MIN_QUESTION_LENGTH) {
-      setShortPayload(payload as CreatePerguntaData);
-      setShortConfirmError(null);
-      setShortConfirmOpen(true);
-      return;
-    }
-
-    mutate(payload, {
-      onSuccess: () => {
-        setIsSuccess(true);
-        setTimeout(() => {
-          router.push("/home");
-        }, 1500);
-      },
-      onError: (err: any) => {
-        // try to extract server validation message
-        const serverMessage =
-          err?.response?.data?.error ||
-          err?.message ||
-          "Erro ao criar pergunta";
-        setError("pergunta" as any, {
-          type: "server",
-          message: serverMessage,
-        });
-      },
-    });
+    // fluxo normal
+    await criarPerguntaEEnviarImagem(payload);
   };
 
   const proceedWithShortQuestion = () => {
@@ -483,6 +517,66 @@ export default function AskQuestionPage({
                   {errors.fkId_componente && (
                     <p className="text-red-500 text-sm mt-1 font-medium">
                       {errors.fkId_componente.message}
+                    </p>
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-sm font-semibold text-gray-700 flex items-center gap-2">
+                    <span className="w-1 h-4 bg-purple-600 rounded-full"></span>
+                    Imagem
+                  </label>
+
+                  <Controller
+                    control={control}
+                    name="foto_pergunta"
+                    rules={{ required: "Selecione uma imagem" }}
+                    render={({ field }) => (
+                      <div className="w-full">
+                        <label
+                          className="
+          flex flex-col items-center justify-center gap-2
+          w-full h-32 cursor-pointer bg-white border-2 border-zinc-200 
+          rounded-xl transition-all duration-300
+          hover:border-purple-400 hover:shadow-sm
+          focus-within:border-purple-500 focus-within:ring-2 focus-within:ring-purple-500/20
+        "
+                        >
+                          <input
+                            type="file"
+                            accept="image/*"
+                            className="hidden"
+                            onChange={(e) => {
+                              const file = e.target.files?.[0];
+                              field.onChange(file || null);
+                            }}
+                          />
+
+                          {field.value ? (
+                            <img
+                              src={URL.createObjectURL(field.value)}
+                              alt="preview"
+                              className="h-full object-contain rounded-lg"
+                            />
+                          ) : (
+                            <p className="text-sm text-zinc-500">
+                              Clique para enviar uma imagem
+                            </p>
+                          )}
+                        </label>
+                      </div>
+                    )}
+                  />
+
+                  {errors.foto_pergunta && (
+                    <p className="text-red-500 text-sm mt-1 font-medium">
+                      {errors.foto_pergunta.message}
+                    </p>
+                  )}
+
+                  {errors.foto_pergunta && (
+                    <p className="text-red-500 text-sm mt-1 font-medium">
+                      {errors.foto_pergunta.message}
                     </p>
                   )}
                 </div>

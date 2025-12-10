@@ -1,5 +1,6 @@
 export interface Pergunta {
   id_pergunta: string;
+  foto_pergunta?: string
   pergunta: string;
   fkId_usuario?: string;
   fkId_componente?: string;
@@ -25,6 +26,7 @@ export interface CreatePerguntaData {
   fkId_usuario: string;
   fkId_componente: string;
   fkId_curso: string;
+  foto_pergunta?: string
 }
 
 export interface UpdatePerguntaData {

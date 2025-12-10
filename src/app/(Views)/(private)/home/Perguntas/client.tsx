@@ -20,8 +20,6 @@ import ModalCreateDenuncia from "./modalCreateReport";
 import { GlowingEffect } from "@/components/ui/glowing-effect";
 import { LiquidButton } from "@/components/ui/liquid-glass-button";
 import { validarResposta } from "@/services/validarResposta";
-// use `User` from lucide-react to keep icon set consistent
-
 import { Inter } from "next/font/google";
 import Image from "next/image";
 import { AnimatePresence, motion } from "framer-motion";
@@ -787,13 +785,17 @@ export function PerguntasClientPage({
                         <DropdownMenuContent className="z-[120]">
                           <DropdownMenuLabel>Ações</DropdownMenuLabel>
                           <DropdownMenuSeparator />
-                          {id_usuario === author.id_usuario && (
+                          {id_usuario === author.id_usuario && !temResposta && (
                             <DropdownMenuItem
                               onClick={() => {
                                 setOpenPergunta(null); // Fecha modal de ver respostas
                                 setEditPerguntaId(pergunta.id_pergunta);
                               }}
-                              className="cursor-pointer"
+                              className={`${
+                                temResposta
+                                  ? "opacity-40 cursor-not-allowed"
+                                  : "cursor-pointer"
+                              }`}
                             >
                               Editar
                             </DropdownMenuItem>
@@ -858,6 +860,7 @@ export function PerguntasClientPage({
 
                     {/* Pergunta */}
                     <div className="relative mb-4">
+                      <img src={pergunta.foto_pergunta} />
                       <h3 className="text-left text-[18px] md:text-[20px] font-bold leading-snug tracking-tight text-zinc-900">
                         {pergunta.pergunta}
                       </h3>

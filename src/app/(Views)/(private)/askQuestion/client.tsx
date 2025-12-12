@@ -554,7 +554,7 @@ export default function AskQuestionPage({
 
                           {field.value ? (
                             <img
-                              src={URL.createObjectURL(field.value)}
+                              src={field.value}
                               alt="preview"
                               className="h-full object-contain rounded-lg"
                             />
